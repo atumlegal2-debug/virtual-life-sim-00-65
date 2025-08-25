@@ -226,11 +226,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear local storage first
       localStorage.removeItem('currentUser');
       
-      // Then sign out from Supabase
-      await supabase.auth.signOut();
+      // Check if there's an active session before trying to sign out
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Only try to sign out if there's an active session
+        await supabase.auth.signOut();
+      }
+      
+      // Force clear the session state immediately
+      setSession(null);
+      setUser(null);
+      
     } catch (error) {
       console.error('Erro no logout:', error);
-      // Even if Supabase logout fails, we've cleared local data
+      // Even if Supabase logout fails, force clear everything
+      setSession(null);
+      setUser(null);
+      localStorage.removeItem('currentUser');
     }
   };
 

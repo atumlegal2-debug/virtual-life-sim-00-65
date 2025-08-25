@@ -301,24 +301,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('currentUserId');
       localStorage.removeItem('userDiseases');
       setCurrentUser(null);
+      setIsLoggedIn(false);
+      setUserId(null);
+      setDiseases([]);
+      setGameStats({
+        health: 100,
+        hunger: 100,
+        alcoholism: 0,
+        disease: 0,
+        mood: "Sentindo-se bem"
+      });
       
-      // Then try to sign out from Supabase
-      await supabase.auth.signOut();
+      // Check if there's an active session before trying to sign out
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Only try to sign out if there's an active session
+        await supabase.auth.signOut();
+      }
+      
     } catch (e) {
       console.error('Erro ao deslogar do Supabase:', e);
-      // Even if Supabase logout fails, we've cleared local data
+      // Even if Supabase logout fails, ensure we're logged out locally
+      setIsLoggedIn(false);
+      setUserId(null);
+      setCurrentUser(null);
+      setDiseases([]);
     }
-    setIsLoggedIn(false);
-    setUserId(null);
-    setDiseases([]);
-    setGameStats({
-      health: 100,
-      hunger: 100,
-      alcoholism: 0,
-      disease: 0,
-      mood: "Sentindo-se bem"
-    });
-    setMoney(2000);
   };
 
   const updateStats = async (stats: Partial<GameStats>) => {
