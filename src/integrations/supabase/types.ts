@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_items: {
+        Row: {
+          created_at: string
+          created_by_user_id: string
+          description: string
+          icon: string | null
+          id: string
+          item_type: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id: string
+          description: string
+          icon?: string | null
+          id: string
+          item_type: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          item_type?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           addressee_id: string
