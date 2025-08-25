@@ -218,17 +218,19 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
         index === self.findIndex(f => f.id === friend.id || f.username === friend.username)
       );
 
-      // Store friends in localStorage to ensure persistence
+      // Store friends permanently in localStorage with separate cache
+      const currentUserKey = `${currentUser}_friends_cache`;
       const friendsData = JSON.stringify(uniqueFriends);
-      localStorage.setItem(`${currentUser}_friends`, friendsData);
+      localStorage.setItem(currentUserKey, friendsData);
 
+      console.log(`Friends loaded for ${currentUser}:`, uniqueFriends);
       setFriends(uniqueFriends);
     } catch (error) {
       console.error('Error fetching friends:', error);
       
       // Try to load from cached friends first
       const currentUser = localStorage.getItem('currentUser');
-      const cachedFriends = localStorage.getItem(`${currentUser}_friends`);
+      const cachedFriends = localStorage.getItem(`${currentUser}_friends_cache`);
       
       if (cachedFriends) {
         try {
@@ -238,6 +240,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             ...friend,
             isOnline: localStorage.getItem(`${friend.username}_onlineStatus`) === 'true' || false
           }));
+          console.log(`Friends loaded from cache for ${currentUser}:`, updatedFriends);
           setFriends(updatedFriends);
           return;
         } catch (parseError) {
@@ -265,6 +268,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
           };
         });
         
+      console.log(`Friends loaded from fallback for ${currentUser}:`, localFriends);
       setFriends(localFriends);
     }
   };
@@ -386,7 +390,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
     // Clear cached friends to force refresh
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
-      localStorage.removeItem(`${currentUser}_friends`);
+      localStorage.removeItem(`${currentUser}_friends_cache`);
     }
 
     await fetchFriendRequests();
