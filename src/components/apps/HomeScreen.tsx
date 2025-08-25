@@ -14,9 +14,11 @@ import {
   Globe,
   Zap,
   LogOut,
-  HeartHandshake
+  HeartHandshake,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { LifeApp } from "./LifeApp";
 import { WalletApp } from "./WalletApp";
@@ -43,6 +45,7 @@ export function HomeScreen() {
   const [currentApp, setCurrentApp] = useState<AppType>("home");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isOnline, setIsOnline] = useState(true);
   const { toast } = useToast();
 
   // Iniciar sistema automático de diminuição da fome
@@ -63,6 +66,11 @@ export function HomeScreen() {
   useEffect(() => {
     if (currentUser) {
       fetchUserProfile();
+      // Load online status from localStorage
+      const savedStatus = localStorage.getItem(`${currentUser}_onlineStatus`);
+      if (savedStatus !== null) {
+        setIsOnline(savedStatus === 'true');
+      }
     }
   }, [currentUser]);
 
@@ -92,6 +100,17 @@ export function HomeScreen() {
       markProposalsAsViewed(currentUser || "");
     }
     setCurrentApp(appId);
+  };
+
+  const handleStatusChange = (status: boolean) => {
+    setIsOnline(status);
+    if (currentUser) {
+      localStorage.setItem(`${currentUser}_onlineStatus`, status.toString());
+    }
+    toast({
+      title: status ? "Você está online! 🟢" : "Você está offline! 🔴",
+      description: status ? "Outros usuários podem ver que você está ativo" : "Outros usuários verão você como offline"
+    });
   };
 
   const apps = [
@@ -167,9 +186,40 @@ export function HomeScreen() {
               )}
             </Avatar>
             <div>
-              <h2 className="font-bold text-foreground">
-                {currentUser?.slice(0, -4)}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-foreground">
+                  {currentUser?.slice(0, -4)}
+                </h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-auto p-1 hover:bg-transparent">
+                      <div className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <span className="text-xs text-muted-foreground">
+                          {isOnline ? 'Online' : 'Offline'}
+                        </span>
+                        <ChevronDown size={12} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-32">
+                    <DropdownMenuItem 
+                      onClick={() => handleStatusChange(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      Online
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleStatusChange(false)}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-gray-400" />
+                      Offline
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {userProfile?.relationship_status ? userProfile.relationship_status : "Nível 1"}
               </p>
