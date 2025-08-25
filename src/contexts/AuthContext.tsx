@@ -222,7 +222,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear local storage first
+      localStorage.removeItem('currentUser');
+      
+      // Then sign out from Supabase
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      // Even if Supabase logout fails, we've cleared local data
+    }
   };
 
   return (

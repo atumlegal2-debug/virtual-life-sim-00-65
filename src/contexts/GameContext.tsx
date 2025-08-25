@@ -296,14 +296,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Always clear local data first
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentUserId');
+      localStorage.removeItem('userDiseases');
+      setCurrentUser(null);
+      
+      // Then try to sign out from Supabase
       await supabase.auth.signOut();
     } catch (e) {
       console.error('Erro ao deslogar do Supabase:', e);
+      // Even if Supabase logout fails, we've cleared local data
     }
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('currentUserId');
-    localStorage.removeItem('userDiseases');
-    setCurrentUser(null);
     setIsLoggedIn(false);
     setUserId(null);
     setDiseases([]);
