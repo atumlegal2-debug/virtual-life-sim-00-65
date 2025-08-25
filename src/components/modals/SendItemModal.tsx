@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, ArrowLeft, Plus, Minus } from "lucide-react";
+import { Send, Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +28,6 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
   const { currentUser } = useGame();
 
@@ -41,8 +39,6 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
-      setSelectedQuantity(1);
-      setSelectedUser(null);
     }
   }, [isOpen]);
 
@@ -82,19 +78,8 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
     }
   };
 
-  const handleSendItem = async () => {
-    if (!item || !currentUser || !selectedUser || selectedQuantity <= 0) return;
-
-    // Check if user has enough items
-    const availableQuantity = item.quantity || 1;
-    if (selectedQuantity > availableQuantity) {
-      toast({
-        title: "Quantidade insuficiente",
-        description: "Você não tem itens suficientes para enviar",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSendItem = async (toUser: User) => {
+    if (!item || !currentUser) return;
 
     try {
       // Get current user data
@@ -113,94 +98,37 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
         return;
       }
 
-      // Get current inventory item
-      const { data: currentInventory, error: inventoryError } = await supabase
+      // Remove item from sender's inventory
+      await supabase
         .from('inventory')
-        .select('quantity')
+        .delete()
         .eq('user_id', currentUserData.id)
-        .eq('item_id', item.id)
-        .single();
+        .eq('item_id', item.id);
 
-      if (inventoryError || !currentInventory) {
-        toast({
-          title: "Erro",
-          description: "Item não encontrado no inventário",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const newQuantity = currentInventory.quantity - selectedQuantity;
-
-      // Update sender's inventory
-      if (newQuantity <= 0) {
-        // Remove item completely if quantity reaches 0
-        await supabase
-          .from('inventory')
-          .delete()
-          .eq('user_id', currentUserData.id)
-          .eq('item_id', item.id);
-      } else {
-        // Update quantity
-        await supabase
-          .from('inventory')
-          .update({ quantity: newQuantity })
-          .eq('user_id', currentUserData.id)
-          .eq('item_id', item.id);
-      }
-
-      // Check if recipient already has this item
-      const { data: recipientInventory } = await supabase
+      // Add item to recipient's inventory
+      const { error: addError } = await supabase
         .from('inventory')
-        .select('quantity')
-        .eq('user_id', selectedUser.id)
-        .eq('item_id', item.id)
-        .single();
+        .insert({
+          user_id: toUser.id,
+          item_id: item.id,
+          quantity: 1
+        });
 
-      if (recipientInventory) {
-        // Update existing item quantity
+      if (addError) {
+        // If adding to recipient fails, restore item to sender
         await supabase
-          .from('inventory')
-          .update({ 
-            quantity: recipientInventory.quantity + selectedQuantity 
-          })
-          .eq('user_id', selectedUser.id)
-          .eq('item_id', item.id);
-      } else {
-        // Add new item to recipient's inventory
-        const { error: addError } = await supabase
           .from('inventory')
           .insert({
-            user_id: selectedUser.id,
+            user_id: currentUserData.id,
             item_id: item.id,
-            quantity: selectedQuantity,
-            item_data: item.originalItem || item
+            quantity: 1
           });
-
-        if (addError) {
-          // If adding to recipient fails, restore sender's inventory
-          if (newQuantity <= 0) {
-            await supabase
-              .from('inventory')
-              .insert({
-                user_id: currentUserData.id,
-                item_id: item.id,
-                quantity: selectedQuantity
-              });
-          } else {
-            await supabase
-              .from('inventory')
-              .update({ quantity: currentInventory.quantity })
-              .eq('user_id', currentUserData.id)
-              .eq('item_id', item.id);
-          }
-          throw addError;
-        }
+        throw addError;
       }
 
       toast({
         title: "Item enviado! 📦",
-        description: `${selectedQuantity}x ${item.name} foi enviado para ${getDisplayName(selectedUser.username)}`
+        description: `${item.name} foi enviado para ${getDisplayName(toUser.username)}`
       });
 
       onItemSent(); // Refresh inventory
@@ -215,20 +143,8 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
     }
   };
 
-  const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-  };
-
-  const adjustQuantity = (change: number) => {
-    const maxQuantity = item?.quantity || 1;
-    const newQuantity = Math.max(1, Math.min(maxQuantity, selectedQuantity + change));
-    setSelectedQuantity(newQuantity);
-  };
-
   const handleClose = () => {
     setSearchTerm("");
-    setSelectedUser(null);
-    setSelectedQuantity(1);
     onClose();
   };
 
@@ -259,44 +175,11 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
                   ) : (
                     <span className="text-2xl">📦</span>
                   )}
-                  <div className="flex-1">
+                  <div>
                     <h3 className="font-medium">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">
                       {(item.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2')}
                     </p>
-                    <Badge variant="secondary" className="mt-1">
-                      Disponível: {item.quantity || 1}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quantity Selector */}
-            <Card className="bg-gradient-card border-border/50">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Quantidade:</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => adjustQuantity(-1)}
-                      disabled={selectedQuantity <= 1}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span className="min-w-[2rem] text-center font-medium">
-                      {selectedQuantity}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => adjustQuantity(1)}
-                      disabled={selectedQuantity >= (item.quantity || 1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -332,10 +215,8 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
               filteredUsers.map((user) => (
                 <Card 
                   key={user.id} 
-                  className={`cursor-pointer hover:bg-accent/50 transition-colors ${
-                    selectedUser?.id === user.id ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => handleUserSelect(user)}
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  onClick={() => handleSendItem(user)}
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">
@@ -350,29 +231,16 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
                           <h3 className="font-medium">{getDisplayName(user.username)}</h3>
                         </div>
                       </div>
-                      {selectedUser?.id === user.id && (
-                        <Badge variant="default">Selecionado</Badge>
-                      )}
+                      <Button size="sm">
+                        <Send size={14} className="mr-1" />
+                        Enviar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))
             )}
           </div>
-
-          {/* Send Button */}
-          {selectedUser && (
-            <div className="pt-4 border-t">
-              <Button 
-                onClick={handleSendItem}
-                className="w-full"
-                disabled={selectedQuantity <= 0 || selectedQuantity > (item?.quantity || 1)}
-              >
-                <Send size={16} className="mr-2" />
-                Enviar {selectedQuantity}x {item?.name} para {getDisplayName(selectedUser.username)}
-              </Button>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
