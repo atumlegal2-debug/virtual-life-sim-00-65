@@ -289,8 +289,56 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      // Check and process pending money transfers
+      const transfers = JSON.parse(localStorage.getItem('moneyTransfers') || '[]');
+      const userTransfers = transfers.filter((t: any) => t.to === profile.id);
+      if (userTransfers.length > 0) {
+        const totalReceived = userTransfers.reduce((sum: number, t: any) => sum + t.amount, 0);
+        if (totalReceived > 0) {
+          await addCoins(totalReceived);
+          console.log(`Received ${totalReceived} C'M from transfers`);
+          
+          // Remove processed transfers
+          const remainingTransfers = transfers.filter((t: any) => t.to !== profile.id);
+          localStorage.setItem('moneyTransfers', JSON.stringify(remainingTransfers));
+        }
+      }
+      
+      // Check and process pending item transfers
+      const itemTransfers = JSON.parse(localStorage.getItem('itemTransfers') || '[]');
+      const userItemTransfers = itemTransfers.filter((t: any) => t.to === profile.id);
+      if (userItemTransfers.length > 0) {
+        for (const transfer of userItemTransfers) {
+          try {
+            // Add item to user's inventory in database
+            await supabase
+              .from('inventory')
+              .upsert({
+                user_id: profile.id,
+                item_id: transfer.item.id,
+                quantity: 1,
+                item_data: transfer.item
+              }, {
+                onConflict: 'user_id,item_id'
+              });
+            console.log(`Received item: ${transfer.item.name}`);
+          } catch (error) {
+            console.error('Error processing item transfer:', error);
+          }
+        }
+        
+        // Remove processed item transfers
+        const remainingItemTransfers = itemTransfers.filter((t: any) => t.to !== profile.id);
+        localStorage.setItem('itemTransfers', JSON.stringify(remainingItemTransfers));
+      }
+      
+      // Load inventory after processing transfers
+      await fetchInventory();
+      
       // Check and fix disease level after loading profile
       setTimeout(() => checkAndFixDiseaseLevel(), 100);
+      
+      console.log(`User ${username} logged in successfully with all data loaded`);
     }
   };
 
@@ -618,6 +666,39 @@ export function GameProvider({ children }: { children: ReactNode }) {
       console.error('Error refreshing wallet:', error);
     }
   };
+
+  // Auto-save diseases to localStorage whenever they change
+  useEffect(() => {
+    if (currentUser && diseases.length >= 0) {
+      localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(diseases));
+    }
+  }, [diseases, currentUser]);
+
+  // Auto-save game stats to database whenever they change
+  useEffect(() => {
+    if (userId && isLoggedIn && currentUser) {
+      const saveStatsToDatabase = async () => {
+        try {
+          await supabase
+            .from('users')
+            .update({
+              life_percentage: gameStats.health,
+              hunger_percentage: gameStats.hunger,
+              alcoholism_percentage: gameStats.alcoholism,
+              disease_percentage: gameStats.disease,
+              wallet_balance: money
+            })
+            .eq('id', userId);
+        } catch (error) {
+          console.error('Error auto-saving stats:', error);
+        }
+      };
+      
+      // Debounce the save to avoid too many database calls
+      const timeoutId = setTimeout(saveStatsToDatabase, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gameStats, money, userId, isLoggedIn, currentUser]);
 
   // Listen for login state changes to reload friends
   useEffect(() => {
