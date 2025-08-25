@@ -2,7 +2,6 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { PhoneContainer } from "@/components/ui/phone-container";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGame } from "@/contexts/GameContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { 
   Heart, 
   ShoppingBag, 
@@ -41,8 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager";
 
 export function HomeScreen() {
-  const { currentUser } = useGame();
-  const { signOut } = useAuth();
+  const { currentUser, logout } = useGame();
   const { getProposalsForUser, markProposalsAsViewed } = useRelationship();
   const [currentApp, setCurrentApp] = useState<AppType>("home");
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -236,7 +234,7 @@ export function HomeScreen() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={signOut}
+            onClick={logout}
             className="text-muted-foreground hover:text-destructive"
           >
             <LogOut size={16} />

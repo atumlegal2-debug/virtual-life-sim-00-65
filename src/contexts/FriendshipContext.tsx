@@ -63,8 +63,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             addressee_id,
             status,
             created_at,
-            requester:users!friend_requests_requester_id_fkey(username),
-            addressee:users!friend_requests_addressee_id_fkey(username)
+            requester:users!friend_requests_requester_id_fkey(username)
           `)
           .eq('addressee_id', userData.id)
           .eq('status', 'pending');
@@ -75,7 +74,6 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             requester_id: request.requester_id,
             requester_username: request.requester?.username || 'Unknown',
             addressee_id: request.addressee_id,
-            addressee_username: request.addressee?.username || 'Unknown',
             status: request.status as "pending" | "accepted" | "rejected",
             created_at: request.created_at
           }));

@@ -10,7 +10,6 @@ import { RelationshipProvider } from "@/contexts/RelationshipContext";
 import { FriendshipProvider } from "@/contexts/FriendshipContext";
 import { PregnancyProvider } from "@/contexts/PregnancyContext";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import Manager from "./pages/Manager";
 import NotFound from "./pages/NotFound";
 
@@ -30,7 +29,6 @@ const App = () => (
                 <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
                     <Route path="/manager" element={<Manager />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
