@@ -432,11 +432,16 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return false;
     
-    // Check in the local state for pending requests (both sent and received)
-    return friendRequests.some(request => 
-      request.requester_id === userId || request.addressee_id === userId ||
-      request.requester_username === userId || request.addressee_username === userId
-    );
+    // Check localStorage for all requests (sent and received)
+    const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+    
+    // Check for pending requests where current user is requester or addressee
+    return localRequests.some((request: any) => {
+      const isInvolved = (request.requester_username === currentUser && request.addressee_username === userId) ||
+                        (request.requester_username === userId && request.addressee_username === currentUser) ||
+                        (request.requester_id === userId || request.addressee_id === userId);
+      return isInvolved && request.status === 'pending';
+    });
   };
 
   const refreshFriendsStatus = () => {

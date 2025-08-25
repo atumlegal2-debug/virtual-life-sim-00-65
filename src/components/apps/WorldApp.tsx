@@ -26,7 +26,7 @@ interface User {
 
 export function WorldApp({ onBack }: WorldAppProps) {
   const { currentUser } = useGame();
-  const { friendRequests, sendFriendRequest, areFriends, hasPendingRequest } = useFriendship();
+  const { friendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, areFriends, hasPendingRequest } = useFriendship();
   const { currentRelationship } = useRelationship();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -131,25 +131,51 @@ export function WorldApp({ onBack }: WorldAppProps) {
     console.log("handleAddFriend called for user:", user);
     console.log("currentUser:", currentUser);
     
-    if (currentUser && user.id !== currentUser) {
+    if (currentUser && user.username !== currentUser) {
+      // Check if this is responding to a pending request
+      const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+      const pendingRequest = localRequests.find((req: any) => 
+        req.requester_username === user.username && 
+        req.addressee_username === currentUser &&
+        req.status === 'pending'
+      );
+      
+      if (pendingRequest) {
+        // This is responding to a pending request, show modal instead
+        setSelectedUser(user);
+        return;
+      }
+      
       console.log("Sending friend request...");
       await sendFriendRequest(user.id, user.username);
     } else {
-      console.log("Friend request not sent - currentUser:", currentUser, "user.id:", user.id);
+      console.log("Friend request not sent - currentUser:", currentUser, "user.username:", user.username);
     }
   };
 
   const getButtonState = (user: User) => {
-    if (!currentUser || user.id === currentUser) {
+    if (!currentUser || user.username === currentUser) {
       return { text: "Você", disabled: true, variant: "outline" as const };
     }
     
-    if (areFriends(user.id)) {
+    if (areFriends(user.username)) {
       return { text: "✓ Amigos", disabled: true, variant: "outline" as const };
     }
     
-    if (hasPendingRequest(user.id)) {
-      return { text: "Pendente", disabled: true, variant: "outline" as const };
+    // Check for pending friend requests
+    const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+    const pendingRequest = localRequests.find((req: any) => 
+      ((req.requester_username === currentUser && req.addressee_username === user.username) ||
+       (req.requester_username === user.username && req.addressee_username === currentUser)) &&
+      req.status === 'pending'
+    );
+    
+    if (pendingRequest) {
+      if (pendingRequest.requester_username === currentUser) {
+        return { text: "Pedido enviado - Aguarde", disabled: true, variant: "outline" as const };
+      } else {
+        return { text: "Responder pedido", disabled: false, variant: "secondary" as const };
+      }
     }
     
     return { text: "Adicionar Amigo", disabled: false, variant: "default" as const };
@@ -247,12 +273,48 @@ export function WorldApp({ onBack }: WorldAppProps) {
                 );
               })()}
               
-              {areFriends(selectedUser.id) && (
+              {areFriends(selectedUser.username) && (
                 <Button variant="outline" className="w-full">
                   <Heart size={16} className="mr-2" />
                   Amigos desde hoje
                 </Button>
               )}
+              
+              {(() => {
+                const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+                const pendingRequest = localRequests.find((req: any) => 
+                  req.requester_username === selectedUser.username && 
+                  req.addressee_username === currentUser &&
+                  req.status === 'pending'
+                );
+                
+                if (pendingRequest) {
+                  return (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={async () => {
+                          await acceptFriendRequest(pendingRequest.id);
+                          setSelectedUser(null);
+                        }}
+                        className="flex-1 bg-green-500 hover:bg-green-600"
+                      >
+                        ✓ Aceitar
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={async () => {
+                          await rejectFriendRequest(pendingRequest.id);
+                          setSelectedUser(null);
+                        }}
+                        className="flex-1 border-red-500/50 text-red-600 hover:bg-red-50"
+                      >
+                        ✗ Rejeitar
+                      </Button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -341,17 +403,38 @@ export function WorldApp({ onBack }: WorldAppProps) {
                     {/* Friendship Status Indicators */}
                     {currentUser && user.id !== currentUser && (
                       <>
-                        {areFriends(user.id) && (
+                        {areFriends(user.username) && (
                           <Badge variant="outline" className="text-xs border-green-500/50 text-green-600">
                             ✓ Amigo
                           </Badge>
                         )}
-                        {hasPendingRequest(user.id) && (
-                          <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-600">
-                            <Clock size={10} className="mr-1" />
-                            Pendente
-                          </Badge>
-                        )}
+                        {(() => {
+                          const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+                          const pendingRequest = localRequests.find((req: any) => 
+                            ((req.requester_username === currentUser && req.addressee_username === user.username) ||
+                             (req.requester_username === user.username && req.addressee_username === currentUser)) &&
+                            req.status === 'pending'
+                          );
+                          
+                          if (pendingRequest) {
+                            if (pendingRequest.requester_username === currentUser) {
+                              return (
+                                <Badge variant="outline" className="text-xs border-blue-500/50 text-blue-600">
+                                  <Clock size={10} className="mr-1" />
+                                  Enviado
+                                </Badge>
+                              );
+                            } else {
+                              return (
+                                <Badge variant="outline" className="text-xs border-orange-500/50 text-orange-600 animate-pulse">
+                                  <Clock size={10} className="mr-1" />
+                                  Responder
+                                </Badge>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
                       </>
                     )}
                   </div>
