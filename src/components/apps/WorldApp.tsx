@@ -81,6 +81,10 @@ export function WorldApp({ onBack }: WorldAppProps) {
       
       existingRequests.push(friendshipRequest);
       localStorage.setItem('friendRequests', JSON.stringify(existingRequests));
+      
+      // Force refresh of friends for both users by clearing their cached friends
+      localStorage.removeItem('wonho1234_friends');
+      localStorage.removeItem('wonho1235_friends');
     }
   };
 

@@ -138,7 +138,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
       // Get current user's ID from users table using full username
       const { data: userData } = await supabase
         .from('users')
-        .select('id')
+        .select('id, avatar')
         .eq('username', currentUser)
         .maybeSingle();
 
@@ -152,8 +152,8 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             id,
             requester_id,
             addressee_id,
-            requester:users!friend_requests_requester_id_fkey(username),
-            addressee:users!friend_requests_addressee_id_fkey(username)
+            requester:users!friend_requests_requester_id_fkey(username, avatar),
+            addressee:users!friend_requests_addressee_id_fkey(username, avatar)
           `)
           .or(`requester_id.eq.${userData.id},addressee_id.eq.${userData.id}`)
           .eq('status', 'accepted');
@@ -162,61 +162,55 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
           supabaseFriends = friendships.map(friendship => {
             const isRequester = friendship.requester_id === userData.id;
             const friendId = isRequester ? friendship.addressee_id : friendship.requester_id;
-            const friendUsername = isRequester ? friendship.addressee?.username : friendship.requester?.username;
+            const friendData = isRequester ? friendship.addressee : friendship.requester;
             
             return {
               id: friendId,
-              username: friendUsername || 'Unknown',
-              avatar_url: null,
-              isOnline: Math.random() > 0.3 // Demo random status
+              username: friendData?.username || 'Unknown',
+              avatar_url: friendData?.avatar || null,
+              isOnline: localStorage.getItem(`${friendData?.username}_onlineStatus`) === 'true' || false
             };
           });
-          
-          // Fetch avatars for friends from users table
-          if (supabaseFriends.length > 0) {
-            const friendIds = supabaseFriends.map(f => f.id);
-            const { data: friendsData } = await supabase
-              .from('users')
-              .select('id, avatar')
-              .in('id', friendIds);
-              
-            if (friendsData) {
-              supabaseFriends = supabaseFriends.map(friend => {
-                const userData = friendsData.find(u => u.id === friend.id);
-                return {
-                  ...friend,
-                  avatar_url: userData?.avatar || null,
-                  isOnline: localStorage.getItem(`${friend.username}_onlineStatus`) === 'true' || false
-                };
-              });
-            }
-          }
         }
       }
 
-      // Also check localStorage for accepted friendships
+      // Always check localStorage for accepted friendships and ensure they persist
       const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
-      const localFriends: Friend[] = localRequests
-        .filter((req: any) => {
-          const isInvolved = req.requester_username === currentUser || 
-                            req.addressee_username === currentUser ||
-                            (userData && (req.requester_id === userData.id || req.addressee_id === userData.id));
-          const isAccepted = req.status === 'accepted';
-          return isInvolved && isAccepted;
-        })
-        .map((req: any) => {
+      const localFriends: Friend[] = [];
+      
+      for (const req of localRequests) {
+        const isInvolved = req.requester_username === currentUser || 
+                          req.addressee_username === currentUser ||
+                          (userData && (req.requester_id === userData.id || req.addressee_id === userData.id));
+        const isAccepted = req.status === 'accepted';
+        
+        if (isInvolved && isAccepted) {
           const isRequester = req.requester_username === currentUser || 
                              (userData && req.requester_id === userData.id);
           const friendUsername = isRequester ? req.addressee_username : req.requester_username;
           const friendId = isRequester ? req.addressee_id : req.requester_id;
           
-          return {
+          // Try to get friend's avatar from Supabase
+          let avatar_url = null;
+          try {
+            const { data: friendData } = await supabase
+              .from('users')
+              .select('avatar')
+              .eq('username', friendUsername)
+              .maybeSingle();
+            avatar_url = friendData?.avatar || null;
+          } catch (error) {
+            console.log('Could not fetch avatar for friend:', friendUsername);
+          }
+          
+          localFriends.push({
             id: friendId,
             username: friendUsername || 'Unknown',
-            avatar_url: null,
+            avatar_url,
             isOnline: localStorage.getItem(`${friendUsername}_onlineStatus`) === 'true' || false
-          };
-        });
+          });
+        }
+      }
 
       // Combine and deduplicate friends
       const allFriends = [...supabaseFriends, ...localFriends];
@@ -224,14 +218,35 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
         index === self.findIndex(f => f.id === friend.id || f.username === friend.username)
       );
 
+      // Store friends in localStorage to ensure persistence
+      const friendsData = JSON.stringify(uniqueFriends);
+      localStorage.setItem(`${currentUser}_friends`, friendsData);
+
       setFriends(uniqueFriends);
     } catch (error) {
       console.error('Error fetching friends:', error);
       
-      // Fallback: only use localStorage
+      // Try to load from cached friends first
       const currentUser = localStorage.getItem('currentUser');
-      const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
+      const cachedFriends = localStorage.getItem(`${currentUser}_friends`);
       
+      if (cachedFriends) {
+        try {
+          const parsedFriends = JSON.parse(cachedFriends);
+          // Update online status from current localStorage values
+          const updatedFriends = parsedFriends.map((friend: Friend) => ({
+            ...friend,
+            isOnline: localStorage.getItem(`${friend.username}_onlineStatus`) === 'true' || false
+          }));
+          setFriends(updatedFriends);
+          return;
+        } catch (parseError) {
+          console.error('Error parsing cached friends:', parseError);
+        }
+      }
+      
+      // Final fallback: only use localStorage friend requests
+      const localRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
       const localFriends: Friend[] = localRequests
         .filter((req: any) => 
           (req.requester_username === currentUser || req.addressee_username === currentUser) &&
@@ -367,6 +382,12 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
       req.id === requestId ? { ...req, status: 'accepted' } : req
     );
     localStorage.setItem('friendRequests', JSON.stringify(updatedRequests));
+
+    // Clear cached friends to force refresh
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      localStorage.removeItem(`${currentUser}_friends`);
+    }
 
     await fetchFriendRequests();
     await fetchFriends();
