@@ -21,17 +21,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Set currentUser in localStorage when user is authenticated
+        if (session?.user) {
+          const username = session.user.user_metadata?.username;
+          if (username) {
+            localStorage.setItem('currentUser', username);
+          }
+        } else {
+          localStorage.removeItem('currentUser');
+        }
+        
         setIsLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Set currentUser in localStorage for existing session
+      if (session?.user) {
+        const username = session.user.user_metadata?.username;
+        if (username) {
+          localStorage.setItem('currentUser', username);
+        }
+      }
+      
       setIsLoading(false);
     });
 

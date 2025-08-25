@@ -352,15 +352,28 @@ export function LoginForm() {
               <label htmlFor="username" className="text-sm font-medium">
                 Username
               </label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Lucas1415"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-input border-border/50 focus:border-primary"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Lucas1415"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="bg-input border-border/50 focus:border-primary pr-10"
+                  required
+                />
+                {username && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                    onClick={() => setUsername("")}
+                  >
+                    <span className="text-muted-foreground hover:text-foreground">✕</span>
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Deve terminar com exatamente 4 dígitos
               </p>
