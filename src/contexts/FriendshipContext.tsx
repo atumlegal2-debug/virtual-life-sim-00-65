@@ -460,6 +460,21 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchFriendRequests();
     fetchFriends();
+    
+    // Listen for login events to reload friends
+    const handleUserLogin = () => {
+      console.log('User logged in, reloading friends...');
+      setTimeout(() => {
+        fetchFriends();
+        fetchFriendRequests();
+      }, 200);
+    };
+    
+    window.addEventListener('userLoggedIn', handleUserLogin);
+    
+    return () => {
+      window.removeEventListener('userLoggedIn', handleUserLogin);
+    };
   }, []);
 
   return (

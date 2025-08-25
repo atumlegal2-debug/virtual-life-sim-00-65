@@ -296,10 +296,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Get current user before clearing localStorage
+      const currentUserToLogout = localStorage.getItem('currentUser');
+      
       // Always clear local data first
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentUserId');
       localStorage.removeItem('userDiseases');
+      
+      // Clear friends cache for the current user
+      if (currentUserToLogout) {
+        localStorage.removeItem(`${currentUserToLogout}_friends_cache`);
+      }
+      
       setCurrentUser(null);
       setIsLoggedIn(false);
       setUserId(null);
@@ -609,6 +618,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
       console.error('Error refreshing wallet:', error);
     }
   };
+
+  // Listen for login state changes to reload friends
+  useEffect(() => {
+    if (isLoggedIn && currentUser) {
+      console.log('User logged in, triggering friends reload:', currentUser);
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { username: currentUser } }));
+      }, 100);
+    }
+  }, [isLoggedIn, currentUser]);
 
   return (
     <GameContext.Provider value={{
