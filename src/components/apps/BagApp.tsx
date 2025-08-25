@@ -86,14 +86,14 @@ export function BagApp({ onBack }: BagAppProps) {
         if (customItems[item.item_id]) {
           const customItem = customItems[item.item_id];
           
-          // Define effect based on item type
+          // Define effect based on item type - Custom items have fixed small effects
           let effect = null;
           if (customItem.itemType === "food") {
-            effect = { type: "hunger", value: 3, message: `Você comeu ${customItem.name} e se sente satisfeito!` };
+            effect = { type: "hunger", value: 3, message: `Você comeu ${customItem.name} e se sente um pouco satisfeito!` };
           } else if (customItem.itemType === "drink") {
-            effect = { type: "hunger", value: 3, message: `Você bebeu ${customItem.name} e se sente mais satisfeito!` };
+            effect = { type: "hunger", value: 3, message: `Você bebeu ${customItem.name} e se sente um pouco saciado!` };
           } else if (customItem.itemType === "object") {
-            effect = { type: "mood", value: 10, message: `Você usou ${customItem.name} e se sente melhor!` };
+            effect = { type: "mood", value: 5, message: `Você usou ${customItem.name} e se sente ligeiramente melhor!` };
           }
           
           formattedInventory.push({
