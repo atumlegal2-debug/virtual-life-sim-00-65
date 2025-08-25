@@ -178,7 +178,7 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
                   <div>
                     <h3 className="font-medium">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {item.description}
+                      {(item.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2')}
                     </p>
                   </div>
                 </div>

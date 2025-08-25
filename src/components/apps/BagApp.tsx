@@ -99,7 +99,7 @@ export function BagApp({ onBack }: BagAppProps) {
           formattedInventory.push({
             id: customItem.id,
             name: customItem.name,
-            description: customItem.description,
+            description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
             itemType: customItem.itemType,
             quantity: item.quantity,
             storeId: "custom",
@@ -540,7 +540,7 @@ export function BagApp({ onBack }: BagAppProps) {
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground mb-3">
-            {item.description}
+            {(item.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2')}
           </p>
           
           {/* Special ring info */}
