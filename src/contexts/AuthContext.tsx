@@ -1,0 +1,228 @@
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from "@/integrations/supabase/client";
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  signUp: (username: string) => Promise<{ error?: any }>;
+  signIn: (username: string) => Promise<{ error?: any }>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const validateUsername = (username: string): boolean => {
+    const regex = /^[a-zA-Z]+\d{4}$/;
+    return regex.test(username);
+  };
+
+  const checkUserExists = async (username: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Erro ao verificar usuário:', error);
+      return false;
+    }
+  };
+
+  const signUp = async (username: string) => {
+    if (!validateUsername(username)) {
+      return { error: { message: "O username deve terminar com exatamente 4 dígitos (ex: Lucas1415)" } };
+    }
+
+    try {
+      const userExists = await checkUserExists(username);
+      if (userExists) {
+        return { error: { message: "Este username já está em uso. Tente outro." } };
+      }
+
+      // Create fake email from username with valid domain
+      const email = `${username}@rpglife.com`;
+      const password = username; // Use username as password for simplicity
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            username,
+            age: 25,
+            race: "Lunari",
+            lookingFor: "Todos",
+            about: "Jogador do RPG Real Life Virtual"
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Erro no signup:', error);
+        return { error };
+      }
+
+      console.log('Resultado do signup:', data);
+
+      // Se o usuário foi criado mas não está confirmado, confirmar automaticamente
+      if (data.user && !data.session) {
+        console.log('Usuário criado mas não confirmado. Confirmando automaticamente...');
+        
+        try {
+          // Chamar edge function para confirmar o usuário
+          const { data: fnData, error: fnError } = await supabase.functions.invoke('auto-confirm-user', {
+            body: { email }
+          });
+
+          if (!fnError) {
+            console.log('Usuário confirmado automaticamente. Fazendo login...');
+            
+            // Tentar fazer login após confirmação
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            
+            if (loginError) {
+              console.log('Erro no login após confirmação:', loginError);
+              return { error: { message: "Conta criada! Tente fazer login em alguns segundos." } };
+            }
+          } else {
+            console.log('Falha ao confirmar usuário automaticamente', fnError);
+            return { error: { message: "Conta criada! Tente fazer login em alguns segundos." } };
+          }
+        } catch (confirmError) {
+          console.log('Erro ao confirmar usuário:', confirmError);
+          return { error: { message: "Conta criada! Tente fazer login em alguns segundos." } };
+        }
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      return { error };
+    }
+  };
+
+  const signIn = async (username: string) => {
+    if (!validateUsername(username)) {
+      return { error: { message: "O username deve terminar com exatamente 4 dígitos (ex: Lucas1415)" } };
+    }
+
+    try {
+      const userExists = await checkUserExists(username);
+      if (!userExists) {
+        return { error: { message: "Usuário não encontrado. Você precisa se registrar antes de fazer login." } };
+      }
+
+      const email = `${username}@rpglife.com`;
+      const password = username;
+
+      console.log('Tentando login com:', { email, password });
+
+      // Primeira tentativa de login
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      console.log('Resultado do login:', { data, error });
+
+      // Se o email não estiver confirmado, tenta confirmar automaticamente e refazer o login
+      const msg = String((error as any)?.message || '').toLowerCase();
+      const needsConfirm = ((error as any)?.code === 'email_not_confirmed')
+        || msg.includes('email not confirmed')
+        || msg.includes('não confirmado')
+        || msg.includes('nao confirmado')
+        || msg.includes('unconfirmed')
+        || msg.includes('confirme')
+        || msg.includes('confirmar');
+
+      if (error && needsConfirm) {
+        console.log('Email possivelmente não confirmado. Tentando confirmar automaticamente...');
+        const { error: fnError } = await supabase.functions.invoke('auto-confirm-user', {
+          body: { email }
+        });
+
+        if (!fnError) {
+          const retry = await supabase.auth.signInWithPassword({ email, password });
+          data = retry.data;
+          error = retry.error;
+          console.log('Resultado do login (após confirmação):', { data, error });
+        } else {
+          console.error('Falha ao confirmar automaticamente:', fnError);
+        }
+      }
+
+      if (error) {
+        console.error('Erro de login:', error);
+        return { error };
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Erro no login:', error);
+      return { error };
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isLoading,
+      signUp,
+      signIn,
+      signOut
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

@@ -1,0 +1,10 @@
+-- Atualizar senhas dos gerentes para corresponder aos códigos solicitados
+UPDATE store_managers SET password = 'Bar1212' WHERE username = 'Bar';
+UPDATE store_managers SET password = 'Joalheria1329' WHERE username = 'Joalheria'; 
+UPDATE store_managers SET password = 'Restaurante1313' WHERE username = 'Restaurante';
+UPDATE store_managers SET password = 'Farmacia1414' WHERE username = 'Farmacia';
+UPDATE store_managers SET password = 'Cafeteria2020' WHERE username = 'Cafeteria';
+UPDATE store_managers SET password = 'Pizzaria1616' WHERE username = 'Pizzaria';
+UPDATE store_managers SET password = 'Sexshop1717' WHERE username = 'Sexshop';
+UPDATE store_managers SET password = 'Sorveteria1818' WHERE username = 'Sorveteria';
+UPDATE store_managers SET password = 'Hospital2023' WHERE username = 'Hospital';
