@@ -222,6 +222,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    const currentUser = localStorage.getItem('currentUser');
+    
+    // Clear user-specific cached data
+    if (currentUser) {
+      localStorage.removeItem(`${currentUser}_friends`);
+      localStorage.removeItem(`${currentUser}_onlineStatus`);
+    }
+    
+    // Clear general data
+    localStorage.removeItem('currentUser');
+    
     await supabase.auth.signOut();
   };
 

@@ -1,5 +1,4 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { LoginForm } from "@/components/auth/LoginForm";
 import { HomeScreen } from "@/components/apps/HomeScreen";
 
 const Index = () => {
@@ -14,7 +13,9 @@ const Index = () => {
   }
   
   if (!user) {
-    return <LoginForm />;
+    // Redirect to auth page instead of showing LoginForm directly
+    window.location.href = '/auth';
+    return null;
   }
   
   return <HomeScreen />;
