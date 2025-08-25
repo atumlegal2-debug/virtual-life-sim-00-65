@@ -107,6 +107,11 @@ export function HomeScreen() {
     if (currentUser) {
       localStorage.setItem(`${currentUser}_onlineStatus`, status.toString());
     }
+    
+    // Update friends status in real-time in FriendsApp and WorldApp
+    const statusEvent = new CustomEvent('statusChanged', { detail: { username: currentUser, isOnline: status } });
+    window.dispatchEvent(statusEvent);
+    
     toast({
       title: status ? "Você está online! 🟢" : "Você está offline! 🔴",
       description: status ? "Outros usuários podem ver que você está ativo" : "Outros usuários verão você como offline"

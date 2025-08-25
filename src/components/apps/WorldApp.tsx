@@ -34,6 +34,18 @@ export function WorldApp({ onBack }: WorldAppProps) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileModalUser, setProfileModalUser] = useState<User | null>(null);
 
+  // Listen for status changes to update users' online status
+  useEffect(() => {
+    const handleStatusChange = () => {
+      fetchUsers(); // Refresh users to get updated status
+    };
+
+    window.addEventListener('statusChanged', handleStatusChange);
+    return () => {
+      window.removeEventListener('statusChanged', handleStatusChange);
+    };
+  }, []);
+
   // Function to hide the 4-digit code from usernames for display
   const getDisplayName = (username: string) => {
     // Remove the last 4 digits if they exist
@@ -86,18 +98,21 @@ export function WorldApp({ onBack }: WorldAppProps) {
       }
 
       // Use only Supabase users with relationship status
-      const allUsers = (data || []).map(profile => ({
-        id: profile.id,
-        username: profile.username,
-        age: profile.age,
-        race: profile.race,
-        about: profile.about,
-        avatar_url: profile.avatar,
-        looking_for: profile.looking_for,
-        mood: profile.mood ? profile.mood.toString() : "normal",
-        relationship_status: profile.relationship_status || 'single', // Use Supabase status
-        isOnline: Math.random() > 0.3
-      }));
+      const allUsers = (data || []).map(profile => {
+        const onlineStatus = localStorage.getItem(`${profile.username}_onlineStatus`);
+        return {
+          id: profile.id,
+          username: profile.username,
+          age: profile.age,
+          race: profile.race,
+          about: profile.about,
+          avatar_url: profile.avatar,
+          looking_for: profile.looking_for,
+          mood: profile.mood ? profile.mood.toString() : "normal",
+          relationship_status: profile.relationship_status || 'single', // Use Supabase status
+          isOnline: onlineStatus === 'true' || (onlineStatus === null && Math.random() > 0.3)
+        };
+      });
 
       // Filter out current user
       const filteredUsers = allUsers.filter(user => user.username !== currentUser);

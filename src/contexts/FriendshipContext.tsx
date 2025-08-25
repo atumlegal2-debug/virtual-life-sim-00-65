@@ -29,6 +29,7 @@ interface FriendshipContextType {
   fetchFriends: () => Promise<void>;
   areFriends: (userId: string) => boolean;
   hasPendingRequest: (userId: string) => boolean;
+  refreshFriendsStatus: () => void;
 }
 
 const FriendshipContext = createContext<FriendshipContextType | undefined>(undefined);
@@ -170,6 +171,26 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
               isOnline: Math.random() > 0.3 // Demo random status
             };
           });
+          
+          // Fetch avatars for friends from users table
+          if (supabaseFriends.length > 0) {
+            const friendIds = supabaseFriends.map(f => f.id);
+            const { data: friendsData } = await supabase
+              .from('users')
+              .select('id, avatar')
+              .in('id', friendIds);
+              
+            if (friendsData) {
+              supabaseFriends = supabaseFriends.map(friend => {
+                const userData = friendsData.find(u => u.id === friend.id);
+                return {
+                  ...friend,
+                  avatar_url: userData?.avatar || null,
+                  isOnline: localStorage.getItem(`${friend.username}_onlineStatus`) === 'true' || false
+                };
+              });
+            }
+          }
         }
       }
 
@@ -193,7 +214,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             id: friendId,
             username: friendUsername || 'Unknown',
             avatar_url: null,
-            isOnline: Math.random() > 0.3
+            isOnline: localStorage.getItem(`${friendUsername}_onlineStatus`) === 'true' || false
           };
         });
 
@@ -225,7 +246,7 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
             id: friendId,
             username: friendUsername || 'Unknown',
             avatar_url: null,
-            isOnline: Math.random() > 0.3
+            isOnline: localStorage.getItem(`${friendUsername}_onlineStatus`) === 'true' || false
           };
         });
         
@@ -397,6 +418,15 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const refreshFriendsStatus = () => {
+    setFriends(currentFriends => 
+      currentFriends.map(friend => ({
+        ...friend,
+        isOnline: localStorage.getItem(`${friend.username}_onlineStatus`) === 'true'
+      }))
+    );
+  };
+
   useEffect(() => {
     fetchFriendRequests();
     fetchFriends();
@@ -412,7 +442,8 @@ export function FriendshipProvider({ children }: { children: ReactNode }) {
       fetchFriendRequests,
       fetchFriends,
       areFriends,
-      hasPendingRequest
+      hasPendingRequest,
+      refreshFriendsStatus
     }}>
       {children}
     </FriendshipContext.Provider>

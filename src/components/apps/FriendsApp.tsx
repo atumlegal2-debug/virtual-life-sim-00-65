@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Users, Gift, DollarSign, Send } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGame } from "@/contexts/GameContext";
 import { useFriendship } from "@/contexts/FriendshipContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +17,7 @@ interface FriendsAppProps {
 }
 
 export function FriendsApp({ onBack }: FriendsAppProps) {
-  const { friends } = useFriendship();
+  const { friends, refreshFriendsStatus } = useFriendship();
   const { coins, deductCoins, inventory, removeFromInventory } = useGame();
   const { toast } = useToast();
   
@@ -32,6 +32,18 @@ export function FriendsApp({ onBack }: FriendsAppProps) {
   const [sendItemModal, setSendItemModal] = useState(false);
   const [moneyAmount, setMoneyAmount] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
+
+  // Listen for status changes to update friends' online status
+  useEffect(() => {
+    const handleStatusChange = () => {
+      refreshFriendsStatus();
+    };
+
+    window.addEventListener('statusChanged', handleStatusChange);
+    return () => {
+      window.removeEventListener('statusChanged', handleStatusChange);
+    };
+  }, [refreshFriendsStatus]);
 
   const handleSendMoney = async () => {
     const amount = parseInt(moneyAmount);
