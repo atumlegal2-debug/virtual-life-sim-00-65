@@ -45,6 +45,11 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
   const { toast } = useToast();
   const { currentUser, money, deductCoins } = useGame();
 
+  // Function to hide the 4-digit code from usernames for display
+  const getDisplayName = (username: string) => {
+    return username.replace(/\d{4}$/, '');
+  };
+
   const handleCategorySelect = (category: keyof typeof CATEGORIES) => {
     const categoryPrice = CATEGORIES[category].price;
     
@@ -137,7 +142,7 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
       customItems[customItemId] = {
         id: customItemId,
         name: customName,
-        description: isCustomItem && customDescription ? customDescription : `Item criado por ${currentUser}`,
+        description: isCustomItem && customDescription ? customDescription : `Item criado por ${getDisplayName(currentUser)}`,
         itemType: selectedCategory,
         icon: uploadedImage || selectedIcon,
         isCustom: true,

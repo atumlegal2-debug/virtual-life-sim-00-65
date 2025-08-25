@@ -40,6 +40,11 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
   const [currentRelationship, setCurrentRelationship] = useState<UserRelationship | null>(null);
   const { toast } = useToast();
 
+  // Function to hide the 4-digit code from usernames for display
+  const getDisplayName = (username: string) => {
+    return username.replace(/\d{4}$/, '');
+  };
+
   useEffect(() => {
     // Load relationship data from Supabase
     const loadRelationships = async () => {
@@ -50,7 +55,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from('relationships')
           .select('*')
-          .or(`user1_username.eq.${currentUser.slice(0, -4)},user2_username.eq.${currentUser.slice(0, -4)}`);
+        .or(`user1_username.eq.${getDisplayName(currentUser)},user2_username.eq.${getDisplayName(currentUser)}`);
 
         if (error) {
           console.error('Error loading relationships:', error);
@@ -59,7 +64,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
 
         if (data && data.length > 0) {
           const relationship = data[0];
-          const isUser1 = relationship.user1_username === currentUser.slice(0, -4);
+          const isUser1 = relationship.user1_username === getDisplayName(currentUser);
           
           const partnerUsername = isUser1 ? relationship.user2_username : relationship.user1_username;
           const partnerId = isUser1 ? relationship.user2_id : relationship.user1_id;
@@ -97,7 +102,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('proposal_requests')
         .select('*')
-        .eq('to_username', currentUser.slice(0, -4))
+        .eq('to_username', getDisplayName(currentUser))
         .eq('status', 'pending');
 
       if (error) {
@@ -126,8 +131,8 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
     const fromUser = localStorage.getItem('currentUser');
     if (!fromUser) return;
     
-    const fromUsername = fromUser.slice(0, -4) || 'Unknown';
-    const displayToUsername = toUsername.length > 4 ? toUsername.slice(0, -4) : toUsername;
+    const fromUsername = getDisplayName(fromUser) || 'Unknown';
+    const displayToUsername = getDisplayName(toUserId);
     
     try {
       // Get sender's user record
@@ -225,7 +230,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
           user1_id: fromUserRecord.id,
           user1_username: proposal.fromUsername,
           user2_id: currentUserRecord.id,
-          user2_username: currentUser.slice(0, -4),
+          user2_username: getDisplayName(currentUser),
           relationship_type: proposal.type
         });
 
@@ -346,7 +351,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         const { error: relationshipError } = await supabase
           .from('relationships')
           .delete()
-          .or(`user1_username.eq.${currentUser.slice(0, -4)},user2_username.eq.${currentUser.slice(0, -4)}`);
+          .or(`user1_username.eq.${getDisplayName(currentUser)},user2_username.eq.${getDisplayName(currentUser)}`);
 
         if (relationshipError) {
           console.error('Error deleting relationship:', relationshipError);

@@ -60,6 +60,11 @@ export function RelationshipProposalModal({
   onReject 
 }: RelationshipProposalModalProps) {
   const { toast } = useToast();
+  
+  // Function to hide the 4-digit code from usernames for display
+  const getDisplayName = (username: string) => {
+    return username.replace(/\d{4}$/, '');
+  };
 
   if (!proposal) return null;
 
@@ -154,7 +159,7 @@ export function RelationshipProposalModal({
           </DialogTitle>
           <DialogDescription className="text-center space-y-3">
             <p className="font-medium text-foreground">
-              {proposal.fromUsername} enviou um anel para você!
+              {getDisplayName(proposal.fromUsername)} enviou um anel para você!
             </p>
             
             <div className="bg-gradient-card border border-border/50 rounded-lg p-4">
