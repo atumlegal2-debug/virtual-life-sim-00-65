@@ -515,57 +515,36 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
 
     try {
-      // Get receiver's current balance
-      const { data: receiverProfile } = await supabase
-        .from('users')
-        .select('wallet_balance, username')
-        .eq('id', selectedUser)
-        .single();
+      // Use the edge function for secure transfer
+      const { data, error } = await supabase.functions.invoke('manager-transfer', {
+        body: {
+          managerId: currentManager.id,
+          storeId: currentManager.store_id,
+          receiverUserId: selectedUser,
+          amount: amount
+        }
+      });
 
-      if (!receiverProfile) {
-        throw new Error('Usuário não encontrado');
+      if (error) {
+        throw error;
       }
 
-      // Update receiver's balance
-      const receiverNewBalance = (receiverProfile.wallet_balance || 0) + amount;
-      const { error: receiverError } = await supabase
-        .from('users')
-        .update({ wallet_balance: receiverNewBalance })
-        .eq('id', selectedUser);
+      if (!data.success) {
+        throw new Error(data.error || 'Erro desconhecido');
+      }
 
-      if (receiverError) throw receiverError;
-
-      // Update store manager balance
-      const newManagerBalance = (currentManager.balance || 0) - amount;
-      const { error: managerError } = await supabase
-        .from('store_managers')
-        .update({ balance: newManagerBalance })
-        .eq('id', currentManager.id);
-
-      if (managerError) throw managerError;
-
-      // Create transaction record
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          from_user_id: currentManager.id, // Using manager ID as sender
-          to_user_id: selectedUser,
-          from_username: `${currentManager.store_id} (Loja)`,
-          to_username: receiverProfile.username,
-          amount: amount,
-          transaction_type: 'store_transfer',
-          description: `Transferência da loja ${currentManager.store_id}`
-        });
-
-      if (transactionError) throw transactionError;
-
-      setCurrentManager({ ...currentManager, balance: newManagerBalance });
+      // Update local state with new balances
+      setCurrentManager({ 
+        ...currentManager, 
+        balance: data.data.newManagerBalance 
+      });
+      
       setSelectedUser("");
       setTransferAmount("");
       
       toast({
         title: "Transferência realizada!",
-        description: `${formatMoney(amount)} CM enviados para ${getDisplayName(receiverProfile.username)}.`,
+        description: `${formatMoney(amount)} CM enviados para ${getDisplayName(data.data.receiverUsername)}.`,
       });
 
       loadUsers();
@@ -573,7 +552,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       console.error('Erro ao enviar dinheiro:', error);
       toast({
         title: "Erro na transferência",
-        description: "Não foi possível completar a transferência.",
+        description: error.message || "Não foi possível completar a transferência.",
         variant: "destructive",
       });
     }
