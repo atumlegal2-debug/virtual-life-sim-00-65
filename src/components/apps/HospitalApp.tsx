@@ -99,33 +99,12 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
     }
 
     try {
-      // Get current user data
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('life_percentage')
-        .eq('username', currentUser)
-        .maybeSingle();
-
-      if (userError || !userRecord) return;
-
-      // Increase health by 10 points
-      const newHealth = Math.min(100, userRecord.life_percentage + 10);
-      
-      // Update health in database
-      await supabase
-        .from('users')
-        .update({ life_percentage: newHealth })
-        .eq('username', currentUser);
-
-      // Update GameContext
-      await updateStats({ health: newHealth });
-
       deductCoins(consultationCost);
       setHasConsultation(true);
       
       toast({
         title: "Consulta realizada!",
-        description: "Sua saúde melhorou! Agora você pode escolher seus tratamentos.",
+        description: "Agora você pode escolher seus tratamentos médicos.",
       });
     } catch (error) {
       console.error('Error during consultation:', error);
