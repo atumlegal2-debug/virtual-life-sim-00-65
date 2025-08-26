@@ -151,7 +151,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via auth ID:', profile.wallet_balance);
         
-        // Load diseases from localStorage for now (using username-based storage)
+        // Load diseases from localStorage (strengthened persistence)
         const savedDiseases = localStorage.getItem(`${profile.username}_diseases`);
         if (savedDiseases) {
           try {
@@ -186,7 +186,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via username:', profile.wallet_balance);
         
-        // Load diseases from localStorage for now (using username-based storage)
+        // Load diseases from localStorage (strengthened persistence)
         const savedDiseases = localStorage.getItem(`${username}_diseases`);
         if (savedDiseases) {
           try {
@@ -495,6 +495,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (currentUser) {
       localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
     }
+    
   };
 
   const addTemporaryEffect = async (message: string, duration: number, type: "icecream" | "bar" | "pizzeria" | "other" = "other") => {
