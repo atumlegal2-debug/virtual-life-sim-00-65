@@ -511,6 +511,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const updatedDiseases = diseases.filter(d => d.name !== diseaseName);
     setDiseases(updatedDiseases);
     
+    // If curing hunger disease, clear the saved feeling message
+    if (diseaseName === "Desnutrição" && currentUser) {
+      localStorage.removeItem(`${currentUser}_hunger_disease_feeling`);
+    }
+    
     // If no diseases left, set disease percentage to 0, otherwise decrease by 15
     const currentHealth = gameStats.health || 100;
     const newDiseasePercent = updatedDiseases.length === 0 ? 0 : Math.max(0, (gameStats.disease || 0) - 15);

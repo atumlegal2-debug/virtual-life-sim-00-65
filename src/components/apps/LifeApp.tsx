@@ -11,7 +11,7 @@ interface LifeAppProps {
 }
 
 // Disease feeling messages with emojis
-const getDiseaseFeeling = (diseaseName: string): string => {
+const getDiseaseFeeling = (diseaseName: string, currentUser: string | null): string => {
   const diseaseFeels: { [key: string]: string } = {
     'Queimadura Solar Arcana': 'Ai, minha pele está ardendo! Preciso do Protetor Solar "Luz de Sombra".',
     'Gripe do Vento Gelado': 'Estou todo tremendo e espirrando! Um Elixir Refrescante de Gelo me salvaria.',
@@ -22,14 +22,23 @@ const getDiseaseFeeling = (diseaseName: string): string => {
     'Irritação de Poeira Mágica': 'Meus olhos coçam e estou tossindo… Máscara da Névoa Purificadora vai salvar.',
     'Pele de Pedra': 'Minha pele está seca e rachando… Pomada da Fênix é a solução!',
     'Febre de Dragão': 'Sinto meu corpo queimando por dentro… Néctar das Sereias vai me refrescar.',
-    'Desnutrição': getHungerDiseaseFeeling()
+    'Desnutrição': getHungerDiseaseFeeling(currentUser)
   };
   
   return diseaseFeels[diseaseName] || `Não me sinto bem por causa de ${diseaseName}.`;
 };
 
 // Hunger-related disease messages
-const getHungerDiseaseFeeling = (): string => {
+const getHungerDiseaseFeeling = (currentUser: string | null): string => {
+  if (!currentUser) return "Não me sinto bem...";
+  
+  // Get saved feeling for this user
+  const savedFeeling = localStorage.getItem(`${currentUser}_hunger_disease_feeling`);
+  if (savedFeeling) {
+    return savedFeeling;
+  }
+  
+  // If no saved feeling, generate and save a new one
   const hungerMessages = [
     "Você sente o corpo pesado e uma febre começando a subir.",
     "Sua cabeça lateja como se tivesse um tambor batendo lá dentro.",
@@ -43,7 +52,10 @@ const getHungerDiseaseFeeling = (): string => {
     "Sua respiração está curta e você sente-se ofegante com facilidade."
   ];
   
-  return hungerMessages[Math.floor(Math.random() * hungerMessages.length)];
+  const randomFeeling = hungerMessages[Math.floor(Math.random() * hungerMessages.length)];
+  localStorage.setItem(`${currentUser}_hunger_disease_feeling`, randomFeeling);
+  
+  return randomFeeling;
 };
 
 export function LifeApp({ onBack }: LifeAppProps) {
@@ -197,7 +209,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Como Estou Me Sentindo</p>
               <p className="text-lg font-medium text-foreground">
-                {localDiseases.length > 0 ? getDiseaseFeeling(localDiseases[0].name) : 
+                {localDiseases.length > 0 ? getDiseaseFeeling(localDiseases[0].name, currentUser) : 
                  localEffects.length > 0 ? localEffects[0].message : "Sentindo-se bem 😊"}
               </p>
             </div>
