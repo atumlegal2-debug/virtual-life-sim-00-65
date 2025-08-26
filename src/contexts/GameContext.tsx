@@ -483,14 +483,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
     }
     
-    // Update disease percentage in database
-    if (userId && currentUser) {
-      await supabase
-        .from('users')
-        .update({ 
-          disease_percentage: Math.min(100, (gameStats.disease || 0) + 15)
-        })
-        .eq('id', userId);
+    // Special handling for hunger-related disease
+    if (name === "Desnutrição") {
+      // Decrease health when getting hunger disease
+      const currentHealth = gameStats.health || 100;
+      const newHealth = Math.max(0, currentHealth - 20); // Decrease health by 20 points
+      
+      // Update both disease and health stats
+      await updateStats({ 
+        disease: Math.min(100, (gameStats.disease || 0) + 15),
+        health: newHealth
+      });
+    } else {
+      // Update disease percentage in database for other diseases
+      if (userId && currentUser) {
+        await supabase
+          .from('users')
+          .update({ 
+            disease_percentage: Math.min(100, (gameStats.disease || 0) + 15)
+          })
+          .eq('id', userId);
+      }
     }
   };
 
