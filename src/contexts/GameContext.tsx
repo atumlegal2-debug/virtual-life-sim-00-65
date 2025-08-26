@@ -456,10 +456,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const updatedDiseases = [...diseases, newDisease];
     setDiseases(updatedDiseases);
     
-    // Save diseases to localStorage for persistence
-    localStorage.setItem('userDiseases', JSON.stringify(updatedDiseases));
-    
-    // Also save with user ID for cross-device access
+    // Save diseases to localStorage for persistence with username-specific key
     if (currentUser) {
       localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
     }
@@ -488,10 +485,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       health: Math.min(100, currentHealth + 15) // Restore health when cured
     });
     
-    // Save updated diseases to localStorage
-    localStorage.setItem('userDiseases', JSON.stringify(updatedDiseases));
-    
-    // Also save with user ID for cross-device access
+    // Save updated diseases to localStorage with username-specific key
     if (currentUser) {
       localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
     }
