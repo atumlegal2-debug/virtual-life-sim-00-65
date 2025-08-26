@@ -64,6 +64,7 @@ interface GameContextType {
   checkAndFixDiseaseLevel: () => Promise<void>;
   fetchInventory: () => Promise<void>;
   removeFromInventory: (itemId: string) => Promise<void>;
+  cureDiseaseWithMedicine: (medicineName: string, userId: string) => Promise<boolean>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -100,27 +101,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // Store in localStorage for persistence
         localStorage.setItem('currentUser', username);
         localStorage.setItem('currentUserId', user.id);
+        
+        // Load diseases for this user
+        const savedDiseases = localStorage.getItem(`${username}_diseases`);
+        if (savedDiseases) {
+          try {
+            setDiseases(JSON.parse(savedDiseases));
+          } catch (error) {
+            console.error('Error loading saved diseases:', error);
+          }
+        }
       }
     } else {
       // User is not authenticated
+      const currentUserToLogout = currentUser;
       setCurrentUser(null);
       setUserId(null);
       setIsLoggedIn(false);
+      setDiseases([]);
       
       // Clear localStorage
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentUserId');
-      localStorage.removeItem('userDiseases');
-    }
-    
-    // Load saved diseases if user is logged in
-    const savedDiseases = localStorage.getItem('userDiseases');
-    if (savedDiseases && isLoggedIn) {
-      try {
-        setDiseases(JSON.parse(savedDiseases));
-      } catch (error) {
-        console.error('Error loading saved diseases:', error);
-      }
+      // Don't remove user-specific diseases, keep them for when user logs back in
     }
     
     // Check and fix disease percentage if no diseases but disease level > 0
@@ -571,6 +574,89 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // New function to cure disease with medicine
+  const cureDiseaseWithMedicine = async (medicineName: string, userId: string) => {
+    // Map medicine names to disease names
+    const medicineToDisease: Record<string, string> = {
+      "Protetor Solar \"Luz de Sombra\"": "Queimadura Solar Arcana",
+      "Elixir Refrescante de Gelo": "Gripe do Vento Gelado", 
+      "Máscara da Luz Divina": "Febre da Lua Cheia",
+      "Essência do Calmante Sereno": "Enjoo do Portal",
+      "Gel Purificador do Clérigo": "Virose do Pó de Fada",
+      "Pomada do Sábio Curador": "Dor Fantasma de Batalha", 
+      "Máscara da Névoa Purificadora": "Irritação de Poeira Mágica",
+      "Pomada da Fênix": "Pele de Pedra",
+      "Néctar das Sereias": "Febre de Dragão"
+    };
+
+    const diseaseToCure = medicineToDisease[medicineName];
+    if (!diseaseToCure) return false;
+
+    // Get user profile to get username for disease storage key
+    const { data: userProfile } = await supabase
+      .from('users')  
+      .select('username')
+      .eq('id', userId)
+      .single();
+
+    if (!userProfile) return false;
+
+    const username = userProfile.username;
+    const savedDiseases = localStorage.getItem(`${username}_diseases`);
+    let userDiseases: Disease[] = [];
+    
+    if (savedDiseases) {
+      try {
+        userDiseases = JSON.parse(savedDiseases);
+      } catch (error) {
+        console.error('Error parsing user diseases:', error);
+        return false;
+      }
+    }
+
+    // Check if user has this disease
+    const hasDisease = userDiseases.some(d => d.name === diseaseToCure);
+    if (!hasDisease) return false;
+
+    // Remove the disease
+    const updatedDiseases = userDiseases.filter(d => d.name !== diseaseToCure);
+    localStorage.setItem(`${username}_diseases`, JSON.stringify(updatedDiseases));
+
+    // Calculate new disease percentage
+    const newDiseasePercent = updatedDiseases.length === 0 ? 0 : Math.max(0, updatedDiseases.length * 15);
+
+    // Update user health in database - restore health when cured
+    const { data: currentStats } = await supabase
+      .from('users')
+      .select('life_percentage, disease_percentage')
+      .eq('id', userId)
+      .single();
+
+    const currentHealth = currentStats?.life_percentage || 100;
+    const newHealth = Math.min(100, currentHealth + 15); // Restore health when cured
+
+    await supabase
+      .from('users')
+      .update({ 
+        disease_percentage: newDiseasePercent,
+        life_percentage: newHealth
+      })
+      .eq('id', userId);
+
+    // If this is the current logged in user, update local state too
+    if (currentUser === username) {
+      setDiseases(updatedDiseases);
+      setGameStats(prev => ({
+        ...prev,
+        disease: newDiseasePercent,
+        health: newHealth
+      }));
+    }
+
+    console.log(`Disease cured: ${diseaseToCure} with medicine: ${medicineName} for user: ${username}`);
+    return true;
+  };
+
   const fetchInventory = async () => {
     try {
       if (!userId) return;
@@ -729,7 +815,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       refreshWallet,
       checkAndFixDiseaseLevel,
       fetchInventory,
-      removeFromInventory
+      removeFromInventory,
+      cureDiseaseWithMedicine,
     }}>
       {children}
     </GameContext.Provider>
