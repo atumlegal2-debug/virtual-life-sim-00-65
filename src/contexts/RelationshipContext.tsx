@@ -399,17 +399,41 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('currentRelationship', JSON.stringify(updatedRelationship));
 
       // Update user's relationship status in localStorage as well for World app
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const updatedUsers = registeredUsers.map((user: any) => {
-        if (user.username === localStorage.getItem('currentUser')) {
-          return {
-            ...user,
-            relationship_status: newType === 'engagement' ? 'noivo(a)' : 'casado(a)'
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const updatedUsers = registeredUsers.map((user: any) => {
+          if (user.username === currentUser) {
+            return {
+              ...user,
+              relationship_status: newType === 'engagement' ? 'engaged' : 'married'
+            };
+          }
+          return user;
+        });
+        localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+
+        // Also update in Supabase
+        try {
+          const statusMap = {
+            'engagement': 'engaged',
+            'marriage': 'married'
           };
+          
+          await supabase
+            .from('users')
+            .update({ relationship_status: statusMap[newType] })
+            .eq('username', currentUser);
+
+          // Update relationship type in Supabase
+          await supabase
+            .from('relationships')
+            .update({ relationship_type: newType })
+            .or(`user1_username.eq.${getDisplayName(currentUser)},user2_username.eq.${getDisplayName(currentUser)}`);
+        } catch (error) {
+          console.error('Error updating relationship status in Supabase:', error);
         }
-        return user;
-      });
-      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+      }
 
       toast({
         title: "Relacionamento atualizado! 💕",

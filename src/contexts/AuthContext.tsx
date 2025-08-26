@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.user_metadata);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -30,9 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const username = session.user.user_metadata?.username;
           if (username) {
             localStorage.setItem('currentUser', username);
+            console.log('Current user set in localStorage:', username);
           }
         } else {
           localStorage.removeItem('currentUser');
+          console.log('Current user removed from localStorage');
         }
         
         setIsLoading(false);
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.user_metadata);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -49,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const username = session.user.user_metadata?.username;
         if (username) {
           localStorage.setItem('currentUser', username);
+          console.log('Current user set from existing session:', username);
         }
       }
       

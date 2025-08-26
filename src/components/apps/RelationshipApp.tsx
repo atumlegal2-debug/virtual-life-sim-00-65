@@ -29,8 +29,8 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
   const getRelationshipTypeText = (type: string) => {
     switch (type) {
       case 'dating': return 'Namorando';
-      case 'engagement': return 'Noivo(a)';
-      case 'marriage': return 'Casado(a)';
+      case 'engagement': return 'Noivos';
+      case 'marriage': return 'Casados';
       default: return type;
     }
   };
