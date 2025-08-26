@@ -50,6 +50,12 @@ export function LifeApp({ onBack }: LifeAppProps) {
   const { gameStats, currentUser, diseases, checkAndFixDiseaseLevel, cureHungerDisease } = useGame();
   const [localEffects, setLocalEffects] = useState<any[]>([]);
   const [showHungerAlert, setShowHungerAlert] = useState(false);
+  const [localDiseases, setLocalDiseases] = useState(diseases);
+
+  // Sync diseases from GameContext
+  useEffect(() => {
+    setLocalDiseases(diseases);
+  }, [diseases]);
 
   // Load temporary effects from localStorage
   useEffect(() => {
@@ -82,12 +88,12 @@ export function LifeApp({ onBack }: LifeAppProps) {
 
   // Check if user has hunger-related disease and show alert
   useEffect(() => {
-    if (gameStats.hunger <= 49 && diseases.some(d => d.name === "Desnutrição")) {
+    if (gameStats.hunger <= 49 && localDiseases.some(d => d.name === "Desnutrição")) {
       setShowHungerAlert(true);
       const timer = setTimeout(() => setShowHungerAlert(false), 8000);
       return () => clearTimeout(timer);
     }
-  }, [gameStats.hunger, diseases]);
+  }, [gameStats.hunger, localDiseases]);
 
   // Listen for consultation approval events to cure hunger disease
   useEffect(() => {
@@ -123,7 +129,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
           treatment.request_message.includes('Desnutrição')
         );
 
-        if (hungerTreatment && diseases.some(d => d.name === "Desnutrição")) {
+        if (hungerTreatment && localDiseases.some(d => d.name === "Desnutrição")) {
           console.log('Hunger disease treatment approved, curing patient');
           await cureHungerDisease();
           
@@ -139,11 +145,11 @@ export function LifeApp({ onBack }: LifeAppProps) {
     };
 
     // Check every 30 seconds if user is logged in and has hunger disease
-    if (currentUser && diseases.some(d => d.name === "Desnutrição")) {
+    if (currentUser && localDiseases.some(d => d.name === "Desnutrição")) {
       const interval = setInterval(checkConsultationApproval, 30000);
       return () => clearInterval(interval);
     }
-  }, [currentUser, diseases]);
+  }, [currentUser, localDiseases]);
 
   return (
     <div className="flex flex-col h-full">
@@ -191,7 +197,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Como Estou Me Sentindo</p>
               <p className="text-lg font-medium text-foreground">
-                {diseases.length > 0 ? getDiseaseFeeling(diseases[0].name) : 
+                {localDiseases.length > 0 ? getDiseaseFeeling(localDiseases[0].name) : 
                  localEffects.length > 0 ? localEffects[0].message : "Sentindo-se bem 😊"}
               </p>
             </div>
@@ -199,13 +205,13 @@ export function LifeApp({ onBack }: LifeAppProps) {
         </Card>
 
         {/* Diseases */}
-        {diseases.length > 0 && (
+        {localDiseases.length > 0 && (
           <Card className="bg-gradient-card border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-destructive">😷 Doenças Ativas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {diseases.map((disease, index) => (
+              {localDiseases.map((disease, index) => (
                 <div key={index} className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                   <p className="text-sm font-medium text-destructive mb-1">
                     {disease.name}
@@ -268,7 +274,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
       </div>
 
       {/* Debug/Fix Button - only show if disease level > 0 but no diseases */}
-      {diseases.length === 0 && gameStats.disease > 0 && (
+      {localDiseases.length === 0 && gameStats.disease > 0 && (
         <div className="mt-4">
           <Button
             onClick={checkAndFixDiseaseLevel}
