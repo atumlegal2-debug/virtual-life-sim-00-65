@@ -208,21 +208,28 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       const currentUser = localStorage.getItem('currentUser');
       if (!currentUser) return;
 
-      // Get both users' records
+      // Get both users' records using the correct username format
       const { data: currentUserRecord } = await supabase
         .from('users')
         .select('id')
         .eq('username', currentUser)
         .single();
 
+      // Use from_username + numbers format for the sender
+      const senderUsername = proposal.fromUsername + (proposal.fromUsername.length === 4 ? '' : '2809');
       const { data: fromUserRecord } = await supabase
         .from('users')
         .select('id')
-        .eq('username', proposal.fromUserId)
+        .eq('username', senderUsername)
         .single();
 
       if (!currentUserRecord || !fromUserRecord) {
-        console.error('Could not find user records');
+        console.error('Could not find user records', { currentUser, senderUsername });
+        toast({
+          title: "Erro",
+          description: "Não foi possível encontrar os usuários",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -272,11 +279,11 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .eq('username', currentUser);
 
       // Update sender (use the correct username format with digits)
-      const senderUsername = proposal.fromUsername.length === 4 ? proposal.fromUsername + '1234' : proposal.fromUsername + '0000';
+      const senderUsernameForUpdate = proposal.fromUsername.length === 4 ? proposal.fromUsername + '1234' : proposal.fromUsername + '0000';
       await supabase
         .from('users')
         .update({ relationship_status: status })
-        .eq('username', senderUsername);
+        .eq('username', senderUsernameForUpdate);
 
       // Create new relationship locally
       const newRelationship: UserRelationship = {
