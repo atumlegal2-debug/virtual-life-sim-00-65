@@ -80,11 +80,32 @@ export function BagApp({ onBack }: BagAppProps) {
       // Load custom items from localStorage
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
       
+      // Also load custom items from Supabase for items sent from other users
+      const { data: customItemsFromDB } = await supabase
+        .from('custom_items')
+        .select('*');
+      
+      // Merge custom items from DB into local storage for access
+      const allCustomItems = { ...customItems };
+      if (customItemsFromDB) {
+        customItemsFromDB.forEach(item => {
+          allCustomItems[item.id] = {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            itemType: item.item_type,
+            icon: item.icon,
+            isCustom: true,
+            effect: null
+          };
+        });
+      }
+      
       // Process each inventory item
       for (const item of data || []) {
         // Check if it's a custom item first
-        if (customItems[item.item_id]) {
-          const customItem = customItems[item.item_id];
+        if (allCustomItems[item.item_id]) {
+          const customItem = allCustomItems[item.item_id];
           
           // Define effect based on item type - Custom items have fixed small effects
           let effect = null;

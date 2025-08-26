@@ -161,6 +161,7 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
           });
 
         if (addError) {
+          console.error('Error adding item to recipient inventory:', addError);
           // If adding to recipient fails, restore item to sender
           if (item.quantity === quantityToSend) {
             await supabase
@@ -178,6 +179,24 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
               .eq('item_id', item.id);
           }
           throw addError;
+        }
+
+        // If it's a custom item, store it in Supabase custom_items table too
+        if (item.storeId === "custom" && item.originalItem) {
+          const { error: customItemError } = await supabase
+            .from('custom_items')
+            .upsert({
+              id: item.id,
+              name: item.originalItem.name,
+              description: item.originalItem.description,
+              item_type: item.originalItem.itemType,
+              icon: item.originalItem.icon,
+              created_by_user_id: currentUserData.id
+            }, { onConflict: 'id' });
+
+          if (customItemError) {
+            console.error('Error storing custom item:', customItemError);
+          }
         }
       }
 

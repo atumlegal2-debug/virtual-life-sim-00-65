@@ -137,7 +137,27 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
 
       if (inventoryError) throw inventoryError;
 
-      // Store custom item data in localStorage for now
+      // Store custom item data in both Supabase and localStorage
+      const customItemData = {
+        id: customItemId,
+        name: customName,
+        description: isCustomItem && customDescription ? customDescription : `Item criado por ${getDisplayName(currentUser)}`,
+        item_type: selectedCategory,
+        icon: uploadedImage || selectedIcon,
+        created_by_user_id: userRecord.id
+      };
+
+      // Store in Supabase custom_items table
+      const { error: customItemError } = await supabase
+        .from('custom_items')
+        .insert(customItemData);
+
+      if (customItemError) {
+        console.error('Error storing custom item in DB:', customItemError);
+        // Continue anyway - we still have it in localStorage
+      }
+
+      // Store custom item data in localStorage for backward compatibility
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
       customItems[customItemId] = {
         id: customItemId,
