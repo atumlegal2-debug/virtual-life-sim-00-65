@@ -256,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             alcoholism_percentage: 0.00,
             disease_percentage: 0.00,
             relationship_status: 'single',
-            user_code: username,
+            user_code: username.slice(-4), // Extract last 4 digits
           } as any);
           console.log('Criado registro em public.users para', username);
         }
