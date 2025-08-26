@@ -170,17 +170,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const userExists = await checkUserExists(username);
-      if (!userExists) {
-        return { error: { message: "Usuário não encontrado. Você precisa se registrar antes de fazer login." } };
-      }
+      // Clean up any stale auth state to avoid limbo
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        Object.keys(sessionStorage || {}).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch {}
+      try { await supabase.auth.signOut({ scope: 'global' } as any); } catch {}
 
       const email = `${username}@rpglife.com`;
       const password = username;
 
-      console.log('Tentando login com:', { email, password });
+      console.log('Tentando login com:', { email });
 
-      // Primeira tentativa de login
+      // Tentar login diretamente (não bloqueie por inexistência prévia no banco)
       let { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -189,34 +199,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Resultado do login:', { data, error });
 
       // Se o email não estiver confirmado, tenta confirmar automaticamente e refazer o login
-      const msg = String((error as any)?.message || '').toLowerCase();
-      const needsConfirm = ((error as any)?.code === 'email_not_confirmed')
-        || msg.includes('email not confirmed')
-        || msg.includes('não confirmado')
-        || msg.includes('nao confirmado')
-        || msg.includes('unconfirmed')
-        || msg.includes('confirme')
-        || msg.includes('confirmar');
+      if (error) {
+        const msg = String((error as any)?.message || '').toLowerCase();
+        const needsConfirm = ((error as any)?.code === 'email_not_confirmed')
+          || msg.includes('email not confirmed')
+          || msg.includes('não confirmado')
+          || msg.includes('nao confirmado')
+          || msg.includes('unconfirmed')
+          || msg.includes('confirme')
+          || msg.includes('confirmar');
 
-      if (error && needsConfirm) {
-        console.log('Email possivelmente não confirmado. Tentando confirmar automaticamente...');
-        const { error: fnError } = await supabase.functions.invoke('auto-confirm-user', {
-          body: { email }
-        });
+        if (needsConfirm) {
+          console.log('Email possivelmente não confirmado. Tentando confirmar automaticamente...');
+          const { error: fnError } = await supabase.functions.invoke('auto-confirm-user', {
+            body: { email }
+          });
 
-        if (!fnError) {
-          const retry = await supabase.auth.signInWithPassword({ email, password });
-          data = retry.data;
-          error = retry.error;
-          console.log('Resultado do login (após confirmação):', { data, error });
-        } else {
-          console.error('Falha ao confirmar automaticamente:', fnError);
+          if (!fnError) {
+            const retry = await supabase.auth.signInWithPassword({ email, password });
+            data = retry.data;
+            error = retry.error;
+            console.log('Resultado do login (após confirmação):', { data, error });
+          } else {
+            console.error('Falha ao confirmar automaticamente:', fnError);
+          }
         }
       }
 
       if (error) {
         console.error('Erro de login:', error);
         return { error };
+      }
+
+      // Garante que exista um registro correspondente na tabela public.users
+      try {
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+
+        if (!existing) {
+          const authUser = data?.user;
+          await supabase.from('users').insert({
+            auth_user_id: authUser?.id,
+            username,
+            email,
+            age: 25,
+            race: 'Lunari',
+            looking_for: 'Todos',
+            about: 'Jogador do RPG Real Life Virtual',
+            wallet_balance: 2000.00,
+            life_percentage: 100.00,
+            hunger_percentage: 100.00,
+            mood: 100.00,
+            alcoholism_percentage: 0.00,
+            disease_percentage: 0.00,
+            relationship_status: 'single',
+            user_code: username,
+          } as any);
+          console.log('Criado registro em public.users para', username);
+        }
+      } catch (ensureErr) {
+        console.warn('Falha ao garantir registro em public.users:', ensureErr);
       }
 
       return {};
