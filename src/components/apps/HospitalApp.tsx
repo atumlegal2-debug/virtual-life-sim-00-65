@@ -87,19 +87,7 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
   };
 
   const handleConsultation = async () => {
-    const consultationCost = 100;
-    
-    if (coins < consultationCost) {
-      toast({
-        title: "Dinheiro insuficiente",
-        description: `Você precisa de ${consultationCost} C'M para a consulta.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      deductCoins(consultationCost);
       setHasConsultation(true);
       
       toast({
@@ -371,17 +359,11 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
               </p>
               <Button
                 onClick={handleConsultation}
-                disabled={coins < 100}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600"
+                className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 <Heart className="h-4 w-4 mr-2" />
-                Fazer Consulta - 100 C'M
+                Fazer Consulta Gratuita
               </Button>
-              {coins < 100 && (
-                <p className="text-red-300 text-sm">
-                  Dinheiro insuficiente para a consulta
-                </p>
-              )}
             </CardContent>
           </Card>
         ) : (

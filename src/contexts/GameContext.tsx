@@ -518,11 +518,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     // If no diseases left, set disease percentage to 0, otherwise decrease by 15
     const currentHealth = gameStats.health || 100;
+    const currentHunger = gameStats.hunger || 0;
     const newDiseasePercent = updatedDiseases.length === 0 ? 0 : Math.max(0, (gameStats.disease || 0) - 15);
+    
+    // Increase hunger by 60% after treatment
+    const newHunger = Math.min(100, currentHunger + 60);
     
     await updateStats({ 
       disease: newDiseasePercent,
-      health: Math.min(100, currentHealth + 25) // Restore 25 points of health when cured
+      health: Math.min(100, currentHealth + 25), // Restore 25 points of health when cured
+      hunger: newHunger // Increase hunger by 60% after treatment
     });
     
     // Save updated diseases to localStorage with username-specific key
