@@ -215,14 +215,12 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .eq('username', currentUser)
         .single();
 
-      // Use from_username + numbers format for the sender
-      const senderUsername = proposal.fromUsername + (proposal.fromUsername.length === 4 ? '' : '2809');
-      console.log('Searching for users:', { currentUser, senderUsername, proposalFromUsername: proposal.fromUsername });
-      
+      // Search for users using LIKE pattern since proposals store usernames without digits
+      // but users table has usernames with 4 digits
       const { data: fromUserRecord } = await supabase
         .from('users')
         .select('id, username')
-        .eq('username', senderUsername)
+        .like('username', `${proposal.fromUsername}%`)
         .single();
 
       console.log('Found fromUserRecord:', fromUserRecord);
@@ -230,18 +228,10 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       if (!currentUserRecord || !fromUserRecord) {
         console.error('Could not find user records', { 
           currentUser, 
-          senderUsername, 
+          proposalFromUsername: proposal.fromUsername,
           currentUserRecord: !!currentUserRecord, 
           fromUserRecord: !!fromUserRecord 
         });
-        
-        // Let's also try searching all users to see what usernames exist
-        const { data: allUsers } = await supabase
-          .from('users')
-          .select('username')
-          .ilike('username', `%${proposal.fromUsername}%`);
-        
-        console.log('Similar usernames found:', allUsers);
         
         toast({
           title: "Erro",
@@ -296,12 +286,11 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .update({ relationship_status: status })
         .eq('username', currentUser);
 
-      // Update sender (use the correct username format with digits)
-      const senderUsernameForUpdate = proposal.fromUsername.length === 4 ? proposal.fromUsername + '1234' : proposal.fromUsername + '0000';
+      // Update sender using the actual username from database
       await supabase
         .from('users')
         .update({ relationship_status: status })
-        .eq('username', senderUsernameForUpdate);
+        .eq('id', fromUserRecord.id);
 
       // Create new relationship locally
       const newRelationship: UserRelationship = {
