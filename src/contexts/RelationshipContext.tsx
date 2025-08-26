@@ -217,14 +217,32 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
 
       // Use from_username + numbers format for the sender
       const senderUsername = proposal.fromUsername + (proposal.fromUsername.length === 4 ? '' : '2809');
+      console.log('Searching for users:', { currentUser, senderUsername, proposalFromUsername: proposal.fromUsername });
+      
       const { data: fromUserRecord } = await supabase
         .from('users')
-        .select('id')
+        .select('id, username')
         .eq('username', senderUsername)
         .single();
 
+      console.log('Found fromUserRecord:', fromUserRecord);
+
       if (!currentUserRecord || !fromUserRecord) {
-        console.error('Could not find user records', { currentUser, senderUsername });
+        console.error('Could not find user records', { 
+          currentUser, 
+          senderUsername, 
+          currentUserRecord: !!currentUserRecord, 
+          fromUserRecord: !!fromUserRecord 
+        });
+        
+        // Let's also try searching all users to see what usernames exist
+        const { data: allUsers } = await supabase
+          .from('users')
+          .select('username')
+          .ilike('username', `%${proposal.fromUsername}%`);
+        
+        console.log('Similar usernames found:', allUsers);
+        
         toast({
           title: "Erro",
           description: "Não foi possível encontrar os usuários",
