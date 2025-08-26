@@ -517,7 +517,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     await updateStats({ 
       disease: newDiseasePercent,
-      health: Math.min(100, currentHealth + 15) // Restore health when cured
+      health: Math.min(100, currentHealth + 25) // Restore 25 points of health when cured
     });
     
     // Save updated diseases to localStorage with username-specific key
