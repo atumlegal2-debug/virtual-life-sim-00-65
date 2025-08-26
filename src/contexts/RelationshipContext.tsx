@@ -212,11 +212,10 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .eq('username', currentUser)
         .single();
 
-      // Use fromUsername instead of constructed fromUserId for database lookup
       const { data: fromUserRecord } = await supabase
         .from('users')
-        .select('id, username')
-        .eq('username', proposal.fromUsername + '1234')
+        .select('id')
+        .eq('username', proposal.fromUserId)
         .single();
 
       if (!currentUserRecord || !fromUserRecord) {
@@ -255,11 +254,11 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .update({ relationship_status: status })
         .eq('username', currentUser);
 
-      // Update sender - use proper username format
+      // Update sender
       await supabase
         .from('users')
         .update({ relationship_status: status })
-        .eq('username', proposal.fromUsername + '1234');
+        .eq('username', proposal.fromUserId);
 
       // Update proposal status in Supabase
       await supabase

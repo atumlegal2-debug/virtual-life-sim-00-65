@@ -152,13 +152,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         console.log('GameContext saldo carregado via auth ID:', profile.wallet_balance);
         
         // Load diseases from localStorage (strengthened persistence)
-        // Use currentUser to maintain consistency
-        const currentUserKey = localStorage.getItem('currentUser') || profile.username;
-        const savedDiseases = localStorage.getItem(`${currentUserKey}_diseases`);
+        const savedDiseases = localStorage.getItem(`${profile.username}_diseases`);
         if (savedDiseases) {
           try {
             setDiseases(JSON.parse(savedDiseases));
-            console.log('Doenças carregadas para usuário:', currentUserKey, JSON.parse(savedDiseases));
           } catch (error) {
             console.error('Error parsing user diseases:', error);
           }
