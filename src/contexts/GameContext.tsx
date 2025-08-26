@@ -65,6 +65,7 @@ interface GameContextType {
   fetchInventory: () => Promise<void>;
   removeFromInventory: (itemId: string) => Promise<void>;
   cureDiseaseWithMedicine: (medicineName: string, userId: string) => Promise<boolean>;
+  cureHungerDisease: () => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -208,13 +209,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Handle alcoholism decrease and clear expired effects
+  // Handle alcoholism decrease, hunger disease check, and clear expired effects
   useEffect(() => {
     if (!isLoggedIn) return;
     
     const interval = setInterval(async () => {
       // Note: Hunger decrease is now handled by the server-side edge function
       // This ensures consistent timing and prevents double decreasing
+      
+      // Check for hunger-related disease
+      if (gameStats.hunger <= 49 && !diseases.some(d => d.name === "Desnutrição")) {
+        console.log('Applying hunger disease due to low hunger:', gameStats.hunger);
+        await addDisease("Desnutrição", "Consulta Médica");
+        
+        // Show notification
+        if (window.location.pathname === '/') {
+          const event = new CustomEvent('showHungerAlert');
+          window.dispatchEvent(event);
+        }
+      }
       
       // Decrease alcoholism over time (faster decrease)
       setGameStats(prev => {
@@ -255,7 +268,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
-  }, [isLoggedIn, userId, diseases.length, gameStats.disease]);
+  }, [isLoggedIn, userId, diseases.length, gameStats.disease, gameStats.hunger]);
 
   const login = async (username: string) => {
     setCurrentUser(username);
@@ -754,6 +767,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Function to cure hunger-related disease when medical consultation is accepted
+  const cureHungerDisease = async () => {
+    const hungerDisease = diseases.find(d => d.name === "Desnutrição");
+    if (!hungerDisease) return;
+
+    console.log('Curing hunger disease through medical consultation');
+    await cureDisease("Desnutrição");
+    
+    // Additional health boost since it's a medical treatment
+    const currentHealth = gameStats.health || 100;
+    const newHealth = Math.min(100, currentHealth + 10);
+    
+    await updateStats({ 
+      health: newHealth 
+    });
+
+    console.log('Hunger disease cured and health restored');
+  };
+
   // Auto-save diseases to localStorage whenever they change
   useEffect(() => {
     if (currentUser && diseases.length >= 0) {
@@ -823,6 +855,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       fetchInventory,
       removeFromInventory,
       cureDiseaseWithMedicine,
+      cureHungerDisease,
     }}>
       {children}
     </GameContext.Provider>
