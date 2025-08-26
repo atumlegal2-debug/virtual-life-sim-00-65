@@ -67,10 +67,11 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const [birthRequests, setBirthRequests] = useState<BirthRequest[]>([]);
   const [treatmentRequests, setTreatmentRequests] = useState<TreatmentRequest[]>([]);
-  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers">("dashboard");
+  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers" | "patient-history">("dashboard");
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [transferAmount, setTransferAmount] = useState("");
+  const [patientHistory, setPatientHistory] = useState<any[]>([]);
   const { toast } = useToast();
 
   const formatMoney = (amount: number) => {
@@ -479,6 +480,44 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
   };
 
+  const loadPatientHistory = async () => {
+    try {
+      // Load all treatment and birth requests for patient history
+      const [treatmentRes, birthRes] = await Promise.all([
+        supabase
+          .from('hospital_treatment_requests')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('hospital_birth_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+      ]);
+
+      const treatments = treatmentRes.data?.map(item => ({
+        ...item,
+        type: 'treatment',
+        service: item.treatment_type,
+        cost: item.treatment_cost
+      })) || [];
+
+      const births = birthRes.data?.map(item => ({
+        ...item,
+        type: 'birth',
+        service: 'Parto',
+        cost: 0
+      })) || [];
+
+      const combined = [...treatments, ...births].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setPatientHistory(combined);
+    } catch (error) {
+      console.error('Error loading patient history:', error);
+    }
+  };
+
   const loadUsers = async () => {
     try {
       const { data, error } = await supabase
@@ -562,11 +601,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     if (isLoggedIn && currentManager) {
       loadPendingOrders();
       loadSalesHistory();
-      loadBirthRequests();
-      loadTreatmentRequests();
+      if (currentManager.store_id === 'hospital') {
+        loadBirthRequests();
+        loadTreatmentRequests();
+      }
     }
     if (currentView === "transfers") {
       loadUsers();
+    }
+    if (currentView === "patient-history") {
+      loadPatientHistory();
     }
   }, [isLoggedIn, currentManager, currentView]);
 
@@ -1039,6 +1083,90 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     );
   }
 
+  // Patient History View (Hospital only)
+  if (currentView === "patient-history" && currentManager?.store_id === 'hospital') {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => setCurrentView("dashboard")}>
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Histórico de Pacientes</h1>
+        </div>
+
+        <div className="space-y-4 overflow-y-auto">
+          {patientHistory.length === 0 ? (
+            <Card className="bg-gradient-card border-border/50">
+              <CardContent className="text-center py-8">
+                <Heart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Nenhum histórico de paciente encontrado</p>
+              </CardContent>
+            </Card>
+          ) : (
+            patientHistory.map((record) => (
+              <Card key={record.id} className="bg-gradient-card border-border/50">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-sm">
+                        {getDisplayName(record.username)}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(record.created_at).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant={
+                        record.status === 'accepted' ? 'default' : 
+                        record.status === 'rejected' ? 'destructive' : 'secondary'
+                      }
+                      className="text-xs"
+                    >
+                      {record.type === 'birth' ? '👶 Parto' : '💊 Tratamento'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Serviço:</span>
+                    <span className="font-medium">{record.service}</span>
+                  </div>
+                  {record.cost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Custo:</span>
+                      <span className="font-medium">{formatMoney(record.cost)} CM</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span>Status:</span>
+                    <span className={`font-medium ${
+                      record.status === 'accepted' ? 'text-green-600' : 
+                      record.status === 'rejected' ? 'text-red-600' : 'text-yellow-600'
+                    }`}>
+                      {record.status === 'accepted' ? '✅ Aprovado' : 
+                       record.status === 'rejected' ? '❌ Rejeitado' : '⏳ Pendente'}
+                    </span>
+                  </div>
+                  {record.manager_notes && (
+                    <div className="mt-2 p-2 bg-background/50 rounded text-xs">
+                      <span className="text-muted-foreground">Observações: </span>
+                      <span>{record.manager_notes}</span>
+                    </div>
+                  )}
+                  {record.processed_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Processado em: {new Date(record.processed_at).toLocaleString('pt-BR')}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 mb-6">
@@ -1088,22 +1216,35 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           <DollarSign size={16} className="mr-2" />
           Histórico de Vendas
         </Button>
-        <Button
-          variant="outline"
-          className="w-full justify-start"
-          onClick={() => setCurrentView("hospital")}
-        >
-          <Baby size={16} className="mr-2" />
-          Gerenciamento Hospitalar ({birthRequests.filter(r => r.status === 'pending').length})
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full justify-start"
-          onClick={() => setCurrentView("treatments")}
-        >
-          <Heart size={16} className="mr-2" />
-          Solicitações de Tratamento ({treatmentRequests.filter(r => r.status === 'pending').length})
-        </Button>
+        {/* Hospital-specific options */}
+        {currentManager.store_id === 'hospital' && (
+          <>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => setCurrentView("hospital")}
+            >
+              <Baby size={16} className="mr-2" />
+              Gerenciamento Hospitalar ({birthRequests.filter(r => r.status === 'pending').length})
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => setCurrentView("treatments")}
+            >
+              <Heart size={16} className="mr-2" />
+              Solicitações de Tratamento ({treatmentRequests.filter(r => r.status === 'pending').length})
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => setCurrentView("patient-history")}
+            >
+              <Clock size={16} className="mr-2" />
+              Histórico de Pacientes
+            </Button>
+          </>
+        )}
         <Button
           variant="outline"
           className="w-full justify-start"
