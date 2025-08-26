@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useGame } from "@/contexts/GameContext";
 
 interface ManagerAppProps {
   onBack: () => void;
@@ -73,7 +72,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [transferAmount, setTransferAmount] = useState("");
   const { toast } = useToast();
-  const { cureDiseaseWithMedicine } = useGame();
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('pt-BR').format(amount);
@@ -238,7 +236,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
       // Adicionar itens ao inventário do usuário
       const items = Array.isArray(order.items) ? order.items : [];
-      let curedDiseases: string[] = [];
       
       for (const item of items) {
         const { data: existingItem } = await supabase
@@ -262,14 +259,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               quantity: item.quantity
             });
         }
-        
-        // Check if this item is a medicine and cure diseases
-        if (item.type === "medicine" && item.cures) {
-          const wasCured = await cureDiseaseWithMedicine(item.name, order.user_id);
-          if (wasCured) {
-            curedDiseases.push(item.cures);
-          }
-        }
       }
 
       // Registrar venda
@@ -287,15 +276,9 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
       setCurrentManager({ ...currentManager, balance: newManagerBalance });
       
-      // Show appropriate success message
-      let successMessage = `Transferência de ${formatMoney(order.total_amount)} CM realizada.`;
-      if (curedDiseases.length > 0) {
-        successMessage += ` Doenças curadas: ${curedDiseases.join(', ')}`;
-      }
-      
       toast({
         title: "Pedido aprovado!",
-        description: successMessage,
+        description: `Transferência de ${formatMoney(order.total_amount)} CM realizada.`,
       });
 
       loadPendingOrders();
