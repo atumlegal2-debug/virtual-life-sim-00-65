@@ -218,7 +218,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       const { data: fromUserRecord } = await supabase
         .from('users')
         .select('id')
-        .eq('username', proposal.fromUserId.replace(/\d{4}$/, '') + proposal.fromUserId.slice(-4))
+        .eq('username', proposal.fromUserId)
         .single();
 
       if (!currentUserRecord || !fromUserRecord) {
