@@ -31,6 +31,7 @@ interface RelationshipContextType {
   markProposalsAsViewed: (userId: string) => void;
   endRelationship: () => Promise<void>;
   upgradeRelationship: (newType: 'engagement' | 'marriage', ring: StoreItem) => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
 const RelationshipContext = createContext<RelationshipContextType | undefined>(undefined);
@@ -45,53 +46,55 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
     return username.replace(/\d{4}$/, '');
   };
 
-  useEffect(() => {
-    // Load relationship data from Supabase
-    const loadRelationships = async () => {
-      const currentUser = localStorage.getItem('currentUser');
-      if (!currentUser) return;
+  const refreshData = async () => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      await loadRelationships();
+      await fetchProposals();
+    }
+  };
 
-      try {
-        const { data, error } = await supabase
-          .from('relationships')
-          .select('*')
-        .or(`user1_username.eq.${getDisplayName(currentUser)},user2_username.eq.${getDisplayName(currentUser)}`);
+  const loadRelationships = async () => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
 
-        if (error) {
-          console.error('Error loading relationships:', error);
-          return;
-        }
+    try {
+      const { data, error } = await supabase
+        .from('relationships')
+        .select('*')
+      .or(`user1_username.eq.${getDisplayName(currentUser)},user2_username.eq.${getDisplayName(currentUser)}`);
 
-        if (data && data.length > 0) {
-          const relationship = data[0];
-          const isUser1 = relationship.user1_username === getDisplayName(currentUser);
-          
-          const partnerUsername = isUser1 ? relationship.user2_username : relationship.user1_username;
-          const partnerId = isUser1 ? relationship.user2_id : relationship.user1_id;
-          
-          const userRelationship: UserRelationship = {
-            id: relationship.id,
-            partnerId: partnerId,
-            partnerUsername: partnerUsername,
-            type: relationship.relationship_type as 'dating' | 'engagement' | 'marriage',
-            startDate: new Date(relationship.started_at)
-          };
-          
-          setCurrentRelationship(userRelationship);
-          localStorage.setItem('currentRelationship', JSON.stringify(userRelationship));
-        } else {
-          // No relationship found, clear local storage
-          setCurrentRelationship(null);
-          localStorage.removeItem('currentRelationship');
-        }
-      } catch (error) {
+      if (error) {
         console.error('Error loading relationships:', error);
+        return;
       }
-    };
 
-    loadRelationships();
-    fetchProposals();
-  }, []);
+      if (data && data.length > 0) {
+        const relationship = data[0];
+        const isUser1 = relationship.user1_username === getDisplayName(currentUser);
+        
+        const partnerUsername = isUser1 ? relationship.user2_username : relationship.user1_username;
+        const partnerId = isUser1 ? relationship.user2_id : relationship.user1_id;
+        
+        const userRelationship: UserRelationship = {
+          id: relationship.id,
+          partnerId: partnerId,
+          partnerUsername: partnerUsername,
+          type: relationship.relationship_type as 'dating' | 'engagement' | 'marriage',
+          startDate: new Date(relationship.started_at)
+        };
+        
+        setCurrentRelationship(userRelationship);
+        localStorage.setItem('currentRelationship', JSON.stringify(userRelationship));
+      } else {
+        // No relationship found, clear local storage
+        setCurrentRelationship(null);
+        localStorage.removeItem('currentRelationship');
+      }
+    } catch (error) {
+      console.error('Error loading relationships:', error);
+    }
+  };
 
   const fetchProposals = async () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -215,11 +218,25 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       const { data: fromUserRecord } = await supabase
         .from('users')
         .select('id')
-        .eq('username', proposal.fromUserId)
+        .eq('username', proposal.fromUserId.replace(/\d{4}$/, '') + proposal.fromUserId.slice(-4))
         .single();
 
       if (!currentUserRecord || !fromUserRecord) {
         console.error('Could not find user records');
+        return;
+      }
+
+      // Update proposal status in Supabase first to mark it as processed
+      const { error: proposalUpdateError } = await supabase
+        .from('proposal_requests')
+        .update({ 
+          status: 'accepted',
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', proposal.id);
+
+      if (proposalUpdateError) {
+        console.error('Error updating proposal status:', proposalUpdateError);
         return;
       }
 
@@ -242,7 +259,7 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       // Update both users' relationship status
       const statusMap = {
         'dating': 'dating',
-        'engagement': 'engaged',
+        'engagement': 'engaged', 
         'marriage': 'married'
       };
       
@@ -254,20 +271,12 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         .update({ relationship_status: status })
         .eq('username', currentUser);
 
-      // Update sender
+      // Update sender (use the correct username format with digits)
+      const senderUsername = proposal.fromUsername.length === 4 ? proposal.fromUsername + '1234' : proposal.fromUsername + '0000';
       await supabase
         .from('users')
         .update({ relationship_status: status })
-        .eq('username', proposal.fromUserId);
-
-      // Update proposal status in Supabase
-      await supabase
-        .from('proposal_requests')
-        .update({ 
-          status: 'accepted',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', proposal.id);
+        .eq('username', senderUsername);
 
       // Create new relationship locally
       const newRelationship: UserRelationship = {
@@ -281,13 +290,12 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       setCurrentRelationship(newRelationship);
       localStorage.setItem('currentRelationship', JSON.stringify(newRelationship));
 
-      // Remove proposal from state and refresh from database
+      // Remove proposal from local state immediately for instant UI feedback
       const updatedProposals = proposals.filter(p => p.id !== proposal.id);
       setProposals(updatedProposals);
-      localStorage.setItem('relationshipProposals', JSON.stringify(updatedProposals));
       
-      // Refresh proposals from database to ensure UI is in sync
-      await fetchProposals();
+      // Refresh proposals from database to ensure sync (this will show only pending ones)
+      fetchProposals();
 
       toast({
         title: "Proposta aceita! 💕",
@@ -319,13 +327,12 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Remove proposal from state and refresh from database
+      // Remove proposal from local state immediately for instant UI feedback
       const updatedProposals = proposals.filter(p => p.id !== proposal.id);
       setProposals(updatedProposals);
-      localStorage.setItem('relationshipProposals', JSON.stringify(updatedProposals));
       
-      // Refresh proposals from database to ensure UI is in sync
-      await fetchProposals();
+      // Refresh proposals from database to ensure sync (this will show only pending ones)
+      fetchProposals();
 
       toast({
         title: "Proposta rejeitada",
@@ -452,6 +459,25 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
     console.log(`Marked proposals as viewed for user: ${userId}`);
   };
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refreshData();
+    };
+    
+    // Listen for storage changes and auth changes
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for user login through our custom event
+    window.addEventListener('userLoggedIn', handleStorageChange);
+    
+    refreshData();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLoggedIn', handleStorageChange);
+    };
+  }, []);
+
   return (
     <RelationshipContext.Provider value={{
       proposals,
@@ -462,7 +488,8 @@ export function RelationshipProvider({ children }: { children: ReactNode }) {
       getProposalsForUser,
       markProposalsAsViewed,
       endRelationship,
-      upgradeRelationship
+      upgradeRelationship,
+      refreshData
     }}>
       {children}
     </RelationshipContext.Provider>

@@ -98,11 +98,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // Load user stats from database
         loadUserStats(user.id);
         
-        // Store in localStorage for persistence
-        localStorage.setItem('currentUser', username);
-        localStorage.setItem('currentUserId', user.id);
-        
-        // Load diseases for this user
+      // Store in localStorage for persistence
+      localStorage.setItem('currentUser', username);
+      localStorage.setItem('currentUserId', user.id);
+      
+      // Dispatch custom event for relationship context refresh
+      window.dispatchEvent(new CustomEvent('userLoggedIn'));
+      
+      // Load diseases for this user
         const savedDiseases = localStorage.getItem(`${username}_diseases`);
         if (savedDiseases) {
           try {
@@ -260,6 +263,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     // Save to localStorage for simple persistence
     localStorage.setItem('currentUser', username);
+    
+    // Dispatch custom event for relationship context refresh  
+    window.dispatchEvent(new CustomEvent('userLoggedIn'));
     
     // Get user profile from database by username to get the correct database ID
     const { data: profile } = await supabase
