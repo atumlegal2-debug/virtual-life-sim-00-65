@@ -78,9 +78,31 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     return new Intl.NumberFormat('pt-BR').format(amount);
   };
 
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+
   const getDisplayName = (username: string) => {
     if (!username) return 'Usuário desconhecido';
-    return username.length > 4 ? username.slice(0, -4) : username;
+    return displayNames[username] || (username.length > 4 ? username.slice(0, -4) : username);
+  };
+
+  const loadDisplayNameForUser = async (username: string) => {
+    if (!username || displayNames[username]) return displayNames[username] || username;
+    
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('nickname')
+        .eq('username', username)
+        .maybeSingle();
+      
+      const displayName = data?.nickname || (username.length > 4 ? username.slice(0, -4) : username);
+      setDisplayNames(prev => ({ ...prev, [username]: displayName }));
+      return displayName;
+    } catch {
+      const fallbackName = username.length > 4 ? username.slice(0, -4) : username;
+      setDisplayNames(prev => ({ ...prev, [username]: fallbackName }));
+      return fallbackName;
+    }
   };
 
   const handleLogin = async () => {
@@ -153,10 +175,12 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
       if (error) throw error;
 
-      const ordersWithUsername = data?.map(order => ({
-        ...order,
-        buyer_username: getDisplayName(order.users?.username || 'Usuário desconhecido')
-      })) || [];
+      const ordersWithUsername = await Promise.all(
+        (data || []).map(async (order) => ({
+          ...order,
+          buyer_username: await loadDisplayNameForUser(order.users?.username || 'Usuário desconhecido')
+        }))
+      );
 
       console.log('Pedidos com username:', ordersWithUsername);
       setPendingOrders(ordersWithUsername);
@@ -653,7 +677,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                   <div key={request.id} className="bg-yellow-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h4 className="font-medium text-white">{getDisplayName(request.username)}</h4>
+                        <h4 className="font-medium text-white">{displayNames[request.username] || request.username.replace(/\d{4}$/, '')}</h4>
                         <p className="text-sm text-yellow-300">{request.request_message}</p>
                         <p className="text-xs text-yellow-400 mt-1">
                           {new Date(request.created_at).toLocaleString('pt-BR')}
@@ -702,7 +726,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                   <div key={request.id} className="bg-gray-700 rounded-lg p-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium text-white text-sm">{getDisplayName(request.username)}</h4>
+                        <h4 className="font-medium text-white text-sm">{displayNames[request.username] || request.username.replace(/\d{4}$/, '')}</h4>
                         <p className="text-xs text-gray-300">{request.manager_notes}</p>
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(request.processed_at || request.updated_at).toLocaleString('pt-BR')}
@@ -763,7 +787,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                   <div key={request.id} className="bg-blue-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h4 className="font-medium text-white">{getDisplayName(request.username)}</h4>
+                        <h4 className="font-medium text-white">{displayNames[request.username] || request.username.replace(/\d{4}$/, '')}</h4>
                         <p className="text-sm text-blue-300">{request.treatment_type}</p>
                         <p className="text-sm text-blue-200">Custo: {request.treatment_cost} C'M</p>
                         <p className="text-xs text-blue-400 mt-1">
@@ -813,7 +837,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                   <div key={request.id} className="bg-gray-700 rounded-lg p-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium text-white text-sm">{getDisplayName(request.username)}</h4>
+                        <h4 className="font-medium text-white text-sm">{displayNames[request.username] || request.username.replace(/\d{4}$/, '')}</h4>
                         <p className="text-xs text-gray-300">{request.treatment_type} - {request.treatment_cost} C'M</p>
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(request.processed_at || request.updated_at).toLocaleString('pt-BR')}
@@ -1119,7 +1143,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-sm">
-                        {getDisplayName(record.username)}
+                        {displayNames[record.username] || record.username.replace(/\d{4}$/, '')}
                       </CardTitle>
                       <p className="text-xs text-muted-foreground">
                         {new Date(record.created_at).toLocaleString('pt-BR')}

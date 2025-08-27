@@ -101,21 +101,51 @@ export function BankApp({ onBack }: BankAppProps) {
     }
   };
 
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+
   const getDisplayName = (username: string) => {
-    return username.length > 4 ? username.slice(0, -4) : username;
+    return displayNames[username] || (username.length > 4 ? username.slice(0, -4) : username);
+  };
+
+  const loadDisplayNameForUser = async (username: string) => {
+    if (displayNames[username]) return;
+    
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('nickname')
+        .eq('username', username)
+        .maybeSingle();
+      
+      const displayName = data?.nickname || (username.length > 4 ? username.slice(0, -4) : username);
+      setDisplayNames(prev => ({ ...prev, [username]: displayName }));
+    } catch {
+      const fallbackName = username.length > 4 ? username.slice(0, -4) : username;
+      setDisplayNames(prev => ({ ...prev, [username]: fallbackName }));
+    }
   };
 
   const loadUsers = async () => {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, username, wallet_balance')
+        .select('id, username, wallet_balance, nickname')
         .order('username');
       
       if (error) throw error;
-      setUsers(data || []);
+      
+      const users = data || [];
+      
+      // Load display names
+      const names: Record<string, string> = {};
+      for (const user of users) {
+        names[user.username] = user.nickname || (user.username.length > 4 ? user.username.slice(0, -4) : user.username);
+      }
+      setDisplayNames(names);
+      
+      setUsers(users);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      console.error('Error loading users:', error);
     }
   };
 

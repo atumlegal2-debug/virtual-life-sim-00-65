@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FriendsAppProps {
   onBack: () => void;
@@ -20,12 +21,39 @@ export function FriendsApp({ onBack }: FriendsAppProps) {
   const { friends, refreshFriendsStatus } = useFriendship();
   const { coins, deductCoins, inventory, removeFromInventory } = useGame();
   const { toast } = useToast();
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   
-  // Function to hide the 4-digit code from usernames for display
+  // Function to get display name (nickname if available, otherwise username without digits)
   const getDisplayName = (username: string) => {
-    // Remove the last 4 digits if they exist
-    return username.replace(/\d{4}$/, '');
+    return displayNames[username] || username.replace(/\d{4}$/, '');
   };
+
+  // Load display names for all friends
+  useEffect(() => {
+    const loadDisplayNames = async () => {
+      const names: Record<string, string> = {};
+      
+      for (const friend of friends) {
+        try {
+          const { data } = await supabase
+            .from('users')
+            .select('nickname')
+            .eq('username', friend.username)
+            .maybeSingle();
+          
+          names[friend.username] = data?.nickname || friend.username.replace(/\d{4}$/, '');
+        } catch {
+          names[friend.username] = friend.username.replace(/\d{4}$/, '');
+        }
+      }
+      
+      setDisplayNames(names);
+    };
+
+    if (friends.length > 0) {
+      loadDisplayNames();
+    }
+  }, [friends]);
   
   const [selectedFriend, setSelectedFriend] = useState<any>(null);
   const [sendMoneyModal, setSendMoneyModal] = useState(false);

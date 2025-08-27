@@ -339,6 +339,9 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
 
       if (error) throw error;
 
+      // Clear nickname cache when user updates their nickname
+      localStorage.removeItem(`nickname_cache_${username}`);
+
       toast({
         title: "Perfil atualizado",
         description: "Suas informações foram salvas com sucesso!"
