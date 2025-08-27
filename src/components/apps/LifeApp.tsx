@@ -128,7 +128,8 @@ export function LifeApp({ onBack }: LifeAppProps) {
           .select('*')
           .eq('user_id', profile.id)
           .eq('status', 'accepted')
-          .gte('processed_at', new Date(Date.now() - 60000).toISOString()); // Check last minute
+          .order('processed_at', { ascending: false })
+          .limit(10);
 
         if (error) {
           console.error('Error checking treatment requests:', error);
