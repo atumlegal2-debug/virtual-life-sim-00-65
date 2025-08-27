@@ -70,15 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkUserExists = async (username: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
         .select('username')
-        .eq('username', username)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+        .ilike('username', username)
+        .maybeSingle();
       
       return !!data;
     } catch (error) {
@@ -99,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Create fake email from username with valid domain
-      const email = `${username}@rpglife.com`;
+      const email = `${username.toLowerCase()}@rpglife.com`;
       const password = username; // Use username as password for simplicity
 
       const { data, error } = await supabase.auth.signUp({
@@ -185,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {}
       try { await supabase.auth.signOut({ scope: 'global' } as any); } catch {}
 
-      const email = `${username}@rpglife.com`;
+      const email = `${username.toLowerCase()}@rpglife.com`;
       const password = username;
 
       console.log('Tentando login com:', { email });

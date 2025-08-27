@@ -26,6 +26,7 @@ interface UserData {
   alcoholism_percentage: number;
   disease_percentage: number;
   mood: string;
+  nickname?: string | null;
 }
 
 export function UserProfileModal({ isOpen, onClose, userId, username }: UserProfileModalProps) {
@@ -34,12 +35,6 @@ export function UserProfileModal({ isOpen, onClose, userId, username }: UserProf
   const [isLoading, setIsLoading] = useState(false);
   const { diseases, currentUser } = useGame();
   const { sendFriendRequest, areFriends, hasPendingRequest } = useFriendship();
-
-  // Function to hide the 4-digit code from usernames for display
-  const getDisplayName = (username: string) => {
-    // Remove the last 4 digits if they exist
-    return username.replace(/\d{4}$/, '');
-  };
 
   useEffect(() => {
     if (isOpen && username) {
@@ -209,7 +204,7 @@ export function UserProfileModal({ isOpen, onClose, userId, username }: UserProf
             <Button variant="ghost" size="sm" onClick={onClose}>
               <ArrowLeft size={20} />
             </Button>
-            <DialogTitle>Perfil de {getDisplayName(username)}</DialogTitle>
+            <DialogTitle>Perfil de {(userData?.nickname || username.replace(/\d{4}$/, ''))}</DialogTitle>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -239,13 +234,13 @@ export function UserProfileModal({ isOpen, onClose, userId, username }: UserProf
                     <AvatarImage src={userData.avatar} alt="Profile" />
                   ) : (
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-lg">
-                      {getDisplayName(username).slice(0, 2).toUpperCase()}
+                      {(userData?.nickname || username.replace(/\d{4}$/, '')).slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 
                 <h2 className="text-xl font-bold text-foreground mb-4">
-                  {getDisplayName(username)}
+                  {(userData?.nickname || username.replace(/\d{4}$/, ''))}
                 </h2>
               </CardContent>
             </Card>
