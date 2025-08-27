@@ -111,6 +111,8 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('File selected:', file.name, file.type, file.size);
+      
       // Validate file type
       if (!file.type.startsWith('image/')) {
         toast({
@@ -134,15 +136,30 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
       // Load image for cropping
       const img = new Image();
       img.onload = () => {
+        console.log('Image loaded:', img.width, 'x', img.height);
         setOriginalImage(img);
         setCropMode(true);
         setCropScale(1);
         setCropX(0);
         setCropY(0);
-        drawCropPreview(img, 1, 0, 0);
+        // Add small delay to ensure canvas is ready
+        setTimeout(() => {
+          drawCropPreview(img, 1, 0, 0);
+        }, 100);
       };
+      img.onerror = (error) => {
+        console.error('Error loading image:', error);
+        toast({
+          title: "Erro ao carregar imagem",
+          description: "Não foi possível carregar a imagem selecionada.",
+          variant: "destructive"
+        });
+      };
+      img.crossOrigin = 'anonymous'; // Handle CORS issues
       img.src = URL.createObjectURL(file);
     }
+    // Clear the input so the same file can be selected again
+    event.target.value = '';
   };
 
   const drawCropPreview = (img: HTMLImageElement, scale: number, x: number, y: number) => {
@@ -156,8 +173,9 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
     canvas.width = size;
     canvas.height = size;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, size, size);
+    // Clear canvas with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
 
     // Calculate image dimensions to fit in canvas while maintaining aspect ratio
     const imgAspect = img.width / img.height;
@@ -176,16 +194,23 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
     const drawX = centerX - drawWidth / 2 + x;
     const drawY = centerY - drawHeight / 2 + y;
 
-    // Draw image
-    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-
-    // Draw circular crop overlay
+    // Create circular clipping path first
     ctx.save();
-    ctx.globalCompositeOperation = 'destination-in';
     ctx.beginPath();
     ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.clip();
+
+    // Draw image within the circular clip
+    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    
     ctx.restore();
+
+    // Draw circular border
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+    ctx.stroke();
   };
 
   const handleCropConfirm = async () => {
@@ -195,45 +220,95 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
     try {
       const canvas = canvasRef.current;
       
-      // Convert canvas to blob
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
+      // Create a new canvas for the final cropped image
+      const finalCanvas = document.createElement('canvas');
+      const finalCtx = finalCanvas.getContext('2d');
+      if (!finalCtx) throw new Error('Could not get canvas context');
 
-        // Create file from blob
-        const file = new File([blob], 'avatar.png', { type: 'image/png' });
-        
-        // Upload to Supabase
-        const fileExt = 'png';
-        const fileName = `${username}/avatar-${Date.now()}.${fileExt}`;
-        
-        const { data, error } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
+      const finalSize = 300; // Higher resolution for better quality
+      finalCanvas.width = finalSize;
+      finalCanvas.height = finalSize;
 
-        if (error) throw error;
+      // Fill with white background
+      finalCtx.fillStyle = '#ffffff';
+      finalCtx.fillRect(0, 0, finalSize, finalSize);
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
+      // Calculate image dimensions
+      const imgAspect = originalImage.width / originalImage.height;
+      let drawWidth = finalSize * cropScale;
+      let drawHeight = finalSize * cropScale;
 
-        setAvatarUrl(publicUrl);
-        setCropMode(false);
-        setOriginalImage(null);
-        
-        toast({
-          title: "Foto processada!",
-          description: "Sua foto de perfil foi recortada e carregada com sucesso."
+      if (imgAspect > 1) {
+        drawHeight = drawWidth / imgAspect;
+      } else {
+        drawWidth = drawHeight * imgAspect;
+      }
+
+      // Center and apply offset
+      const centerX = finalSize / 2;
+      const centerY = finalSize / 2;
+      const drawX = centerX - drawWidth / 2 + cropX * (finalSize / 200);
+      const drawY = centerY - drawHeight / 2 + cropY * (finalSize / 200);
+
+      // Create circular clipping path
+      finalCtx.save();
+      finalCtx.beginPath();
+      finalCtx.arc(centerX, centerY, finalSize / 2, 0, Math.PI * 2);
+      finalCtx.clip();
+
+      // Draw image
+      finalCtx.drawImage(originalImage, drawX, drawY, drawWidth, drawHeight);
+      finalCtx.restore();
+
+      // Convert to blob with better quality
+      const blob = await new Promise<Blob | null>((resolve) => {
+        finalCanvas.toBlob(resolve, 'image/jpeg', 0.92);
+      });
+
+      if (!blob) throw new Error('Failed to create image blob');
+
+      // Create file from blob
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      
+      // Upload to Supabase
+      const fileName = `${username}/avatar-${Date.now()}.jpg`;
+      
+      console.log('Uploading avatar:', fileName, file.size, 'bytes');
+      
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
         });
-      }, 'image/png', 0.9);
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      console.log('Upload successful:', data);
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      console.log('Public URL:', publicUrl);
+
+      setAvatarUrl(publicUrl);
+      setCropMode(false);
+      setOriginalImage(null);
+      
+      toast({
+        title: "Foto processada!",
+        description: "Sua foto de perfil foi recortada e carregada com sucesso."
+      });
     } catch (error) {
       console.error('Error uploading cropped avatar:', error);
       toast({
         title: "Erro no upload",
-        description: "Não foi possível carregar a foto. Tente novamente.",
+        description: `Não foi possível carregar a foto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
     } finally {
