@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const validateUsername = (username: string): boolean => {
-    const regex = /^[a-zA-Z]+\d{4}$/;
+    const regex = /^[a-zA-Z]+\d{4}$/i; // Added 'i' flag for case-insensitive
     return regex.test(username);
   };
 

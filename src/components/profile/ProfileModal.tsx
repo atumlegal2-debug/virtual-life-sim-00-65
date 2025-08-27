@@ -40,6 +40,7 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activeEffects, setActiveEffects] = useState<ActiveEffect[]>([]);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [nickname, setNickname] = useState("");
   const [relationshipStatus, setRelationshipStatus] = useState("single");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -79,6 +80,7 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
           relationship_status: data.relationship_status || "single"
         });
         setAvatarUrl(data.avatar || "");
+        setNickname(data.nickname || "");
         setRelationshipStatus(data.relationship_status || "single");
       }
     } catch (error) {
@@ -330,6 +332,7 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
         .from('users')
         .update({
           avatar: avatarUrl,
+          nickname: nickname,
           relationship_status: relationshipStatus
         })
         .eq('id', userId);
@@ -479,6 +482,20 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
               </CardContent>
             </Card>
           )}
+
+          {/* Nickname Input */}
+          <div className="space-y-2">
+            <Label htmlFor="nickname">Apelido (opcional)</Label>
+            <Input
+              id="nickname"
+              placeholder="Como você gostaria de ser chamado"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              Se preenchido, será exibido no lugar do seu username
+            </p>
+          </div>
 
           {/* Avatar URL Input - Only show if no image uploaded */}
           {!avatarUrl && !cropMode && (

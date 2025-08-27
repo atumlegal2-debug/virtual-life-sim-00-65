@@ -622,6 +622,7 @@ export type Database = {
           life_percentage: number | null
           looking_for: string
           mood: number | null
+          nickname: string | null
           race: string
           relationship_status: string | null
           updated_at: string
@@ -644,6 +645,7 @@ export type Database = {
           life_percentage?: number | null
           looking_for: string
           mood?: number | null
+          nickname?: string | null
           race: string
           relationship_status?: string | null
           updated_at?: string
@@ -666,6 +668,7 @@ export type Database = {
           life_percentage?: number | null
           looking_for?: string
           mood?: number | null
+          nickname?: string | null
           race?: string
           relationship_status?: string | null
           updated_at?: string
