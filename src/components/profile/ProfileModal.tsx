@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Camera, Clock, Upload, Crop, RotateCw } from "lucide-react";
+import { Camera, Clock, Upload, Crop, RotateCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -489,12 +489,25 @@ export function ProfileModal({ isOpen, onClose, userId, username }: ProfileModal
           {/* Nickname Input */}
           <div className="space-y-2">
             <Label htmlFor="nickname">Apelido (opcional)</Label>
-            <Input
-              id="nickname"
-              placeholder="Como você gostaria de ser chamado"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="nickname"
+                placeholder="Como você gostaria de ser chamado"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="pr-8"
+              />
+              {nickname && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-destructive/10"
+                  onClick={() => setNickname("")}
+                >
+                  <X size={12} className="text-muted-foreground hover:text-destructive" />
+                </Button>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               Se preenchido, será exibido no lugar do seu username
             </p>
