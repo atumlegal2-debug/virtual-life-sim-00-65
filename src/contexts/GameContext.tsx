@@ -852,6 +852,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn, currentUser]);
 
+  // Realtime: listen for hospital treatment approvals for this user
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel('rt-hospital-treatments')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'hospital_treatment_requests', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const newRow: any = payload.new;
+          if (newRow?.status === 'accepted') {
+            const type = String(newRow.treatment_type || '');
+            const msg = String(newRow.request_message || '');
+            if (type.includes('Desnutrição') || msg.includes('Desnutrição')) {
+              console.log('Realtime: tratamento aprovado para Desnutrição, curando...');
+              cureHungerDisease();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, cureHungerDisease]);
+
   return (
     <GameContext.Provider value={{
       currentUser,

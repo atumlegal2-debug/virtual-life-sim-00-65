@@ -438,16 +438,26 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         if (healthGain > 0) {
           const { data: currentUserData } = await supabase
             .from('users')
-            .select('life_percentage')
+            .select('life_percentage, hunger_percentage, disease_percentage')
             .eq('id', request.user_id)
             .single();
 
           const newHealth = Math.min(100, (currentUserData?.life_percentage || 100) + healthGain);
-          
-          await supabase
-            .from('users')
-            .update({ life_percentage: newHealth })
-            .eq('id', request.user_id);
+
+          // If treatment is for hunger disease, also boost hunger and reduce disease
+          if (request.treatment_type.includes('Desnutrição')) {
+            const newHunger = Math.min(100, (currentUserData?.hunger_percentage || 0) + 60);
+            const newDisease = Math.max(0, (currentUserData?.disease_percentage || 0) - 15);
+            await supabase
+              .from('users')
+              .update({ life_percentage: newHealth, hunger_percentage: newHunger, disease_percentage: newDisease })
+              .eq('id', request.user_id);
+          } else {
+            await supabase
+              .from('users')
+              .update({ life_percentage: newHealth })
+              .eq('id', request.user_id);
+          }
         }
       }
 
