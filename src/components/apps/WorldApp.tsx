@@ -10,6 +10,7 @@ import { useRelationship } from "@/contexts/RelationshipContext";
 import { supabase } from "@/integrations/supabase/client";
 import { FriendRequestsModal } from "@/components/modals/FriendRequestsModal";
 import { UserProfileModal } from "@/components/modals/UserProfileModal";
+import { getDisplayName, getDisplayNameSync } from "@/lib/displayName";
 
 interface WorldAppProps {
   onBack: () => void;
@@ -46,10 +47,16 @@ export function WorldApp({ onBack }: WorldAppProps) {
     };
   }, []);
 
-  // Function to hide the 4-digit code from usernames for display
-  const getDisplayName = (username: string) => {
-    // Remove the last 4 digits if they exist
-    return username.replace(/\d{4}$/, '');
+  // Função para obter nome com apelido se disponível
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+
+  const getUserDisplayName = async (username: string) => {
+    if (displayNames[username]) {
+      return displayNames[username];
+    }
+    const displayName = await getDisplayName(username);
+    setDisplayNames(prev => ({ ...prev, [username]: displayName }));
+    return displayName;
   };
 
   useEffect(() => {
@@ -57,6 +64,24 @@ export function WorldApp({ onBack }: WorldAppProps) {
     // Simulate friendship between wonho1234 and wonho1235
     simulateDefaultFriendship();
   }, []);
+
+  // Carrega nomes de exibição quando usuários mudam
+  useEffect(() => {
+    const loadDisplayNames = async () => {
+      const usernames = users.map(u => u.username);
+      if (selectedUser) usernames.push(selectedUser.username);
+      
+      for (const username of usernames) {
+        if (!displayNames[username]) {
+          await getUserDisplayName(username);
+        }
+      }
+    };
+    
+    if (users.length > 0) {
+      loadDisplayNames();
+    }
+  }, [users, selectedUser]);
 
   const simulateDefaultFriendship = () => {
     const existingRequests = JSON.parse(localStorage.getItem('friendRequests') || '[]');
@@ -230,13 +255,13 @@ export function WorldApp({ onBack }: WorldAppProps) {
                 <AvatarImage src={selectedUser.avatar_url} alt="Profile" />
               ) : (
                 <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-xl">
-                  {getDisplayName(selectedUser.username).slice(0, 2).toUpperCase()}
+                  {(displayNames[selectedUser.username] || getDisplayNameSync(selectedUser.username)).slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               )}
             </Avatar>
             
             <h2 className="text-2xl font-bold text-foreground mb-2">
-              {getDisplayName(selectedUser.username)}
+              {displayNames[selectedUser.username] || getDisplayNameSync(selectedUser.username)}
             </h2>
             
             <div className="flex items-center justify-center gap-2 mb-3">
@@ -383,7 +408,7 @@ export function WorldApp({ onBack }: WorldAppProps) {
                       <AvatarImage src={user.avatar_url} alt="Profile" />
                     ) : (
                       <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold">
-                        {getDisplayName(user.username).slice(0, 2).toUpperCase()}
+                        {(displayNames[user.username] || getDisplayNameSync(user.username)).slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
@@ -392,7 +417,7 @@ export function WorldApp({ onBack }: WorldAppProps) {
                 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-medium text-foreground">{getDisplayName(user.username)}</h3>
+                    <h3 className="font-medium text-foreground">{displayNames[user.username] || getDisplayNameSync(user.username)}</h3>
                     <Badge 
                       className={`${getStatusColor(user.relationship_status)} text-white text-xs`}
                       variant="secondary"
