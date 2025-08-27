@@ -60,12 +60,20 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
     if (lastSpinTime) {
       const interval = setInterval(() => {
         const now = new Date();
-        const timeDiff = now.getTime() - lastSpinTime.getTime();
-        const hoursLeft = 24 - (timeDiff / (1000 * 60 * 60));
+        const lastSpinDate = new Date(lastSpinTime);
         
-        if (hoursLeft > 0) {
-          const hours = Math.floor(hoursLeft);
-          const minutes = Math.floor((hoursLeft % 1) * 60);
+        // Compare dates - must be different days to allow spinning
+        const isSameDay = now.toDateString() === lastSpinDate.toDateString();
+        
+        if (isSameDay) {
+          // Calculate time until next day (midnight)
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(0, 0, 0, 0);
+          
+          const timeLeft = tomorrow.getTime() - now.getTime();
+          const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
           setTimeUntilNextSpin(`${hours}h ${minutes}m`);
         } else {
           setTimeUntilNextSpin('');
@@ -78,10 +86,18 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
     }
   }, [lastSpinTime]);
 
-  const canSpin = !lastSpinTime || timeUntilNextSpin === '';
+  const canSpin = () => {
+    if (!lastSpinTime) return true;
+    
+    const now = new Date();
+    const lastSpinDate = new Date(lastSpinTime);
+    
+    // Can only spin if it's a different day
+    return now.toDateString() !== lastSpinDate.toDateString();
+  };
 
   const spinRoulette = async () => {
-    if (!canSpin || isSpinning) return;
+    if (!canSpin() || isSpinning) return;
 
     setIsSpinning(true);
     
@@ -193,7 +209,7 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
           <div className="space-y-2">
             <Button
               onClick={spinRoulette}
-              disabled={!canSpin || isSpinning}
+              disabled={!canSpin() || isSpinning}
               className="w-full h-12 text-lg font-bold"
               size="lg"
             >
@@ -202,7 +218,7 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
                   <Zap className="mr-2 animate-spin" size={20} />
                   Girando...
                 </>
-              ) : !canSpin ? (
+              ) : !canSpin() ? (
                 <>
                   <Clock className="mr-2" size={20} />
                   Próximo giro em {timeUntilNextSpin}
@@ -216,7 +232,7 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
             </Button>
             
             <p className="text-xs text-muted-foreground">
-              {canSpin ? "Você pode girar a roleta uma vez a cada 24 horas" : "Aguarde para girar novamente"}
+              {canSpin() ? "Você pode girar a roleta uma vez por dia" : "Aguarde até amanhã para girar novamente"}
             </p>
           </div>
         </CardContent>
