@@ -269,27 +269,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear local storage first
+      // Clear all local storage first (most important step)
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentUserId');
+      localStorage.removeItem('userDiseases');
       
-      // Check if there's an active session before trying to sign out
-      const { data: { session } } = await supabase.auth.getSession();
+      // Clear all Supabase auth tokens and sessions
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
       
-      if (session) {
-        // Only try to sign out if there's an active session
-        await supabase.auth.signOut();
-      }
+      // Clear sessionStorage as well
+      try {
+        Object.keys(sessionStorage || {}).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch {}
       
-      // Force clear the session state immediately
+      // Force clear the React state immediately
       setSession(null);
       setUser(null);
+      
+      // Try to sign out from Supabase but don't let errors block logout
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (supabaseError) {
+        console.log('Supabase signOut failed, but local logout successful:', supabaseError);
+      }
+      
+      // Force reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
       
     } catch (error) {
       console.error('Erro no logout:', error);
-      // Even if Supabase logout fails, force clear everything
+      // Even if everything fails, force clear all local state
+      localStorage.clear();
+      sessionStorage.clear();
       setSession(null);
       setUser(null);
-      localStorage.removeItem('currentUser');
+      
+      // Force reload as last resort
+      window.location.reload();
     }
   };
 

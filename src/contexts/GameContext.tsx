@@ -369,7 +369,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Get current user before clearing localStorage
       const currentUserToLogout = localStorage.getItem('currentUser');
       
-      // Always clear local data first
+      // Always clear local data first (even if Supabase fails)
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentUserId');
       localStorage.removeItem('userDiseases');
@@ -379,6 +379,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(`${currentUserToLogout}_friends_cache`);
       }
       
+      // Clear all Supabase auth tokens and sessions
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Clear sessionStorage as well
+      try {
+        Object.keys(sessionStorage || {}).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch {}
+      
+      // Clear React state immediately
       setCurrentUser(null);
       setIsLoggedIn(false);
       setUserId(null);
@@ -391,21 +408,30 @@ export function GameProvider({ children }: { children: ReactNode }) {
         mood: "Sentindo-se bem"
       });
       
-      // Check if there's an active session before trying to sign out
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // Only try to sign out if there's an active session
-        await supabase.auth.signOut();
+      // Try to sign out from Supabase but don't let it block logout
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (supabaseError) {
+        console.log('Supabase signOut failed, but local logout successful:', supabaseError);
       }
       
+      // Force reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      
     } catch (e) {
-      console.error('Erro ao deslogar do Supabase:', e);
-      // Even if Supabase logout fails, ensure we're logged out locally
+      console.error('Erro ao deslogar:', e);
+      // Even if everything fails, force clear all local state
+      localStorage.clear();
+      sessionStorage.clear();
       setIsLoggedIn(false);
       setUserId(null);
       setCurrentUser(null);
       setDiseases([]);
+      
+      // Force reload as last resort
+      window.location.reload();
     }
   };
 
