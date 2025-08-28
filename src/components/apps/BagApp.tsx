@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart } from "lucide-react";
+import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart, History, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,9 +38,28 @@ interface InventoryItem {
   };
 }
 
+interface HistoryItem {
+  id: string;
+  name: string;
+  description: string;
+  itemType: "food" | "drink" | "object";
+  quantity: number;
+  sent_by_username: string | null;
+  received_at: string;
+  storeId: string;
+  isCustom: boolean;
+  originalItem?: StoreItem;
+  effect?: {
+    type: string;
+    value: number;
+    message: string;
+  };
+}
+
 export function BagApp({ onBack }: BagAppProps) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"food" | "drink" | "object">("food");
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"food" | "drink" | "object" | "history">("food");
   const [sendRingModalOpen, setSendRingModalOpen] = useState(false);
   const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
@@ -52,6 +71,7 @@ export function BagApp({ onBack }: BagAppProps) {
   useEffect(() => {
     if (currentUser) {
       fetchInventory();
+      fetchHistory();
     }
   }, [currentUser]);
 
@@ -176,6 +196,117 @@ export function BagApp({ onBack }: BagAppProps) {
       setInventory(formattedInventory);
     } catch (error) {
       console.error('Error fetching inventory:', error);
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      if (!currentUser) return;
+
+      // Get the user record from users table by username
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', currentUser)
+        .maybeSingle();
+
+      if (userError || !userRecord) return;
+
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('user_id', userRecord.id)
+        .not('sent_by_username', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedHistory: HistoryItem[] = [];
+      
+      // Load custom items from localStorage
+      const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
+      
+      // Also load custom items from Supabase for items sent from other users
+      const { data: customItemsFromDB } = await supabase
+        .from('custom_items')
+        .select('*');
+      
+      // Merge custom items from DB into local storage for access
+      const allCustomItems = { ...customItems };
+      if (customItemsFromDB) {
+        customItemsFromDB.forEach(item => {
+          allCustomItems[item.id] = {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            itemType: item.item_type,
+            icon: item.icon,
+            isCustom: true,
+            effect: null
+          };
+        });
+      }
+      
+      // Process each history item
+      for (const item of data || []) {
+        // Check if it's a custom item first
+        if (allCustomItems[item.item_id]) {
+          const customItem = allCustomItems[item.item_id];
+          
+          formattedHistory.push({
+            id: customItem.id,
+            name: customItem.name,
+            description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
+            itemType: customItem.itemType,
+            quantity: item.quantity,
+            sent_by_username: (item as any).sent_by_username || null,
+            received_at: (item as any).received_at || item.created_at,
+            storeId: "custom",
+            isCustom: true,
+            originalItem: customItem
+          });
+          continue;
+        }
+        
+        // Find the item in stores
+        let storeItem = null;
+        let storeId = "";
+        
+        for (const [key, store] of Object.entries(STORES)) {
+          const foundItem = store.items.find(i => i.id === item.item_id);
+          if (foundItem) {
+            storeItem = foundItem;
+            storeId = key;
+            break;
+          }
+        }
+        
+        if (storeItem) {
+          const itemType = getItemType(storeId, storeItem.id);
+          
+          formattedHistory.push({
+            id: storeItem.id,
+            name: storeItem.name,
+            description: storeItem.description,
+            itemType,
+            quantity: item.quantity,
+            sent_by_username: (item as any).sent_by_username || null,
+            received_at: (item as any).received_at || item.created_at,
+            storeId,
+            isCustom: false,
+            originalItem: storeItem,
+            effect: storeItem.effect ? {
+              type: storeItem.effect.type,
+              value: storeItem.effect.value,
+              message: storeItem.effect.message || `Efeito de ${storeItem.name}`
+            } : undefined
+          });
+        }
+      }
+
+      setHistoryItems(formattedHistory);
+    } catch (error) {
+      console.error('Error fetching history:', error);
     }
   };
 
@@ -622,6 +753,82 @@ export function BagApp({ onBack }: BagAppProps) {
     ));
   };
 
+  const renderHistory = () => {
+    if (historyItems.length === 0) {
+      return (
+        <Card className="bg-gradient-card border-border/50">
+          <CardContent className="pt-6 text-center">
+            <History size={48} className="mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Nenhum item recebido ainda</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Os itens enviados por outros jogadores aparecerão aqui
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return historyItems.map((item, index) => (
+      <Card key={`${item.id}-${index}`} className="bg-gradient-card border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            {/* Show custom item icon/image if available */}
+            {item.isCustom && item.originalItem?.icon ? (
+              typeof item.originalItem.icon === 'string' && item.originalItem.icon.startsWith('data:') ? (
+                <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" />
+              ) : (
+                <span className="text-lg">{item.originalItem.icon}</span>
+              )
+            ) : (
+              <span className="text-lg">{getCategoryIcon(item.itemType)}</span>
+            )}
+            {item.name}
+            {item.quantity > 1 && (
+              <Badge variant="secondary" className="text-xs">
+                {item.quantity}x
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-3">
+            {(item.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2')}
+          </p>
+          
+          {/* Sender and date info */}
+          <div className="flex items-center gap-2 mb-3 p-2 bg-primary/5 rounded border border-primary/10">
+            <Send size={14} className="text-primary" />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-primary">
+                Enviado por: {item.sent_by_username || 'Desconhecido'}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock size={12} />
+                {new Date(item.received_at).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+          </div>
+          
+          {/* Effect info */}
+          {item.effect && (
+            <div className="mb-3">
+              <Badge variant="outline" className="text-xs">
+                {getEffectIcon(item.effect.type as any)}
+                +{item.effect.value} {getEffectName(item.effect.type as any)}
+              </Badge>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    ));
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -647,7 +854,7 @@ export function BagApp({ onBack }: BagAppProps) {
       {/* Categorized Inventory */}
       <div className="flex-1">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="food" className="flex items-center gap-2">
               <Utensils size={16} />
               <span className="hidden sm:inline">Comidas</span>
@@ -669,6 +876,13 @@ export function BagApp({ onBack }: BagAppProps) {
                 {objectItems.length}
               </Badge>
             </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History size={16} />
+              <span className="hidden sm:inline">Histórico</span>
+              <Badge variant="secondary" className="text-xs">
+                {historyItems.length}
+              </Badge>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="food" className="space-y-3 h-full overflow-y-auto">
@@ -681,6 +895,10 @@ export function BagApp({ onBack }: BagAppProps) {
 
           <TabsContent value="object" className="space-y-3 h-full overflow-y-auto">
             {renderItems(objectItems, "Nenhum objeto na bolsa")}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-3 h-full overflow-y-auto">
+            {renderHistory()}
           </TabsContent>
         </Tabs>
       </div>
@@ -717,7 +935,10 @@ export function BagApp({ onBack }: BagAppProps) {
         isOpen={sendItemModalOpen}
         onClose={() => setSendItemModalOpen(false)}
         item={selectedItemToSend}
-        onItemSent={fetchInventory}
+        onItemSent={() => {
+          fetchInventory();
+          fetchHistory();
+        }}
       />
     </div>
   );
