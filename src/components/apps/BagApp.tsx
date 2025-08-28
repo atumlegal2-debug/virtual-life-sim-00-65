@@ -168,7 +168,8 @@ export function BagApp({ onBack }: BagAppProps) {
         
         if (storeItem) {
           const itemType = getItemType(storeId, storeItem.id);
-          const canUse = !!storeItem.effect || (storeItem as any).type === "medicine";
+          // Allow usage of pharmacy, sexshop items, or items with effects
+          const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop";
           const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
           
           formattedInventory.push({
@@ -312,19 +313,19 @@ export function BagApp({ onBack }: BagAppProps) {
 
   const handleUseItem = async (item: InventoryItem) => {
     try {
-        if (!currentUser) return;
+      if (!currentUser) return;
+
+      // Get the user record from users table by username
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage')
+        .eq('username', currentUser)
+        .maybeSingle();
+
+      if (userError || !userRecord) return;
 
       // Handle custom items
       if (item.storeId === "custom") {
-        // Get the user record from users table by username
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage')
-          .eq('username', currentUser)
-          .maybeSingle();
-
-        if (userError || !userRecord) return;
-
         let dbUpdateStats: any = {};
         let gameContextStats: any = {};
         let effectMessage = `Você usou ${item.name}`;
@@ -386,234 +387,143 @@ export function BagApp({ onBack }: BagAppProps) {
             .eq('item_id', item.id);
         }
 
-        fetchInventory(); // Refresh inventory
+        fetchInventory();
         return;
       }
 
-      // Get the user record from users table by username
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage')
-        .eq('username', currentUser)
-        .maybeSingle();
-
-      if (userError || !userRecord) return;
-
       // Check if this is a medicine for a disease
       const diseaseToCure = diseases.find(disease => 
-        // Check if this item can cure this disease by matching the 'cures' property
         STORES.pharmacy.items.some(medicine => 
           medicine.name === item.name && (medicine as any).cures === disease.name
         )
       );
 
+      let dbUpdateStats: any = {};
+      let gameContextStats: any = {};
+      let effectMessage = item.effect?.message || `Você ${item.itemType === "drink" ? "bebeu" : item.itemType === "food" ? "comeu" : "usou"} ${item.name}`;
+
+      // Special handling for sexshop items - they always increase health
+      if (item.storeId === "sexshop") {
+        const healthIncrease = Math.floor(Math.random() * 16) + 15; // Random between 15-30
+        const newHealth = Math.min(100, userRecord.life_percentage + healthIncrease);
+        dbUpdateStats.life_percentage = newHealth;
+        gameContextStats.health = newHealth;
+        effectMessage = `Você se sente rejuvenescido e com mais energia! (+${healthIncrease} vida)`;
+      }
+
       if (diseaseToCure) {
         // This is a medicine - cure the disease
         cureDisease(diseaseToCure.name);
         
-        // Update health and decrease disease percentage
         const newHealth = Math.min(100, userRecord.life_percentage + 15);
         const currentDiseasePercent = gameStats.disease || 0;
         const newDiseasePercent = Math.max(0, currentDiseasePercent - 15);
         
-        await supabase
-          .from('users')
-          .update({ 
-            life_percentage: newHealth,
-            disease_percentage: newDiseasePercent
-          })
-          .eq('username', currentUser);
+        dbUpdateStats.life_percentage = newHealth;
+        dbUpdateStats.disease_percentage = newDiseasePercent;
+        gameContextStats.health = newHealth;
+        gameContextStats.disease = newDiseasePercent;
         
-        await updateStats({ 
-          health: newHealth,
-          disease: newDiseasePercent
-        });
-        
-        toast({
-          title: "Doença curada! ✅",
-          description: `Você usou ${item.name} e curou ${diseaseToCure.name}. Saúde restaurada!`
-        });
-      } else {
-        // Regular item effects
-        let dbUpdateStats: any = {};
-        let gameContextStats: any = {};
-        let effectMessage = item.effect?.message || `Você ${item.itemType === "drink" ? "bebeu" : item.itemType === "food" ? "comeu" : "usou"} ${item.name}`;
-
-        if (item.effect) {
-          switch (item.effect.type) {
-            case "health":
-              const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
-              dbUpdateStats.life_percentage = newHealth;
-              gameContextStats.health = newHealth;
-              break;
-            case "hunger":
-              const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
-              dbUpdateStats.hunger_percentage = newHunger;
-              gameContextStats.hunger = newHunger;
-              break;
-            case "mood":
-              const newMood = Math.min(100, userRecord.mood + item.effect.value);
-              dbUpdateStats.mood = newMood;
-              gameContextStats.mood = newMood.toString();
-              break;
-            case "alcoholism":
-              // For alcoholic drinks, increase alcoholism level
-              const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
-              const newMoodFromAlcohol = Math.max(0, userRecord.mood - 5);
-              dbUpdateStats.alcoholism_percentage = newAlcoholism;
-              dbUpdateStats.mood = newMoodFromAlcohol;
-              gameContextStats.alcoholism = newAlcoholism;
-              gameContextStats.mood = newMoodFromAlcohol.toString();
-              
-              // Add temporary effect that shows in "Como estou me sentindo" for 20 minutes
-              const effectData = {
-                id: Math.random().toString(36),
-                message: item.effect.message,
-                expiresAt: Date.now() + 20 * 60000, // 20 minutes
-                type: "alcoholism",
-                value: item.effect.value
-              };
-              
-              const existingEffects = JSON.parse(localStorage.getItem('temporaryEffects') || '[]');
-              existingEffects.push(effectData);
-              localStorage.setItem('temporaryEffects', JSON.stringify(existingEffects));
-              break;
-          }
-
-          // Update user stats in database
-          if (Object.keys(dbUpdateStats).length > 0) {
-            const { error: updateError } = await supabase
-              .from('users')
-              .update(dbUpdateStats)
-              .eq('username', currentUser);
-            if (updateError) throw updateError;
-          }
-
-          // Update GameContext stats
-          if (Object.keys(gameContextStats).length > 0) {
-            await updateStats(gameContextStats);
-          }
-        }
-
-        // For drinks, check if alcoholic and apply alcohol effects
-        if (item.itemType === "drink" && isAlcoholic(item.storeId, item.id)) {
-          const alcoholLevel = getAlcoholLevel(item.storeId, item.id);
-          const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + alcoholLevel);
-          const newMoodFromAlcohol = Math.max(0, userRecord.mood - Math.floor(alcoholLevel / 4));
-          
-          const alcoholEffectUpdate = {
-            alcoholism_percentage: newAlcoholism,
-            mood: newMoodFromAlcohol
-          };
-          
-          const { error: alcoholError } = await supabase
-            .from('users')
-            .update(alcoholEffectUpdate)
-            .eq('username', currentUser);
-          if (alcoholError) throw alcoholError;
-          
-          // Update GameContext
-          await updateStats({ 
-            alcoholism: newAlcoholism, 
-            mood: newMoodFromAlcohol.toString() 
-          });
-          
-          // Add temporary effect for alcoholic drinks
-          const alcoholEffectData = {
-            id: Math.random().toString(36),
-            message: `Sentindo os efeitos do álcool...`,
-            expiresAt: Date.now() + 30 * 60000, // 30 minutes for alcohol
-            type: "alcoholism",
-            value: alcoholLevel
-          };
-          
-          const existingEffects = JSON.parse(localStorage.getItem('temporaryEffects') || '[]');
-          existingEffects.push(alcoholEffectData);
-          localStorage.setItem('temporaryEffects', JSON.stringify(existingEffects));
-        }
-
-        // For food items, calculate hunger increase based on item source and price
-        if (item.itemType === "food") {
-          let hungerIncrease = 3; // Default for custom items
-          
-          // If item has a price (from store), calculate based on price
-          if (item.price) {
-            if (item.price <= 50) {
-              hungerIncrease = 20; // Cheaper items
-            } else if (item.price <= 150) {
-              hungerIncrease = 40; // Mid-range items
-            } else if (item.price <= 250) {
-              hungerIncrease = 60; // Expensive items
-            } else {
-              hungerIncrease = 100; // Most expensive items
-            }
-          }
-          
-          const newHunger = Math.min(100, userRecord.hunger_percentage + hungerIncrease);
-          
-          const { error: hungerError } = await supabase
-            .from('users')
-            .update({ hunger_percentage: newHunger })
-            .eq('username', currentUser);
-          if (hungerError) throw hungerError;
-
-          // Update GameContext hunger
-          await updateStats({ hunger: newHunger });
-
-          // Add temporary effect for food with special effects
-          if (item.effect && (item.effect as any).duration) {
+        effectMessage = `Você usou ${item.name} e curou ${diseaseToCure.name}. Saúde restaurada!`;
+      } else if (item.effect) {
+        // Handle regular item effects
+        switch (item.effect.type) {
+          case "health":
+            const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
+            dbUpdateStats.life_percentage = newHealth;
+            gameContextStats.health = newHealth;
+            break;
+          case "hunger":
+            const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
+            dbUpdateStats.hunger_percentage = newHunger;
+            gameContextStats.hunger = newHunger;
+            break;
+          case "mood":
+            const newMood = Math.min(100, userRecord.mood + item.effect.value);
+            dbUpdateStats.mood = newMood;
+            gameContextStats.mood = newMood.toString();
+            break;
+          case "alcoholism":
+            const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
+            const newMoodFromAlcohol = Math.max(0, userRecord.mood - 5);
+            dbUpdateStats.alcoholism_percentage = newAlcoholism;
+            dbUpdateStats.mood = newMoodFromAlcohol;
+            gameContextStats.alcoholism = newAlcoholism;
+            gameContextStats.mood = newMoodFromAlcohol.toString();
+            
             const effectData = {
               id: Math.random().toString(36),
-              message: item.effect.message || `Efeito de ${item.name}`,
-              expiresAt: Date.now() + 20 * 60000, // 20 minutes for all effects
-              type: item.effect.type,
+              message: item.effect.message,
+              expiresAt: Date.now() + 20 * 60000,
+              type: "alcoholism",
               value: item.effect.value
             };
             
             const existingEffects = JSON.parse(localStorage.getItem('temporaryEffects') || '[]');
             existingEffects.push(effectData);
             localStorage.setItem('temporaryEffects', JSON.stringify(existingEffects));
-          }
+            break;
         }
-
-        // For drinks that increase hunger, calculate based on price
-        if (item.itemType === "drink" && item.effect?.type === "hunger") {
-          let hungerIncrease = 3; // Default for custom items
-          
-          // If item has a price (from store), calculate based on price
-          if (item.price) {
-            if (item.price <= 50) {
-              hungerIncrease = 20; // Cheaper items
-            } else if (item.price <= 150) {
-              hungerIncrease = 40; // Mid-range items
-            } else if (item.price <= 250) {
-              hungerIncrease = 60; // Expensive items
-            } else {
-              hungerIncrease = 100; // Most expensive items
-            }
-          }
-          
-          const newHunger = Math.min(100, userRecord.hunger_percentage + hungerIncrease);
-          
-          const { error: hungerError } = await supabase
-            .from('users')
-            .update({ hunger_percentage: newHunger })
-            .eq('username', currentUser);
-          if (hungerError) throw hungerError;
-
-          // Update GameContext hunger
-          await updateStats({ hunger: newHunger });
-        }
-
-        const actionText = item.itemType === "drink" ? "bebeu" : item.itemType === "food" ? "comeu" : "usou";
-        
-        toast({
-          title: `Item ${actionText}!`,
-          description: effectMessage
-        });
       }
 
-      // Remove one item from inventory by decreasing quantity
+      // Handle food and drink specific effects
+      if (item.itemType === "food") {
+        let hungerIncrease = 3;
+        if (item.price) {
+          if (item.price <= 50) hungerIncrease = 20;
+          else if (item.price <= 150) hungerIncrease = 40;
+          else if (item.price <= 250) hungerIncrease = 60;
+          else hungerIncrease = 100;
+        }
+        const newHunger = Math.min(100, userRecord.hunger_percentage + hungerIncrease);
+        dbUpdateStats.hunger_percentage = newHunger;
+        gameContextStats.hunger = newHunger;
+      }
+
+      if (item.itemType === "drink" && isAlcoholic(item.storeId, item.id)) {
+        const alcoholLevel = getAlcoholLevel(item.storeId, item.id);
+        const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + alcoholLevel);
+        const newMoodFromAlcohol = Math.max(0, userRecord.mood - Math.floor(alcoholLevel / 4));
+        
+        dbUpdateStats.alcoholism_percentage = newAlcoholism;
+        dbUpdateStats.mood = newMoodFromAlcohol;
+        gameContextStats.alcoholism = newAlcoholism;
+        gameContextStats.mood = newMoodFromAlcohol.toString();
+        
+        const alcoholEffectData = {
+          id: Math.random().toString(36),
+          message: `Sentindo os efeitos do álcool...`,
+          expiresAt: Date.now() + 30 * 60000,
+          type: "alcoholism",
+          value: alcoholLevel
+        };
+        
+        const existingEffects = JSON.parse(localStorage.getItem('temporaryEffects') || '[]');
+        existingEffects.push(alcoholEffectData);
+        localStorage.setItem('temporaryEffects', JSON.stringify(existingEffects));
+      }
+
+      // Update database
+      if (Object.keys(dbUpdateStats).length > 0) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update(dbUpdateStats)
+          .eq('username', currentUser);
+        if (updateError) throw updateError;
+      }
+
+      // Update GameContext
+      if (Object.keys(gameContextStats).length > 0) {
+        await updateStats(gameContextStats);
+      }
+
+      const actionText = item.itemType === "drink" ? "bebeu" : item.itemType === "food" ? "comeu" : "usou";
+      toast({
+        title: `Item ${actionText}!`,
+        description: diseaseToCure ? `Doença curada! ✅ ${effectMessage}` : effectMessage
+      });
+
+      // Remove one item from inventory
       if (item.quantity <= 1) {
         await supabase
           .from('inventory')
@@ -628,7 +538,7 @@ export function BagApp({ onBack }: BagAppProps) {
           .eq('item_id', item.id);
       }
 
-      fetchInventory(); // Refresh inventory
+      fetchInventory();
     } catch (error) {
       console.error('Error using item:', error);
       toast({
