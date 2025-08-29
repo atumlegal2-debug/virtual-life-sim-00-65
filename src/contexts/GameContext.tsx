@@ -217,42 +217,57 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(async () => {
       // Note: Hunger decrease is now handled by the server-side edge function
       // This ensures consistent timing and prevents double decreasing
-      
-      // Check for hunger-related disease
-      if (gameStats.hunger <= 49 && !diseases.some(d => d.name === "Desnutrição")) {
-        console.log('Applying hunger disease due to low hunger:', gameStats.hunger);
+
+      // 1) Sincroniza fome do banco (para refletir o edge function)
+      let hungerToCheck = gameStats.hunger;
+      try {
+        if (userId) {
+          const { data: userRow } = await supabase
+            .from('users')
+            .select('hunger_percentage')
+            .eq('id', userId)
+            .single();
+          if (typeof userRow?.hunger_percentage === 'number') {
+            hungerToCheck = userRow.hunger_percentage;
+            if (userRow.hunger_percentage !== gameStats.hunger) {
+              setGameStats(prev => ({ ...prev, hunger: userRow.hunger_percentage as number }));
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Falha ao sincronizar fome:', e);
+      }
+
+      // 2) Ativa automaticamente Desnutrição quando fome < 50
+      if (hungerToCheck <= 49 && !diseases.some(d => d.name === "Desnutrição")) {
+        console.log('Aplicando doença de fome (Desnutrição). Fome atual:', hungerToCheck);
         await addDisease("Desnutrição", "Consulta Médica");
-        
-        // Show notification
+
+        // Notificação na Home
         if (window.location.pathname === '/') {
           const event = new CustomEvent('showHungerAlert');
           window.dispatchEvent(event);
         }
       }
-      
-      // Decrease alcoholism over time (faster decrease)
+
+      // 3) Diminui alcoolismo ao longo do tempo
       setGameStats(prev => {
         const currentAlcoholism = prev.alcoholism || 0;
         if (currentAlcoholism > 0) {
-          const newAlcoholism = Math.max(0, currentAlcoholism - 2); // Decrease by 2 every minute
-          
-          // Update database if user is logged in
+          const newAlcoholism = Math.max(0, currentAlcoholism - 2);
           if (userId) {
             supabase
               .from('users')
               .update({ alcoholism_percentage: newAlcoholism })
               .eq('id', userId)
-              .then(() => {
-                console.log('Alcoholism decreased to:', newAlcoholism);
-              });
+              .then(() => console.log('Alcoholism decreased to:', newAlcoholism));
           }
-          
           return { ...prev, alcoholism: newAlcoholism };
         }
         return prev;
       });
-      
-      // Reset disease percentage to 0 if no diseases are active
+
+      // 4) Se não há doenças ativas, zera porcentagem de doença
       if (diseases.length === 0 && gameStats.disease > 0) {
         const newDiseaseLevel = 0;
         setGameStats(prev => ({ ...prev, disease: newDiseaseLevel }));
@@ -263,8 +278,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             .eq('id', userId);
         }
       }
-      
-      // Clear expired effects
+
+      // 5) Limpa efeitos temporários expirados
       clearExpiredEffects();
     }, 60000); // Every minute
 
