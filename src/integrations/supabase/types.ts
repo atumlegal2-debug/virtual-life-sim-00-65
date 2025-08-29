@@ -716,6 +716,10 @@ export type Database = {
           user_id: string
         }
       }
+      reset_user_pregnancy: {
+        Args: { p_username: string }
+        Returns: boolean
+      }
       set_current_user: {
         Args: { username_value: string }
         Returns: undefined

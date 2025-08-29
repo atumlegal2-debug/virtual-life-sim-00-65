@@ -261,25 +261,10 @@ export function PregnancyProvider({ children }: { children: ReactNode }) {
       const currentUser = localStorage.getItem('currentUser');
       if (!currentUser) return;
 
-      // Configure o usuário atual para RLS
-      await supabase.rpc('set_current_user', {
-        username_value: currentUser
+      // Use the new RPC function to reset pregnancy
+      const { data, error } = await supabase.rpc('reset_user_pregnancy', {
+        p_username: currentUser
       });
-
-      // Get current user's ID from users table
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('username', currentUser)
-        .maybeSingle();
-
-      if (!userData) return;
-
-      // Delete pregnancy data
-      const { error } = await supabase
-        .from('user_pregnancy')
-        .delete()
-        .eq('user_id', userData.id);
 
       if (error) {
         console.error('Error resetting pregnancy:', error);
@@ -298,6 +283,11 @@ export function PregnancyProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       console.error('Error resetting pregnancy:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível resetar a gravidez",
+        variant: "destructive"
+      });
     }
   };
 
