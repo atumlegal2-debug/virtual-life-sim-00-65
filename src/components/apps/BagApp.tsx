@@ -116,37 +116,51 @@ export function BagApp({ onBack }: BagAppProps) {
     }
   };
 
-  // Ultra-fast data loading with aggressive optimization
-  const fastLoadData = async () => {
+  // Instant data loading with ultra-optimized queries
+  const loadAllData = async () => {
     if (!currentUser) return;
 
     try {
-      // Get user ID with caching
-      const userId = await getUserId(currentUser);
+      setIsLoading(true);
+      
+      // Get user ID only once and cache it
+      let userId = cachedUserId;
       if (!userId) {
-        setIsLoading(false);
-        return;
+        const { data: userRecord } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', currentUser)
+          .maybeSingle();
+        
+        if (!userRecord) {
+          setIsLoading(false);
+          return;
+        }
+        userId = userRecord.id;
+        setCachedUserId(userId);
       }
 
-      // Load custom items from localStorage immediately (synchronous)
+      // Load custom items from localStorage (instant)
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
 
-      // Parallel execution of all queries with minimal data selection
-      const [inventoryResult, customItemsResult] = await Promise.all([
-        supabase
-          .from('inventory')
-          .select('item_id, quantity, sent_by_username, received_at, created_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('custom_items')
-          .select('id, name, description, item_type, icon')
-      ]);
+      // Single optimized query for all inventory data
+      const { data: inventoryData, error } = await supabase
+        .from('inventory')
+        .select('item_id, quantity, sent_by_username, received_at, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-      // Merge custom items immediately
+      if (error) throw error;
+
+      // Load custom items from DB only once
+      const { data: customItemsFromDB } = await supabase
+        .from('custom_items')
+        .select('id, name, description, item_type, icon');
+
+      // Merge all custom items
       const allCustomItems = { ...customItems };
-      if (customItemsResult.data) {
-        customItemsResult.data.forEach(item => {
+      if (customItemsFromDB) {
+        customItemsFromDB.forEach(item => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -159,14 +173,12 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
 
-      // Process data in single pass with pre-computed effects
+      // Process all data in one pass
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
-      const inventoryData = inventoryResult.data || [];
-      
-      for (const item of inventoryData) {
-        const processedItem = fastProcessItem(item, allCustomItems);
+      for (const item of inventoryData || []) {
+        const processedItem = processInventoryItem(item, allCustomItems);
         
         if (processedItem) {
           formattedInventory.push(processedItem.inventoryItem);
@@ -177,19 +189,19 @@ export function BagApp({ onBack }: BagAppProps) {
         }
       }
 
-      // Update state immediately
+      // Update all states at once
       setInventory(formattedInventory);
       setHistoryItems(formattedHistory);
       setIsLoading(false);
       
     } catch (error) {
-      console.error('Error in fast data loading:', error);
+      console.error('Error loading data:', error);
       setIsLoading(false);
     }
   };
 
-  // Optimized item processing with pre-computed effects
-  const fastProcessItem = (item: any, allCustomItems: any) => {
+  // Optimized item processing
+  const processInventoryItem = (item: any, allCustomItems: any) => {
     // Custom item processing
     if (allCustomItems[item.item_id]) {
       const customItem = allCustomItems[item.item_id];
@@ -284,113 +296,13 @@ export function BagApp({ onBack }: BagAppProps) {
     return null;
   };
 
-  // Immediate data loading on component mount
+  // Load data on component mount
   useEffect(() => {
     if (currentUser) {
-      fastLoadData();
+      loadAllData();
     }
   }, [currentUser]);
 
-  const fetchHistory = async () => {
-    try {
-      if (!currentUser) return;
-
-      // Get the user record from users table by username
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('username', currentUser)
-        .maybeSingle();
-
-      if (userError || !userRecord) return;
-
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('user_id', userRecord.id)
-        .not('sent_by_username', 'is', null)
-        .order('received_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedHistory: HistoryItem[] = [];
-      
-      // Load custom items from localStorage
-      const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
-      
-      // Also load custom items from Supabase for items sent from other users
-      const { data: customItemsFromDB } = await supabase
-        .from('custom_items')
-        .select('*');
-      
-      // Merge custom items from DB into local storage for access
-      const allCustomItems = { ...customItems };
-      if (customItemsFromDB) {
-        customItemsFromDB.forEach(item => {
-          allCustomItems[item.id] = {
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            itemType: item.item_type,
-            icon: item.icon,
-            isCustom: true,
-            effect: null
-          };
-        });
-      }
-      
-      // Process each history item using optimized lookup
-      for (const item of data || []) {
-        // Check if it's a custom item first
-        if (allCustomItems[item.item_id]) {
-          const customItem = allCustomItems[item.item_id];
-          
-          formattedHistory.push({
-            id: customItem.id,
-            name: customItem.name,
-            description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
-            itemType: customItem.itemType,
-            quantity: item.quantity,
-            sent_by_username: item.sent_by_username || null,
-            received_at: item.received_at || item.created_at,
-            storeId: "custom",
-            isCustom: true,
-            originalItem: customItem
-          });
-          continue;
-        }
-        
-        // Use optimized lookup map instead of nested loops
-        const itemData = itemLookupMap.get(item.item_id);
-        if (itemData) {
-          const { item: storeItem, storeId } = itemData;
-          const itemType = getItemType(storeId, storeItem.id);
-          
-          formattedHistory.push({
-            id: storeItem.id,
-            name: storeItem.name,
-            description: storeItem.description,
-            itemType,
-            quantity: item.quantity,
-            sent_by_username: item.sent_by_username || null,
-            received_at: item.received_at || item.created_at,
-            storeId,
-            isCustom: false,
-            originalItem: storeItem,
-            effect: storeItem.effect ? {
-              type: storeItem.effect.type,
-              value: storeItem.effect.value,
-              message: storeItem.effect.message || `Efeito de ${storeItem.name}`
-            } : undefined
-          });
-        }
-      }
-
-      setHistoryItems(formattedHistory);
-    } catch (error) {
-      console.error('Error fetching history:', error);
-    }
-  };
 
   const handleUseItem = async (item: InventoryItem) => {
     try {
@@ -468,7 +380,7 @@ export function BagApp({ onBack }: BagAppProps) {
             .eq('item_id', item.id);
         }
 
-        fastLoadData();
+        loadAllData();
         return;
       }
 
@@ -619,7 +531,7 @@ export function BagApp({ onBack }: BagAppProps) {
           .eq('item_id', item.id);
       }
 
-        fastLoadData();
+        loadAllData();
     } catch (error) {
       console.error('Error using item:', error);
       toast({
@@ -927,8 +839,7 @@ export function BagApp({ onBack }: BagAppProps) {
         onClose={() => setSendItemModalOpen(false)}
         item={selectedItemToSend}
         onItemSent={() => {
-        fastLoadData();
-          fetchHistory();
+          loadAllData();
         }}
       />
     </div>
