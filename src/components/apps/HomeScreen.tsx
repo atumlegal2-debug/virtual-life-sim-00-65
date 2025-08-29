@@ -16,7 +16,8 @@ import {
   LogOut,
   HeartHandshake,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Cookie
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -34,12 +35,14 @@ import { ManagerApp } from "./ManagerApp";
 import { PregnancyApp } from "./PregnancyApp";
 import { FriendsApp } from "./FriendsApp";
 import { CreationApp } from "./CreationApp";
+import { MeyBabyApp } from "./MeyBabyApp";
+import { FortuneApp } from "./FortuneApp";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation";
+type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation" | "meybaby" | "fortune";
 
 export function HomeScreen() {
   const { currentUser, logout } = useGame();
@@ -134,6 +137,8 @@ export function HomeScreen() {
     { id: "hospital" as const, icon: HeartHandshake, label: "Hospital" },
     { id: "manager" as const, icon: Building, label: "Gerente" },
     { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
+    { id: "meybaby" as const, icon: Baby, label: "Mey Baby" },
+    { id: "fortune" as const, icon: Cookie, label: "Biscoito da Sorte" },
   ];
 
   const renderApp = () => {
@@ -164,6 +169,10 @@ export function HomeScreen() {
         return <PregnancyApp onBack={() => setCurrentApp("home")} />;
       case "creation":
         return <CreationApp onBack={() => setCurrentApp("home")} />;
+      case "meybaby":
+        return <MeyBabyApp onBack={() => setCurrentApp("home")} />;
+      case "fortune":
+        return <FortuneApp onBack={() => setCurrentApp("home")} />;
       default:
         return null;
     }
