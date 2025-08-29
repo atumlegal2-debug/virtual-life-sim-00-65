@@ -57,7 +57,7 @@ interface HistoryItem {
 }
 
 export default function BagApp({ onBack }: BagAppProps) {
-  const { currentUser, updateStats, gameStats, cureDisease, diseases } = useGame();
+  const { currentUser, updateStats, gameStats, cureDisease, diseases, addTemporaryEffect, cureDiseaseWithMedicine } = useGame();
   const { toast } = useToast();
   
   // States otimizados
@@ -468,8 +468,7 @@ export default function BagApp({ onBack }: BagAppProps) {
 
       if (userError || !userRecord) return;
 
-      // Update GameContext using the correct method name
-      const { updateStats, gameStats, cureDisease, diseases } = useGame();
+      // (hooks já desestruturados no topo do componente)
 
       // Handle custom items
       if (item.storeId === "custom") {
@@ -538,10 +537,92 @@ export default function BagApp({ onBack }: BagAppProps) {
         return;
       }
 
-      // Rest of the handleUseItem logic...
-      // [truncated for brevity, keeping the existing logic]
-      
-      loadAllData(true); // Force refresh após usar item
+      // Itens de loja (não custom)
+      let dbUpdateStats: any = {};
+      let gameContextStats: any = {};
+      let effectMessage = item.effect?.message || `Você usou ${item.name}`;
+
+      // Remédio: tenta curar a doença correspondente
+      if (item.originalItem?.type === 'medicine') {
+        try {
+          await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
+        } catch {}
+      }
+
+      // Aplicar efeitos básicos
+      if (item.effect) {
+        switch (item.effect.type) {
+          case 'health': {
+            const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
+            dbUpdateStats.life_percentage = newHealth;
+            gameContextStats.health = newHealth;
+            break;
+          }
+          case 'hunger': {
+            const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + item.effect.value);
+            dbUpdateStats.hunger_percentage = newHunger;
+            gameContextStats.hunger = newHunger;
+            break;
+          }
+          case 'mood': {
+            const newMood = Math.min(100, (userRecord.mood || 5) + item.effect.value);
+            dbUpdateStats.mood = newMood;
+            gameContextStats.mood = newMood.toString();
+            break;
+          }
+          case 'alcoholism': {
+            const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
+            dbUpdateStats.alcoholism_percentage = newAlcoholism;
+            gameContextStats.alcoholism = newAlcoholism;
+            break;
+          }
+          case 'energy': {
+            if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
+              await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, 'other');
+            }
+            break;
+          }
+        }
+      }
+
+      // Persistir
+      if (Object.keys(dbUpdateStats).length > 0) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update(dbUpdateStats)
+          .eq('id', userRecord.id);
+        if (updateError) throw updateError;
+      }
+
+      if (Object.keys(gameContextStats).length > 0) {
+        await updateStats(gameContextStats);
+      }
+
+      // Remover 1 unidade do inventário
+      if (item.quantity <= 1) {
+        await supabase
+          .from('inventory')
+          .delete()
+          .eq('user_id', userRecord.id)
+          .eq('item_id', item.id);
+      } else {
+        await supabase
+          .from('inventory')
+          .update({ quantity: item.quantity - 1 })
+          .eq('user_id', userRecord.id)
+          .eq('item_id', item.id);
+      }
+
+      // Efeitos temporários com duração (feedback visual/sensação)
+      if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
+        const tempType = item.itemType === 'drink' ? 'bar' : item.itemType === 'food' ? 'icecream' : 'other';
+        await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, tempType as any);
+      }
+
+      toast({ title: "Item usado!", description: effectMessage });
+
+      await loadAllData(true);
+      return;
     } catch (error) {
       console.error('Error using item:', error);
       toast({
