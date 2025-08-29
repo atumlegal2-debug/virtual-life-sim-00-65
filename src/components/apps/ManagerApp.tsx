@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { STORES } from "@/data/stores";
 
 interface ManagerAppProps {
   onBack: () => void;
@@ -298,6 +299,21 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             amount: item.price * item.quantity
           });
       }
+
+      // Registrar transação de compra do usuário
+      const storeName = STORES[order.store_id as keyof typeof STORES]?.name || order.store_id;
+      const itemNames = items.map(item => item.name).join(', ');
+      await supabase
+        .from('transactions')
+        .insert({
+          from_user_id: order.user_id,
+          to_user_id: order.user_id, // Self transaction for purchases
+          from_username: order.buyer_username || 'Usuário',
+          to_username: 'Sistema',
+          amount: order.total_amount,
+          transaction_type: 'purchase',
+          description: `Compra na ${storeName}: ${itemNames}`
+        });
 
       setCurrentManager({ ...currentManager, balance: newManagerBalance });
       

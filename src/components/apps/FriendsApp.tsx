@@ -19,7 +19,7 @@ interface FriendsAppProps {
 
 export function FriendsApp({ onBack }: FriendsAppProps) {
   const { friends, refreshFriendsStatus } = useFriendship();
-  const { coins, deductCoins, inventory, removeFromInventory } = useGame();
+  const { coins, deductCoins, inventory, removeFromInventory, createPurchaseTransaction } = useGame();
   const { toast } = useToast();
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   
@@ -87,6 +87,7 @@ export function FriendsApp({ onBack }: FriendsAppProps) {
     if (!selectedFriend) return;
 
     deductCoins(amount);
+    await createPurchaseTransaction(amount, `Transferência para ${getDisplayName(selectedFriend)}`);
     
     // Store the money transfer in localStorage for the recipient
     const transfers = JSON.parse(localStorage.getItem('moneyTransfers') || '[]');

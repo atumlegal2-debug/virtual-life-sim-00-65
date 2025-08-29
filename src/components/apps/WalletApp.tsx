@@ -18,6 +18,7 @@ interface Transaction {
   amount: number;
   created_at: string;
   transaction_type: string;
+  description?: string;
 }
 
 export function WalletApp({ onBack }: WalletAppProps) {
@@ -28,6 +29,7 @@ export function WalletApp({ onBack }: WalletAppProps) {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [customAmount, setCustomAmount] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]); // All transactions including purchases
   const { toast } = useToast();
 
   // Function to hide the 4-digit code from usernames for display
@@ -182,15 +184,22 @@ export function WalletApp({ onBack }: WalletAppProps) {
 
       if (!userProfile) return;
 
+      // Load all transactions (both transfers and purchases)
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
       
       if (error) throw error;
-      setTransactions(data || []);
+      
+      // Separate transfers for the main transactions view
+      const transferTransactions = (data || []).filter(t => t.transaction_type === 'transfer');
+      setTransactions(transferTransactions);
+      
+      // Keep all transactions for complete history
+      setAllTransactions(data || []);
     } catch (error) {
       console.error('Erro ao carregar transações:', error);
     }
@@ -212,21 +221,23 @@ export function WalletApp({ onBack }: WalletAppProps) {
           <Button variant="ghost" size="sm" onClick={() => setCurrentView("wallet")}>
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">Histórico de Transações</h1>
+          <h1 className="text-xl font-bold text-foreground">Histórico Completo</h1>
         </div>
 
         <div className="space-y-3 flex-1 overflow-auto">
-          {transactions.length === 0 ? (
+          {allTransactions.length === 0 ? (
             <Card className="bg-gradient-card border-border/50">
               <CardContent className="pt-6 text-center">
                 <p className="text-muted-foreground">Nenhuma transação encontrada</p>
               </CardContent>
             </Card>
           ) : (
-            transactions.map((transaction) => {
-              const isReceived = transaction.to_username === currentUser;
-              const otherUser = isReceived ? transaction.from_username : transaction.to_username;
-              const displayName = getDisplayName(otherUser);
+            allTransactions.map((transaction) => {
+              const isTransfer = transaction.transaction_type === 'transfer';
+              const isReceived = isTransfer && transaction.to_username === currentUser;
+              const isPurchase = transaction.transaction_type === 'purchase';
+              const otherUser = isTransfer ? (isReceived ? transaction.from_username : transaction.to_username) : null;
+              const displayName = otherUser ? getDisplayName(otherUser) : null;
               
               return (
                 <Card key={transaction.id} className="bg-gradient-card border-border/50">
@@ -234,17 +245,22 @@ export function WalletApp({ onBack }: WalletAppProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isReceived ? 'bg-green-500/20' : 'bg-red-500/20'
+                          isReceived ? 'bg-green-500/20' : 
+                          isPurchase ? 'bg-blue-500/20' : 'bg-red-500/20'
                         }`}>
                           {isReceived ? (
                             <ArrowDownRight size={20} className="text-green-500" />
+                          ) : isPurchase ? (
+                            <Coins size={20} className="text-blue-500" />
                           ) : (
                             <ArrowUpRight size={20} className="text-red-500" />
                           )}
                         </div>
                         <div>
                           <p className="font-medium text-foreground">
-                            {isReceived ? `Recebido de ${displayName}` : `Enviado para ${displayName}`}
+                            {isReceived ? `Recebido de ${displayName}` : 
+                             isPurchase ? (transaction.description || 'Compra') :
+                             `Enviado para ${displayName}`}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(transaction.created_at).toLocaleDateString('pt-BR')} às{' '}
@@ -255,7 +271,10 @@ export function WalletApp({ onBack }: WalletAppProps) {
                           </p>
                         </div>
                       </div>
-                      <div className={`font-bold ${isReceived ? 'text-green-500' : 'text-red-500'}`}>
+                      <div className={`font-bold ${
+                        isReceived ? 'text-green-500' : 
+                        isPurchase ? 'text-blue-500' : 'text-red-500'
+                      }`}>
                         {isReceived ? '+' : '-'}{formatMoney(transaction.amount)} CM
                       </div>
                     </div>
@@ -389,7 +408,7 @@ export function WalletApp({ onBack }: WalletAppProps) {
             onClick={() => setCurrentView("history")}
           >
             <History size={16} className="mr-2" />
-            Histórico de Transações
+            Histórico Completo
           </Button>
         </CardContent>
       </Card>

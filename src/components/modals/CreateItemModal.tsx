@@ -43,7 +43,7 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
   const [isCustomItem, setIsCustomItem] = useState<boolean>(false);
   const [customDescription, setCustomDescription] = useState<string>("");
   const { toast } = useToast();
-  const { currentUser, money, deductCoins } = useGame();
+  const { currentUser, money, deductCoins, createPurchaseTransaction } = useGame();
 
   // Function to hide the 4-digit code from usernames for display
   const getDisplayName = (username: string) => {
@@ -119,9 +119,10 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
         return;
       }
 
-      // Deduct money
+      // Deduct money and register transaction
       const categoryPrice = CATEGORIES[selectedCategory].price;
       await deductCoins(categoryPrice);
+      await createPurchaseTransaction(categoryPrice, `Criação de item: ${customName}`);
 
       // Create custom item ID
       const customItemId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

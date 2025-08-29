@@ -66,6 +66,7 @@ interface GameContextType {
   removeFromInventory: (itemId: string) => Promise<void>;
   cureDiseaseWithMedicine: (medicineName: string, userId: string) => Promise<boolean>;
   cureHungerDisease: () => Promise<void>;
+  createPurchaseTransaction: (amount: number, description: string) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -515,6 +516,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // New function to create purchase transaction record
+  const createPurchaseTransaction = async (amount: number, description: string) => {
+    if (!userId || !currentUser || !isLoggedIn) return;
+    
+    try {
+      await supabase
+        .from('transactions')
+        .insert({
+          from_user_id: userId,
+          to_user_id: userId, // Self transaction for purchases
+          from_username: currentUser,
+          to_username: 'Sistema', // Indicate system purchase
+          amount: amount,
+          transaction_type: 'purchase',
+          description: description
+        });
+    } catch (error) {
+      console.error('Error creating purchase transaction:', error);
+    }
+  };
+
   const addDisease = async (name: string, medicine: string) => {
     // Check if disease already exists
     if (diseases.some(d => d.name === name)) return;
@@ -951,6 +973,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removeFromInventory,
       cureDiseaseWithMedicine,
       cureHungerDisease,
+      createPurchaseTransaction,
     }}>
       {children}
     </GameContext.Provider>

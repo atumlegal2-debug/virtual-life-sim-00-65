@@ -68,6 +68,11 @@ export function BagApp({ onBack }: BagAppProps) {
   const { toast } = useToast();
   const { currentUser, updateStats, gameStats, cureDisease, diseases } = useGame();
 
+  // Function to hide the 4-digit code from usernames for display
+  const getDisplayName = (username: string) => {
+    return username.replace(/\d{4}$/, '');
+  };
+
   useEffect(() => {
     if (currentUser) {
       fetchInventory();
@@ -710,7 +715,7 @@ export function BagApp({ onBack }: BagAppProps) {
             <Send size={14} className="text-primary" />
             <div className="flex-1">
               <p className="text-xs font-medium text-primary">
-                Enviado por: {item.sent_by_username || 'Desconhecido'}
+                Enviado por: {item.sent_by_username ? getDisplayName(item.sent_by_username) : 'Desconhecido'}
               </p>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock size={12} />

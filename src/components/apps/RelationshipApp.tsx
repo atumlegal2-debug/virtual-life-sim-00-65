@@ -12,7 +12,7 @@ interface RelationshipAppProps {
 }
 
 export function RelationshipApp({ onBack }: RelationshipAppProps) {
-  const { currentUser, deductCoins, coins } = useGame();
+  const { currentUser, deductCoins, coins, createPurchaseTransaction } = useGame();
   const { 
     proposals, 
     currentRelationship, 
@@ -60,6 +60,7 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
         return;
       }
       deductCoins(5000);
+      await createPurchaseTransaction(5000, "Taxa de divórcio");
     }
     await endRelationship();
   };

@@ -144,20 +144,28 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
         .single();
 
       if (existingItem) {
-        // Update existing item quantity
+        // Update existing item quantity and preserve sender info
         await supabase
           .from('inventory')
-          .update({ quantity: existingItem.quantity + quantityToSend })
+          .update({ 
+            quantity: existingItem.quantity + quantityToSend,
+            sent_by_username: currentUser,
+            sent_by_user_id: currentUserData.id,
+            received_at: new Date().toISOString()
+          })
           .eq('user_id', toUser.id)
           .eq('item_id', item.id);
       } else {
-        // Add new item to recipient's inventory
+        // Add new item to recipient's inventory with sender info
         const { error: addError } = await supabase
           .from('inventory')
           .insert({
             user_id: toUser.id,
             item_id: item.id,
-            quantity: quantityToSend
+            quantity: quantityToSend,
+            sent_by_username: currentUser,
+            sent_by_user_id: currentUserData.id,
+            received_at: new Date().toISOString()
           });
 
         if (addError) {
