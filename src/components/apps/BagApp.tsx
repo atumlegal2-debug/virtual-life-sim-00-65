@@ -65,6 +65,7 @@ export function BagApp({ onBack }: BagAppProps) {
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [selectedItemToSend, setSelectedItemToSend] = useState<InventoryItem | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser, updateStats, gameStats, cureDisease, diseases } = useGame();
 
@@ -73,11 +74,10 @@ export function BagApp({ onBack }: BagAppProps) {
     return username.replace(/\d{4}$/, '');
   };
 
-  // Optimized data fetching with parallel execution
+  // Optimized data fetching with single function call
   useEffect(() => {
     if (currentUser) {
-      // Fetch both inventory and history in parallel for better performance
-      Promise.all([fetchInventory(), fetchHistory()]);
+      fetchAllData();
     }
   }, [currentUser]);
 
@@ -94,40 +94,50 @@ export function BagApp({ onBack }: BagAppProps) {
 
   const itemLookupMap = createItemLookupMap();
 
-  const fetchInventory = async () => {
+  // Optimized data fetching with combined queries and caching
+  const fetchAllData = async () => {
     try {
       if (!currentUser) return;
+      
+      setIsLoading(true);
+      
+      // Single user lookup
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', currentUser)
+        .maybeSingle();
 
-      // Parallel fetch of user record, inventory, and custom items
-      const [userResult, customItemsFromDB] = await Promise.all([
+      if (userError || !userRecord) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Parallel execution of all necessary queries
+      const [inventoryResult, customItemsResult] = await Promise.all([
+        // Single inventory query for both regular items and history
         supabase
-          .from('users')
-          .select('id')
-          .eq('username', currentUser)
-          .maybeSingle(),
+          .from('inventory')
+          .select('*')
+          .eq('user_id', userRecord.id)
+          .order('created_at', { ascending: false }),
+        // Custom items from database
         supabase
           .from('custom_items')
-          .select('*')
+          .select('id, name, description, item_type, icon')
       ]);
 
-      const { data: userRecord, error: userError } = userResult;
-      if (userError || !userRecord) return;
-
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('user_id', userRecord.id);
+      const { data: inventoryData, error: inventoryError } = inventoryResult;
+      const { data: customItemsFromDB } = customItemsResult;
 
       if (inventoryError) throw inventoryError;
 
-      const formattedInventory: InventoryItem[] = [];
-      
       // Load custom items from localStorage and merge with DB items
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
       const allCustomItems = { ...customItems };
       
-      if (customItemsFromDB.data) {
-        customItemsFromDB.data.forEach(item => {
+      if (customItemsFromDB) {
+        customItemsFromDB.forEach(item => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -139,73 +149,129 @@ export function BagApp({ onBack }: BagAppProps) {
           };
         });
       }
+
+      // Process inventory and history in a single pass
+      const formattedInventory: InventoryItem[] = [];
+      const formattedHistory: HistoryItem[] = [];
       
-      // Process each inventory item with optimized lookup
       for (const item of inventoryData || []) {
-        // Check if it's a custom item first
-        if (allCustomItems[item.item_id]) {
-          const customItem = allCustomItems[item.item_id];
-          
-          // Define effect based on item type - Custom items have fixed small effects
-          let effect = null;
-          if (customItem.itemType === "food") {
-            effect = { type: "hunger", value: 3, message: `Você comeu ${customItem.name} e se sente um pouco satisfeito!` };
-          } else if (customItem.itemType === "drink") {
-            effect = { type: "hunger", value: 3, message: `Você bebeu ${customItem.name} e se sente um pouco saciado!` };
-          } else if (customItem.itemType === "object") {
-            effect = { type: "mood", value: 5, message: `Você usou ${customItem.name} e se sente ligeiramente melhor!` };
-          }
-          
-          formattedInventory.push({
-            id: customItem.id,
-            name: customItem.name,
-            description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
-            itemType: customItem.itemType,
-            quantity: item.quantity,
-            storeId: "custom",
-            canUse: true,
-            canSend: true,
-            isRing: false,
-            originalItem: customItem,
-            effect
-          });
-          continue;
-        }
+        const processedItem = processInventoryItem(item, allCustomItems);
         
-        // Use optimized lookup map instead of nested loops
-        const itemData = itemLookupMap.get(item.item_id);
-        if (itemData) {
-          const { item: storeItem, storeId } = itemData;
-          const itemType = getItemType(storeId, storeItem.id);
-          const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop";
-          const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
+        if (processedItem) {
+          // Add to regular inventory
+          formattedInventory.push(processedItem.inventoryItem);
           
-          formattedInventory.push({
-            id: storeItem.id,
-            name: storeItem.name,
-            description: storeItem.description,
-            itemType,
-            quantity: item.quantity,
-            storeId,
-            price: storeItem.price,
-            canUse: canUse && !isRing,
-            canSend: !isRing,
-            isRing,
-            relationshipType: (storeItem as any).relationshipType,
-            originalItem: storeItem,
-            effect: storeItem.effect ? {
-              type: storeItem.effect.type,
-              value: storeItem.effect.value,
-              message: storeItem.effect.message || `Efeito de ${storeItem.name}`
-            } : undefined
-          });
+          // Add to history if it was sent by someone
+          if (item.sent_by_username) {
+            formattedHistory.push(processedItem.historyItem);
+          }
         }
       }
 
       setInventory(formattedInventory);
+      setHistoryItems(formattedHistory);
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching inventory:', error);
+      console.error('Error fetching bag data:', error);
+      setIsLoading(false);
     }
+  };
+
+  // Helper function to process individual inventory items
+  const processInventoryItem = (item: any, allCustomItems: any) => {
+    // Check if it's a custom item first
+    if (allCustomItems[item.item_id]) {
+      const customItem = allCustomItems[item.item_id];
+      
+      let effect = null;
+      if (customItem.itemType === "food") {
+        effect = { type: "hunger", value: 3, message: `Você comeu ${customItem.name} e se sente um pouco satisfeito!` };
+      } else if (customItem.itemType === "drink") {
+        effect = { type: "hunger", value: 3, message: `Você bebeu ${customItem.name} e se sente um pouco saciado!` };
+      } else if (customItem.itemType === "object") {
+        effect = { type: "mood", value: 5, message: `Você usou ${customItem.name} e se sente ligeiramente melhor!` };
+      }
+      
+      const inventoryItem = {
+        id: customItem.id,
+        name: customItem.name,
+        description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
+        itemType: customItem.itemType,
+        quantity: item.quantity,
+        storeId: "custom",
+        canUse: true,
+        canSend: true,
+        isRing: false,
+        originalItem: customItem,
+        effect
+      };
+
+      const historyItem = {
+        id: customItem.id,
+        name: customItem.name,
+        description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
+        itemType: customItem.itemType,
+        quantity: item.quantity,
+        sent_by_username: item.sent_by_username || null,
+        received_at: item.received_at || item.created_at,
+        storeId: "custom",
+        isCustom: true,
+        originalItem: customItem
+      };
+
+      return { inventoryItem, historyItem };
+    }
+    
+    // Use optimized lookup map for store items
+    const itemData = itemLookupMap.get(item.item_id);
+    if (itemData) {
+      const { item: storeItem, storeId } = itemData;
+      const itemType = getItemType(storeId, storeItem.id);
+      const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop";
+      const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
+      
+      const inventoryItem = {
+        id: storeItem.id,
+        name: storeItem.name,
+        description: storeItem.description,
+        itemType,
+        quantity: item.quantity,
+        storeId,
+        price: storeItem.price,
+        canUse: canUse && !isRing,
+        canSend: !isRing,
+        isRing,
+        relationshipType: (storeItem as any).relationshipType,
+        originalItem: storeItem,
+        effect: storeItem.effect ? {
+          type: storeItem.effect.type,
+          value: storeItem.effect.value,
+          message: storeItem.effect.message || `Efeito de ${storeItem.name}`
+        } : undefined
+      };
+
+      const historyItem = {
+        id: storeItem.id,
+        name: storeItem.name,
+        description: storeItem.description,
+        itemType,
+        quantity: item.quantity,
+        sent_by_username: item.sent_by_username || null,
+        received_at: item.received_at || item.created_at,
+        storeId,
+        isCustom: false,
+        originalItem: storeItem,
+        effect: storeItem.effect ? {
+          type: storeItem.effect.type,
+          value: storeItem.effect.value,
+          message: storeItem.effect.message || `Efeito de ${storeItem.name}`
+        } : undefined
+      };
+
+      return { inventoryItem, historyItem };
+    }
+
+    return null;
   };
 
   const fetchHistory = async () => {
@@ -385,7 +451,7 @@ export function BagApp({ onBack }: BagAppProps) {
             .eq('item_id', item.id);
         }
 
-        fetchInventory();
+        fetchAllData();
         return;
       }
 
@@ -536,7 +602,7 @@ export function BagApp({ onBack }: BagAppProps) {
           .eq('item_id', item.id);
       }
 
-      fetchInventory();
+        fetchAllData();
     } catch (error) {
       console.error('Error using item:', error);
       toast({
@@ -844,7 +910,7 @@ export function BagApp({ onBack }: BagAppProps) {
         onClose={() => setSendItemModalOpen(false)}
         item={selectedItemToSend}
         onItemSent={() => {
-          fetchInventory();
+        fetchAllData();
           fetchHistory();
         }}
       />
