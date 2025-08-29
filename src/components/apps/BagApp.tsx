@@ -261,9 +261,55 @@ export function BagApp({ onBack }: BagAppProps) {
 
   // Optimized item processing
   const processInventoryItem = (item: any, allCustomItems: any) => {
-    // Custom item processing
-    if (allCustomItems[item.item_id]) {
+    console.log('Debug - Processing item:', item.item_id);
+    console.log('Debug - Custom items available:', Object.keys(allCustomItems));
+    console.log('Debug - Item lookup map has item:', itemLookupMap.has(item.item_id));
+    
+    // Custom item processing - check if it starts with "custom_"
+    if (item.item_id.startsWith('custom_') || allCustomItems[item.item_id]) {
       const customItem = allCustomItems[item.item_id];
+      
+      if (!customItem) {
+        console.log('Debug - Custom item not found in allCustomItems for:', item.item_id);
+        // Try to create a basic custom item fallback
+        const fallbackItem = {
+          id: item.item_id,
+          name: `Item Personalizado`,
+          description: 'Item criado por usuário',
+          itemType: 'object' as const,
+          icon: '📦'
+        };
+        
+        const inventoryItem = {
+          id: fallbackItem.id,
+          name: fallbackItem.name,
+          description: fallbackItem.description,
+          itemType: fallbackItem.itemType,
+          quantity: item.quantity,
+          storeId: "custom",
+          canUse: true,
+          canSend: true,
+          isRing: false,
+          originalItem: fallbackItem,
+          effect: { type: "mood" as const, value: 1, message: `Você usou ${fallbackItem.name}!` }
+        };
+
+        const historyItem = {
+          id: fallbackItem.id,
+          name: fallbackItem.name,
+          description: fallbackItem.description,
+          itemType: fallbackItem.itemType,
+          quantity: item.quantity,
+          sent_by_username: item.sent_by_username || null,
+          received_at: item.received_at || item.created_at,
+          storeId: "custom",
+          isCustom: true,
+          originalItem: fallbackItem
+        };
+
+        console.log('Debug - Created fallback custom item:', inventoryItem.name);
+        return { inventoryItem, historyItem };
+      }
       
       // Pre-computed effects for custom items
       const effectMap = {
@@ -302,6 +348,7 @@ export function BagApp({ onBack }: BagAppProps) {
         originalItem: customItem
       };
 
+      console.log('Debug - Processed custom item:', inventoryItem.name);
       return { inventoryItem, historyItem };
     }
     
@@ -349,9 +396,11 @@ export function BagApp({ onBack }: BagAppProps) {
         effect
       };
 
+      console.log('Debug - Processed store item:', inventoryItem.name);
       return { inventoryItem, historyItem };
     }
 
+    console.log('Debug - Item not found anywhere:', item.item_id);
     return null;
   };
 
