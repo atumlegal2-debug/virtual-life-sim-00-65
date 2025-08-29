@@ -345,9 +345,9 @@ export default function BagApp({ onBack }: BagAppProps) {
       
       // Pre-computed effects for custom items
       const effectMap = {
-        food: { type: "hunger", value: 3, message: `Você comeu ${customItem.name} e se sente um pouco satisfeito!` },
-        drink: { type: "hunger", value: 3, message: `Você bebeu ${customItem.name} e se sente um pouco saciado!` },
-        object: { type: "mood", value: 5, message: `Você usou ${customItem.name} e se sente ligeiramente melhor!` }
+        food: { type: "hunger", value: 25, message: `Você comeu ${customItem.name} e se sente satisfeito!` },
+        drink: { type: "hunger", value: 20, message: `Você bebeu ${customItem.name} e se sente saciado!` },
+        object: { type: "mood", value: 15, message: `Você usou ${customItem.name} e se sente muito melhor!` }
       };
 
       const effect = effectMap[customItem.itemType as keyof typeof effectMap] || null;
