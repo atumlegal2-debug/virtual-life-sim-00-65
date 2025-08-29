@@ -177,6 +177,9 @@ export function BagApp({ onBack }: BagAppProps) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
+      console.log('Debug - Raw inventory data:', inventoryData);
+      console.log('Debug - Inventory error:', inventoryError);
+
       if (inventoryError) {
         console.error('Inventory error:', inventoryError);
         throw inventoryError;
@@ -186,6 +189,9 @@ export function BagApp({ onBack }: BagAppProps) {
       const { data: customItemsFromDB } = await supabase
         .from('custom_items')
         .select('id, name, description, item_type, icon');
+
+      console.log('Debug - Custom items from localStorage:', Object.keys(customItems).length);
+      console.log('Debug - Custom items from DB:', customItemsFromDB?.length || 0);
 
       // Merge all custom items
       const allCustomItems = { ...customItems };
@@ -203,21 +209,29 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
 
+      console.log('Debug - All custom items merged:', Object.keys(allCustomItems).length);
+
       // Process data
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
       for (const item of inventoryData || []) {
+        console.log('Debug - Processing item:', item.item_id);
         const processedItem = processInventoryItem(item, allCustomItems);
         
         if (processedItem) {
+          console.log('Debug - Item processed successfully:', processedItem.inventoryItem.name);
           formattedInventory.push(processedItem.inventoryItem);
           
           if (item.sent_by_username) {
             formattedHistory.push(processedItem.historyItem);
           }
+        } else {
+          console.log('Debug - Item not processed:', item.item_id);
         }
       }
+
+      console.log('Debug - Final formatted inventory count:', formattedInventory.length);
 
       // Update states
       setInventory(formattedInventory);
