@@ -194,6 +194,9 @@ export type Database = {
           id: string
           item_id: string
           quantity: number
+          received_at: string | null
+          sent_by_user_id: string | null
+          sent_by_username: string | null
           updated_at: string
           user_id: string
         }
@@ -202,6 +205,9 @@ export type Database = {
           id?: string
           item_id: string
           quantity?: number
+          received_at?: string | null
+          sent_by_user_id?: string | null
+          sent_by_username?: string | null
           updated_at?: string
           user_id: string
         }
@@ -210,6 +216,9 @@ export type Database = {
           id?: string
           item_id?: string
           quantity?: number
+          received_at?: string | null
+          sent_by_user_id?: string | null
+          sent_by_username?: string | null
           updated_at?: string
           user_id?: string
         }
