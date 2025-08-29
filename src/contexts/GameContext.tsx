@@ -270,6 +270,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [isLoggedIn, userId, diseases.length, gameStats.disease, gameStats.hunger]);
 
+  // Auto-cure hunger disease when hunger is recovered sufficiently
+  useEffect(() => {
+    if (diseases.some(d => d.name === "Desnutrição") && gameStats.hunger >= 60) {
+      console.log('Auto-curing Desnutrição due to recovered hunger:', gameStats.hunger);
+      const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+      setDiseases(updatedDiseases);
+
+      // Persist changes
+      if (currentUser) {
+        localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+        localStorage.removeItem(`${currentUser}_hunger_disease_feeling`);
+      }
+
+      // Adjust disease percentage without altering hunger/health (since recovery came from eating)
+      const newDiseasePercent = updatedDiseases.length === 0 ? 0 : Math.max(0, (gameStats.disease || 0) - 15);
+      updateStats({ disease: newDiseasePercent });
+    }
+  }, [gameStats.hunger, diseases, currentUser]);
+
   const login = async (username: string) => {
     setCurrentUser(username);
     setIsLoggedIn(true);
