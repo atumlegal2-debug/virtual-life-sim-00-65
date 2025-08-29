@@ -10,7 +10,7 @@ import { STORES } from "@/data/stores";
 import { useGame } from "@/contexts/GameContext";
 import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffectName, isAlcoholic, getAlcoholLevel } from "@/lib/itemCategories";
 import { SendRingModal } from "@/components/modals/SendRingModal";
-import { CreateItemModal } from "@/components/modals/CreateItemModal";
+
 import { SendItemModal } from "@/components/modals/SendItemModal";
 import { StoreItem } from "@/data/stores";
 
@@ -67,13 +67,9 @@ export default function BagApp({ onBack }: BagAppProps) {
   const [cachedUserId, setCachedUserId] = useState<string | null>(null);
   
   // Modal states
-  const [showSendRingModal, setShowSendRingModal] = useState(false);
-  const [showCreateItemModal, setShowCreateItemModal] = useState(false);
-  const [showSendItemModal, setShowSendItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [activeTab, setActiveTab] = useState<"food" | "drink" | "object" | "history">("food");
   const [sendRingModalOpen, setSendRingModalOpen] = useState(false);
-  const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [selectedItemToSend, setSelectedItemToSend] = useState<InventoryItem | null>(null);
@@ -831,14 +827,7 @@ export default function BagApp({ onBack }: BagAppProps) {
           <ArrowLeft size={20} />
         </Button>
         <h1 className="text-xl font-bold text-foreground">Bolsa</h1>
-        <div className="ml-auto flex gap-2">
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => setCreateItemModalOpen(true)}
-          >
-            Minha criação
-          </Button>
+        <div className="ml-auto">
           <Badge variant="outline">
             {inventory.length} itens
           </Badge>
@@ -918,11 +907,6 @@ export default function BagApp({ onBack }: BagAppProps) {
         ring={selectedRing}
       />
       
-      {/* Create Item Modal */}
-      <CreateItemModal
-        isOpen={createItemModalOpen}
-        onClose={() => setCreateItemModalOpen(false)}
-      />
       
       {/* Send Item Modal */}
       <SendItemModal

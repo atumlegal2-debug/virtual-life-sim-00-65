@@ -15,7 +15,8 @@ import {
   Zap,
   LogOut,
   HeartHandshake,
-  ChevronDown
+  ChevronDown,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -32,12 +33,13 @@ import { HospitalApp } from "./HospitalApp";
 import { ManagerApp } from "./ManagerApp";
 import { PregnancyApp } from "./PregnancyApp";
 import { FriendsApp } from "./FriendsApp";
+import { CreationApp } from "./CreationApp";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager";
+type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation";
 
 export function HomeScreen() {
   const { currentUser, logout } = useGame();
@@ -131,6 +133,7 @@ export function HomeScreen() {
     { id: "pregnancy" as const, icon: Baby, label: "Gravidez" },
     { id: "hospital" as const, icon: HeartHandshake, label: "Hospital" },
     { id: "manager" as const, icon: Building, label: "Gerente" },
+    { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
   ];
 
   const renderApp = () => {
@@ -159,6 +162,8 @@ export function HomeScreen() {
         return <ManagerApp onBack={() => setCurrentApp("home")} />;
       case "pregnancy":
         return <PregnancyApp onBack={() => setCurrentApp("home")} />;
+      case "creation":
+        return <CreationApp onBack={() => setCurrentApp("home")} />;
       default:
         return null;
     }
