@@ -23,7 +23,7 @@ import { useState, useEffect } from "react";
 import { LifeApp } from "./LifeApp";
 import { WalletApp } from "./WalletApp";
 import { StoreApp } from "./StoreApp";
-import { BagApp } from "./BagApp";
+import BagApp from "./BagApp";
 import { WorldApp } from "./WorldApp";
 import { BankApp } from "./BankApp";
 import { RelationshipApp } from "./RelationshipApp";
