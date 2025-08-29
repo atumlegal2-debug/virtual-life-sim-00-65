@@ -136,15 +136,15 @@ export function BagApp({ onBack }: BagAppProps) {
     return false;
   };
 
-  // Carregamento instantâneo com cache
+  // Carregamento simples e confiável
   const loadAllData = async (forceRefresh = false) => {
     if (!currentUser) return;
 
-    // Mostra dados do cache primeiro para feedback instantâneo
+    // Mostra dados do cache primeiro se não for refresh forçado
     const hasCache = !forceRefresh && showCachedDataFirst();
     
     try {
-      if (!hasCache) setIsLoading(true);
+      setIsLoading(true);
       
       // Get user ID from cache or fetch once
       let userId = cachedUserId;
@@ -167,34 +167,30 @@ export function BagApp({ onBack }: BagAppProps) {
         setCachedUserId(userId);
       }
 
-      // Load custom items from localStorage (instant)
+      // Load custom items from localStorage
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
 
-      // Parallel queries with timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
+      // Query inventory data
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('inventory')
+        .select('item_id, quantity, sent_by_username, received_at, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-      const [inventoryResult, customItemsResult] = await Promise.race([
-        Promise.all([
-          supabase
-            .from('inventory')
-            .select('item_id, quantity, sent_by_username, received_at, created_at')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(100), // Limita para os 100 itens mais recentes
-          supabase
-            .from('custom_items')
-            .select('id, name, description, item_type, icon')
-            .limit(50) // Limita custom items
-        ]),
-        timeoutPromise
-      ]) as [any, any];
+      if (inventoryError) {
+        console.error('Inventory error:', inventoryError);
+        throw inventoryError;
+      }
+
+      // Query custom items from DB
+      const { data: customItemsFromDB } = await supabase
+        .from('custom_items')
+        .select('id, name, description, item_type, icon');
 
       // Merge all custom items
       const allCustomItems = { ...customItems };
-      if (customItemsResult.data) {
-        customItemsResult.data.forEach((item: any) => {
+      if (customItemsFromDB) {
+        customItemsFromDB.forEach((item: any) => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -207,39 +203,27 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
 
-      // Process data in batches para não travar a UI
+      // Process data
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
-      const inventoryData = inventoryResult.data || [];
-      const batchSize = 10;
-      
-      for (let i = 0; i < inventoryData.length; i += batchSize) {
-        const batch = inventoryData.slice(i, i + batchSize);
+      for (const item of inventoryData || []) {
+        const processedItem = processInventoryItem(item, allCustomItems);
         
-        for (const item of batch) {
-          const processedItem = processInventoryItem(item, allCustomItems);
+        if (processedItem) {
+          formattedInventory.push(processedItem.inventoryItem);
           
-          if (processedItem) {
-            formattedInventory.push(processedItem.inventoryItem);
-            
-            if (item.sent_by_username) {
-              formattedHistory.push(processedItem.historyItem);
-            }
+          if (item.sent_by_username) {
+            formattedHistory.push(processedItem.historyItem);
           }
-        }
-        
-        // Pequena pausa para não travar a UI em lotes grandes
-        if (i + batchSize < inventoryData.length) {
-          await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
 
-      // Update all states at once
+      // Update states
       setInventory(formattedInventory);
       setHistoryItems(formattedHistory);
       
-      // Cache the data for next time
+      // Cache the data
       const cacheData = {
         inventory: formattedInventory,
         history: formattedHistory,
@@ -253,7 +237,7 @@ export function BagApp({ onBack }: BagAppProps) {
     } catch (error) {
       console.error('Error loading data:', error);
       // Fallback to cache if available
-      if (!hasCache && cachedData) {
+      if (cachedData) {
         setInventory(cachedData.inventory);
         setHistoryItems(cachedData.history);
       }
