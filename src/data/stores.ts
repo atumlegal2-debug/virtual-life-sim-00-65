@@ -459,21 +459,21 @@ export const STORES = {
         name: "Refresco de Pêssego do Vale",
         price: 50,
         description: "Nossa, que frescor doce! Parece que acordei de um sonho bom.",
-        effect: { type: "mood", value: 15, duration: 20, message: "Nossa, que frescor doce! Parece que acordei de um sonho bom." }
+        effect: { type: "hunger", value: 50, duration: 20, message: "Nossa, que frescor doce! Parece que acordei de um sonho bom." }
       },
       {
         id: "cha_gelado",
         name: "Chá Gélido da Montanha Azul",
         price: 55,
         description: "É como beber o vento da montanha... minha mente ficou clara.",
-        effect: { type: "mood", value: 10, duration: 15, message: "É como beber o vento da montanha... minha mente ficou clara." }
+        effect: { type: "hunger", value: 55, duration: 15, message: "É como beber o vento da montanha... minha mente ficou clara." }
       },
       {
         id: "leite_dourado",
         name: "Leite Dourado da Manhã",
         price: 50,
         description: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo.",
-        effect: { type: "mood", value: 12, duration: 25, message: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo." }
+        effect: { type: "hunger", value: 50, duration: 25, message: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo." }
       },
       // Bebidas Alcoólicas e Fortes
       {
@@ -684,7 +684,7 @@ export const STORES = {
         price: 50,
         description: "Panqueca que aquece o coração",
         category: "Sobremesas",
-        effect: { type: "energy", value: 15, duration: 5, message: "Aquece o coração, recuperando um pouco da energia perdida." }
+        effect: { type: "hunger", value: 25, duration: 5, message: "Aquece o coração, recuperando um pouco da energia perdida." }
       },
       
       // Bebidas Encantadas
@@ -1002,7 +1002,7 @@ export const STORES = {
         price: 28,
         description: "O bom e velho shake tradicional",
         category: "Milk-Shakes",
-        effect: { type: "mood", value: 8, duration: 20, message: "Ahh... nada como o bom e velho shake." }
+        effect: { type: "hunger", value: 28, duration: 20, message: "Ahh... nada como o bom e velho shake." }
       },
       {
         id: "shake_duplo",
@@ -1010,7 +1010,7 @@ export const STORES = {
         price: 32,
         description: "Dois sabores em perfeita harmonia",
         category: "Milk-Shakes",
-        effect: { type: "mood", value: 12, duration: 20, message: "Dois sabores, um só shake... perfeito!" }
+        effect: { type: "hunger", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" }
       },
       {
         id: "shake_encantado",
@@ -1018,7 +1018,7 @@ export const STORES = {
         price: 38,
         description: "Shake que muda de cor magicamente",
         category: "Milk-Shakes",
-        effect: { type: "mood", value: 15, duration: 15, message: "Olha só, ele muda de cor... que incrível!" }
+        effect: { type: "hunger", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" }
       },
       {
         id: "shake_gelido",
@@ -1026,7 +1026,7 @@ export const STORES = {
         price: 40,
         description: "Tão gelado que congela a respiração",
         category: "Milk-Shakes",
-        effect: { type: "mood", value: 8, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" }
+        effect: { type: "hunger", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" }
       },
       {
         id: "shake_supremo",
@@ -1034,7 +1034,7 @@ export const STORES = {
         price: 45,
         description: "O shake mais especial da casa",
         category: "Milk-Shakes",
-        effect: { type: "energy", value: 25, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" }
+        effect: { type: "hunger", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" }
       },
 
       // Açaí
@@ -1052,7 +1052,7 @@ export const STORES = {
         price: 38,
         description: "Açaí especial que brilha magicamente",
         category: "Açaí",
-        effect: { type: "energy", value: 20, duration: 25, message: "Até brilha... parece uma poção deliciosa." }
+        effect: { type: "hunger", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." }
       },
       {
         id: "acai_energetico",
@@ -1060,7 +1060,7 @@ export const STORES = {
         price: 45,
         description: "Açaí que restaura energia instantaneamente",
         category: "Açaí",
-        effect: { type: "energy", value: 30, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" }
+        effect: { type: "hunger", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" }
       },
       {
         id: "acai_chocolate",
@@ -1417,7 +1417,7 @@ export const STORES = {
         price: 40,
         description: "Leveza das nuvens em cada gole",
         category: "Bebidas Quentes Mágicas",
-        effect: { type: "mood", value: 12, duration: 15, message: "Um gole e você sente a leveza das nuvens adoçando sua alma." }
+        effect: { type: "hunger", value: 40, duration: 15, message: "Um gole e você sente a leveza das nuvens adoçando sua alma." }
       },
       {
         id: "cha_serenidade_bosque",
@@ -1425,7 +1425,7 @@ export const STORES = {
         price: 35,
         description: "Calma dos ventos que percorrem as clareiras",
         category: "Bebidas Quentes Mágicas",
-        effect: { type: "mood", value: 15, duration: 20, message: "Cada xícara traz a calma dos ventos suaves que percorrem as clareiras mágicas." }
+        effect: { type: "hunger", value: 35, duration: 20, message: "Cada xícara traz a calma dos ventos suaves que percorrem as clareiras mágicas." }
       },
       {
         id: "cappuccino_fogo_manso",
@@ -1433,7 +1433,7 @@ export const STORES = {
         price: 45,
         description: "Calor suave que envolve o coração",
         category: "Bebidas Quentes Mágicas",
-        effect: { type: "energy", value: 15, duration: 10, message: "O calor suave deste café envolve seu coração sem jamais queimar." }
+        effect: { type: "hunger", value: 45, duration: 10, message: "O calor suave deste café envolve seu coração sem jamais queimar." }
       },
       {
         id: "chocolate_quente_ternura",
@@ -1441,7 +1441,7 @@ export const STORES = {
         price: 38,
         description: "Doce abraço em forma de bebida",
         category: "Bebidas Quentes Mágicas",
-        effect: { type: "mood", value: 18, duration: 25, message: "Doce abraço em forma de bebida, feito para aquecer memórias." }
+        effect: { type: "hunger", value: 38, duration: 25, message: "Doce abraço em forma de bebida, feito para aquecer memórias." }
       },
       {
         id: "cha_azul_estrelas",
@@ -1449,7 +1449,7 @@ export const STORES = {
         price: 50,
         description: "O brilho da noite em cada gole",
         category: "Bebidas Quentes Mágicas",
-        effect: { type: "energy", value: 20, duration: 30, message: "O brilho da noite em cada gole, iluminando sua mente para aprender." }
+        effect: { type: "hunger", value: 50, duration: 30, message: "O brilho da noite em cada gole, iluminando sua mente para aprender." }
       },
 
       // Doces Mágicos
@@ -1493,7 +1493,7 @@ export const STORES = {
         price: 42,
         description: "Elemento fogo que aumenta coragem",
         category: "Bebidas Frias Mágicas",
-        effect: { type: "energy", value: 18, duration: 15, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Fogo: Aumenta coragem)" }
+        effect: { type: "hunger", value: 42, duration: 15, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Fogo: Aumenta coragem)" }
       },
       {
         id: "smoothie_elemental_agua",
@@ -1501,7 +1501,7 @@ export const STORES = {
         price: 42,
         description: "Elemento água que refresca a mente",
         category: "Bebidas Frias Mágicas",
-        effect: { type: "mood", value: 15, duration: 20, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Água: Refresca a mente)" }
+        effect: { type: "hunger", value: 42, duration: 20, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Água: Refresca a mente)" }
       },
       {
         id: "smoothie_elemental_terra",
@@ -1517,7 +1517,7 @@ export const STORES = {
         price: 42,
         description: "Elemento ar que traz leveza",
         category: "Bebidas Frias Mágicas",
-        effect: { type: "mood", value: 12, duration: 15, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Ar: Leveza e bom humor)" }
+        effect: { type: "hunger", value: 42, duration: 15, message: "Escolha seu elemento e deixe a energia fluir em cada gole. (Ar: Leveza e bom humor)" }
       },
       {
         id: "soda_brilhante_aurora",
@@ -1525,7 +1525,7 @@ export const STORES = {
         price: 33,
         description: "Um arco-íris efervescente no copo",
         category: "Bebidas Frias Mágicas",
-        effect: { type: "energy", value: 15, duration: 15, message: "Um arco-íris efervescente dentro do seu copo." }
+        effect: { type: "hunger", value: 33, duration: 15, message: "Um arco-íris efervescente dentro do seu copo." }
       },
       {
         id: "leite_gelido_dragao_azul",
@@ -1533,7 +1533,7 @@ export const STORES = {
         price: 37,
         description: "Frescor do dragão envolvendo o coração",
         category: "Bebidas Frias Mágicas",
-        effect: { type: "mood", value: 14, duration: 20, message: "Um gole e o frescor do dragão envolve seu coração." }
+        effect: { type: "hunger", value: 37, duration: 20, message: "Um gole e o frescor do dragão envolve seu coração." }
       },
 
       // Comidinhas Leves
