@@ -73,47 +73,61 @@ export function BagApp({ onBack }: BagAppProps) {
     return username.replace(/\d{4}$/, '');
   };
 
+  // Optimized data fetching with parallel execution
   useEffect(() => {
     if (currentUser) {
-      fetchInventory();
-      fetchHistory();
+      // Fetch both inventory and history in parallel for better performance
+      Promise.all([fetchInventory(), fetchHistory()]);
     }
   }, [currentUser]);
+
+  // Create item lookup map for better performance
+  const createItemLookupMap = () => {
+    const lookupMap = new Map();
+    for (const [storeId, store] of Object.entries(STORES)) {
+      for (const item of store.items) {
+        lookupMap.set(item.id, { item, storeId });
+      }
+    }
+    return lookupMap;
+  };
+
+  const itemLookupMap = createItemLookupMap();
 
   const fetchInventory = async () => {
     try {
       if (!currentUser) return;
 
-      // Get the user record from users table by username
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('username', currentUser)
-        .maybeSingle();
+      // Parallel fetch of user record, inventory, and custom items
+      const [userResult, customItemsFromDB] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id')
+          .eq('username', currentUser)
+          .maybeSingle(),
+        supabase
+          .from('custom_items')
+          .select('*')
+      ]);
 
+      const { data: userRecord, error: userError } = userResult;
       if (userError || !userRecord) return;
 
-      const { data, error } = await supabase
+      const { data: inventoryData, error: inventoryError } = await supabase
         .from('inventory')
         .select('*')
         .eq('user_id', userRecord.id);
 
-      if (error) throw error;
+      if (inventoryError) throw inventoryError;
 
       const formattedInventory: InventoryItem[] = [];
       
-      // Load custom items from localStorage
+      // Load custom items from localStorage and merge with DB items
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
-      
-      // Also load custom items from Supabase for items sent from other users
-      const { data: customItemsFromDB } = await supabase
-        .from('custom_items')
-        .select('*');
-      
-      // Merge custom items from DB into local storage for access
       const allCustomItems = { ...customItems };
-      if (customItemsFromDB) {
-        customItemsFromDB.forEach(item => {
+      
+      if (customItemsFromDB.data) {
+        customItemsFromDB.data.forEach(item => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -126,8 +140,8 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
       
-      // Process each inventory item
-      for (const item of data || []) {
+      // Process each inventory item with optimized lookup
+      for (const item of inventoryData || []) {
         // Check if it's a custom item first
         if (allCustomItems[item.item_id]) {
           const customItem = allCustomItems[item.item_id];
@@ -149,7 +163,7 @@ export function BagApp({ onBack }: BagAppProps) {
             itemType: customItem.itemType,
             quantity: item.quantity,
             storeId: "custom",
-            canUse: true, // Custom items can be used
+            canUse: true,
             canSend: true,
             isRing: false,
             originalItem: customItem,
@@ -158,22 +172,11 @@ export function BagApp({ onBack }: BagAppProps) {
           continue;
         }
         
-        // Find the item in stores
-        let storeItem = null;
-        let storeId = "";
-        
-        for (const [key, store] of Object.entries(STORES)) {
-          const foundItem = store.items.find(i => i.id === item.item_id);
-          if (foundItem) {
-            storeItem = foundItem;
-            storeId = key;
-            break;
-          }
-        }
-        
-        if (storeItem) {
+        // Use optimized lookup map instead of nested loops
+        const itemData = itemLookupMap.get(item.item_id);
+        if (itemData) {
+          const { item: storeItem, storeId } = itemData;
           const itemType = getItemType(storeId, storeItem.id);
-          // Allow usage of pharmacy, sexshop items, or items with effects
           const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop";
           const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
           
@@ -184,9 +187,9 @@ export function BagApp({ onBack }: BagAppProps) {
             itemType,
             quantity: item.quantity,
             storeId,
-            price: storeItem.price, // Add price for hunger calculation
-            canUse: canUse && !isRing, // Rings can't be "used" like other items
-            canSend: !isRing, // Regular send for non-rings
+            price: storeItem.price,
+            canUse: canUse && !isRing,
+            canSend: !isRing,
             isRing,
             relationshipType: (storeItem as any).relationshipType,
             originalItem: storeItem,
@@ -223,7 +226,7 @@ export function BagApp({ onBack }: BagAppProps) {
         .select('*')
         .eq('user_id', userRecord.id)
         .not('sent_by_username', 'is', null)
-        .order('created_at', { ascending: false });
+        .order('received_at', { ascending: false });
 
       if (error) throw error;
 
@@ -253,7 +256,7 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
       
-      // Process each history item
+      // Process each history item using optimized lookup
       for (const item of data || []) {
         // Check if it's a custom item first
         if (allCustomItems[item.item_id]) {
@@ -265,8 +268,8 @@ export function BagApp({ onBack }: BagAppProps) {
             description: (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2'),
             itemType: customItem.itemType,
             quantity: item.quantity,
-            sent_by_username: (item as any).sent_by_username || null,
-            received_at: (item as any).received_at || item.created_at,
+            sent_by_username: item.sent_by_username || null,
+            received_at: item.received_at || item.created_at,
             storeId: "custom",
             isCustom: true,
             originalItem: customItem
@@ -274,20 +277,10 @@ export function BagApp({ onBack }: BagAppProps) {
           continue;
         }
         
-        // Find the item in stores
-        let storeItem = null;
-        let storeId = "";
-        
-        for (const [key, store] of Object.entries(STORES)) {
-          const foundItem = store.items.find(i => i.id === item.item_id);
-          if (foundItem) {
-            storeItem = foundItem;
-            storeId = key;
-            break;
-          }
-        }
-        
-        if (storeItem) {
+        // Use optimized lookup map instead of nested loops
+        const itemData = itemLookupMap.get(item.item_id);
+        if (itemData) {
+          const { item: storeItem, storeId } = itemData;
           const itemType = getItemType(storeId, storeItem.id);
           
           formattedHistory.push({
@@ -296,8 +289,8 @@ export function BagApp({ onBack }: BagAppProps) {
             description: storeItem.description,
             itemType,
             quantity: item.quantity,
-            sent_by_username: (item as any).sent_by_username || null,
-            received_at: (item as any).received_at || item.created_at,
+            sent_by_username: item.sent_by_username || null,
+            received_at: item.received_at || item.created_at,
             storeId,
             isCustom: false,
             originalItem: storeItem,
