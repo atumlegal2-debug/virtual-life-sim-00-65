@@ -590,7 +590,7 @@ export const STORES = {
         price: 100,
         description: "Prato coreano que ativa runas de concentração",
         category: "Pratos Principais",
-        effect: { type: "energy", value: 15, duration: 15, message: "Ao misturar os ingredientes, ativa uma runa que aumenta a concentração e foco." }
+        effect: { type: "hunger", value: 50, duration: 15, message: "Ao misturar os ingredientes, ativa uma runa que aumenta a concentração e foco." }
       },
       {
         id: "tteokbokki",
@@ -598,7 +598,7 @@ export const STORES = {
         price: 160,
         description: "Massinha picante com resistência ao frio",
         category: "Pratos Principais",
-        effect: { type: "energy", value: 18, duration: 20, message: "Picância mágica que aquece o corpo e concede leve resistência ao frio." }
+        effect: { type: "hunger", value: 80, duration: 20, message: "Picância mágica que aquece o corpo e concede leve resistência ao frio." }
       },
       {
         id: "jjajangmyeon",
@@ -614,7 +614,7 @@ export const STORES = {
         price: 280,
         description: "Costela que reforça a energia vital",
         category: "Pratos Principais",
-        effect: { type: "energy", value: 30, duration: 25, message: "Reforça temporariamente a energia vital, deixando o corpo mais forte." }
+        effect: { type: "hunger", value: 100, duration: 25, message: "Reforça temporariamente a energia vital, deixando o corpo mais forte." }
       },
       {
         id: "kimchi_despertar",
@@ -622,7 +622,7 @@ export const STORES = {
         price: 100,
         description: "Kimchi que clareia a mente e afasta pesadelos",
         category: "Pratos Principais",
-        effect: { type: "hunger", value: 3, duration: 10, message: "Clareia a mente, afasta pesadelos e fortalece a resistência mental." }
+        effect: { type: "hunger", value: 50, duration: 10, message: "Clareia a mente, afasta pesadelos e fortalece a resistência mental." }
       },
       
       // Sopas & Guisados
@@ -632,7 +632,7 @@ export const STORES = {
         price: 100,
         description: "Sopa que proporciona leveza e bem-estar",
         category: "Sopas & Guisados",
-        effect: { type: "hunger", value: 3, duration: 15, message: "Proporciona sensação de leveza e bem-estar, reduzindo o cansaço." }
+        effect: { type: "hunger", value: 50, duration: 15, message: "Proporciona sensação de leveza e bem-estar, reduzindo o cansaço." }
       },
       {
         id: "samgyetang",
@@ -650,7 +650,7 @@ export const STORES = {
         price: 20,
         description: "Pãezinhos que aumentam agilidade",
         category: "Acompanhamentos Mágicos",
-        effect: { type: "energy", value: 10, duration: 5, message: "Ao comer, o corpo fica levemente mais ágil." }
+        effect: { type: "hunger", value: 15, duration: 5, message: "Ao comer, o corpo fica levemente mais ágil." }
       },
       {
         id: "ovos_roc",
@@ -658,7 +658,7 @@ export const STORES = {
         price: 150,
         description: "Ovos que concedem resistência mágica",
         category: "Acompanhamentos Mágicos",
-        effect: { type: "energy", value: 25, duration: 15, message: "Aumenta a resistência mágica contra feitiços diretos." }
+        effect: { type: "hunger", value: 75, duration: 15, message: "Aumenta a resistência mágica contra feitiços diretos." }
       },
       {
         id: "picles_cintilantes",
@@ -666,7 +666,7 @@ export const STORES = {
         price: 50,
         description: "Picles que melhoram recuperação de energia",
         category: "Acompanhamentos Mágicos",
-        effect: { type: "energy", value: 12, duration: 10, message: "Refresca e melhora a recuperação de energia." }
+        effect: { type: "hunger", value: 25, duration: 10, message: "Refresca e melhora a recuperação de energia." }
       },
       
       // Sobremesas
@@ -676,7 +676,7 @@ export const STORES = {
         price: 100,
         description: "Sobremesa que inspira alegria e criatividade",
         category: "Sobremesas",
-        effect: { type: "hunger", value: 3, duration: 10, message: "Cada colher inspira alegria e criatividade." }
+        effect: { type: "hunger", value: 50, duration: 10, message: "Cada colher inspira alegria e criatividade." }
       },
       {
         id: "hotteok",
@@ -727,7 +727,7 @@ export const STORES = {
         price: 45,
         description: "Simples, mas divina... o sabor da tradição.",
         category: "Pizzas Salgadas Normais",
-        effect: { type: "hunger", value: 3, duration: 20, message: "Simples, mas divina... o sabor da tradição." }
+        effect: { type: "hunger", value: 22, duration: 20, message: "Simples, mas divina... o sabor da tradição." }
       },
       {
         id: "reino_calabresa",
@@ -735,7 +735,7 @@ export const STORES = {
         price: 48,
         description: "Picante na medida certa, dá até vontade de cantar vitória!",
         category: "Pizzas Salgadas Normais",
-        effect: { type: "hunger", value: 3, duration: 15, message: "Picante na medida certa, dá até vontade de cantar vitória!" }
+        effect: { type: "hunger", value: 24, duration: 15, message: "Picante na medida certa, dá até vontade de cantar vitória!" }
       },
       {
         id: "quatro_queijos_corte",
@@ -743,7 +743,7 @@ export const STORES = {
         price: 52,
         description: "Cada mordida é uma realeza de sabores!",
         category: "Pizzas Salgadas Normais",
-        effect: { type: "hunger", value: 3, duration: 20, message: "Cada mordida é uma realeza de sabores!" }
+        effect: { type: "hunger", value: 26, duration: 20, message: "Cada mordida é uma realeza de sabores!" }
       },
       {
         id: "jardim_verde",
@@ -751,7 +751,7 @@ export const STORES = {
         price: 46,
         description: "Refrescante... como se eu estivesse no meio de um campo verdejante.",
         category: "Pizzas Salgadas Normais",
-        effect: { type: "hunger", value: 3, duration: 15, message: "Refrescante... como se eu estivesse no meio de um campo verdejante." }
+        effect: { type: "hunger", value: 23, duration: 15, message: "Refrescante... como se eu estivesse no meio de um campo verdejante." }
       },
       {
         id: "fazenda_encantada",
@@ -759,7 +759,7 @@ export const STORES = {
         price: 50,
         description: "Sabor de lar... como um abraço da fazenda.",
         category: "Pizzas Salgadas Normais",
-        effect: { type: "hunger", value: 3, duration: 20, message: "Sabor de lar... como um abraço da fazenda." }
+        effect: { type: "hunger", value: 25, duration: 20, message: "Sabor de lar... como um abraço da fazenda." }
       },
 
       // Pizzas Salgadas Mágicas
@@ -770,7 +770,7 @@ export const STORES = {
         description: "Minha boca tá pegando fogo... mas é delicioso!",
         category: "Pizzas Salgadas Mágicas",
         isMagical: true,
-        effect: { type: "hunger", value: 3, duration: 10, message: "Minha boca tá pegando fogo... mas é delicioso!" }
+        effect: { type: "hunger", value: 32, duration: 10, message: "Minha boca tá pegando fogo... mas é delicioso!" }
       },
       {
         id: "vento_colinas",
@@ -926,7 +926,7 @@ export const STORES = {
         price: 18,
         description: "Chocolate com poderes mágicos",
         category: "Sorvetes Tradicionais",
-        effect: { type: "energy", value: 20, duration: 20, message: "Esse chocolate... parece ter magia própria!" }
+        effect: { type: "hunger", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" }
       },
       {
         id: "morango_encantado",
@@ -934,7 +934,7 @@ export const STORES = {
         price: 18,
         description: "Morango doce que desperta o amor",
         category: "Sorvetes Tradicionais",
-        effect: { type: "mood", value: 15, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." }
+        effect: { type: "hunger", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." }
       },
       {
         id: "napolitano",
@@ -960,7 +960,7 @@ export const STORES = {
         price: 25,
         description: "Explosão refrescante de sabor",
         category: "Sorvetes Mágicos",
-        effect: { type: "energy", value: 15, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" }
+        effect: { type: "hunger", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" }
       },
       {
         id: "creme_nuvens",
@@ -968,7 +968,7 @@ export const STORES = {
         price: 30,
         description: "Leve como nuvens do céu",
         category: "Sorvetes Mágicos",
-        effect: { type: "mood", value: 8, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." }
+        effect: { type: "hunger", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." }
       },
       {
         id: "frutas_arco_iris",
@@ -976,7 +976,7 @@ export const STORES = {
         price: 32,
         description: "Muda de sabor a cada lambida",
         category: "Sorvetes Mágicos",
-        effect: { type: "mood", value: 18, duration: 20, message: "Cada lambida é uma aventura diferente!" }
+        effect: { type: "hunger", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" }
       },
       {
         id: "estelar_mirtilo",
@@ -984,7 +984,7 @@ export const STORES = {
         price: 35,
         description: "Azul brilhante que faz a língua cintilar",
         category: "Sorvetes Mágicos",
-        effect: { type: "mood", value: 5, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" }
+        effect: { type: "hunger", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" }
       },
       {
         id: "doce_crepusculo",
@@ -992,7 +992,7 @@ export const STORES = {
         price: 38,
         description: "Sorvete mágico com sabor de pôr do sol",
         category: "Sorvetes Mágicos",
-        effect: { type: "mood", value: 20, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." }
+        effect: { type: "hunger", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." }
       },
 
       // Milk-Shakes
