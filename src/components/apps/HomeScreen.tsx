@@ -17,7 +17,8 @@ import {
   HeartHandshake,
   ChevronDown,
   Sparkles,
-  Cookie
+  Cookie,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -133,11 +134,11 @@ export function HomeScreen() {
     { id: "bank" as const, icon: Building, label: "Banco" },
     { id: "relationship" as const, icon: Coffee, label: "Relacionamento", hasNotification: hasRelationshipNotifications },
     { id: "roulette" as const, icon: Zap, label: "Roleta" },
-    { id: "pregnancy" as const, icon: Baby, label: "Gravidez" },
+    { id: "pregnancy" as const, icon: Activity, label: "Gravidez" },
     { id: "hospital" as const, icon: HeartHandshake, label: "Hospital" },
     { id: "manager" as const, icon: Building, label: "Gerente" },
     { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
-    { id: "meybaby" as const, icon: Baby, label: "Mey Baby" },
+    { id: "meybaby" as const, icon: Baby, label: "My Baby" },
     { id: "fortune" as const, icon: Cookie, label: "Biscoito da Sorte" },
   ];
 

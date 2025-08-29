@@ -17,7 +17,7 @@ export function MeyBabyApp({ onBack }: MeyBabyAppProps) {
         </Button>
         <h1 className="text-lg font-semibold text-white flex items-center gap-2">
           <Baby className="text-pink-400" size={20} />
-          Mey Baby
+          My Baby
         </h1>
         <div className="w-10" />
       </div>
@@ -30,7 +30,7 @@ export function MeyBabyApp({ onBack }: MeyBabyAppProps) {
               <Baby className="text-white" size={32} />
             </div>
             <CardTitle className="text-white text-xl">
-              Mey Baby
+              My Baby
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
