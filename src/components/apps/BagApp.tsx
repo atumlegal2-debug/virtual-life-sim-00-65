@@ -136,7 +136,7 @@ export function BagApp({ onBack }: BagAppProps) {
     return false;
   };
 
-  // Carregamento simples e confiável
+  // Carregamento otimizado - sem logs excessivos
   const loadAllData = async (forceRefresh = false) => {
     if (!currentUser) return;
 
@@ -144,7 +144,7 @@ export function BagApp({ onBack }: BagAppProps) {
     const hasCache = !forceRefresh && showCachedDataFirst();
     
     try {
-      setIsLoading(true);
+      setIsLoading(!hasCache); // Só mostra loading se não tiver cache
       
       // Get user ID from cache or fetch once
       let userId = cachedUserId;
@@ -167,36 +167,32 @@ export function BagApp({ onBack }: BagAppProps) {
         setCachedUserId(userId);
       }
 
-      // Load custom items from localStorage
-      const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
+      // Parallel loading of data sources
+      const [inventoryResult, customItemsFromDB] = await Promise.all([
+        supabase
+          .from('inventory')
+          .select('item_id, quantity, sent_by_username, received_at, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('custom_items')
+          .select('id, name, description, item_type, icon')
+      ]);
 
-      // Query inventory data
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('inventory')
-        .select('item_id, quantity, sent_by_username, received_at, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      console.log('Debug - Raw inventory data:', inventoryData);
-      console.log('Debug - Inventory error:', inventoryError);
+      const { data: inventoryData, error: inventoryError } = inventoryResult;
 
       if (inventoryError) {
         console.error('Inventory error:', inventoryError);
         throw inventoryError;
       }
 
-      // Query custom items from DB
-      const { data: customItemsFromDB } = await supabase
-        .from('custom_items')
-        .select('id, name, description, item_type, icon');
+      // Load custom items from localStorage
+      const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
 
-      console.log('Debug - Custom items from localStorage:', Object.keys(customItems).length);
-      console.log('Debug - Custom items from DB:', customItemsFromDB?.length || 0);
-
-      // Merge all custom items
+      // Merge all custom items efficiently
       const allCustomItems = { ...customItems };
-      if (customItemsFromDB) {
-        customItemsFromDB.forEach((item: any) => {
+      if (customItemsFromDB.data) {
+        customItemsFromDB.data.forEach((item: any) => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -209,48 +205,43 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
 
-      console.log('Debug - All custom items merged:', Object.keys(allCustomItems).length);
-
-      // Process data
+      // Process data in batches for better performance
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
-      for (const item of inventoryData || []) {
-        console.log('Debug - Processing item:', item.item_id);
-        const processedItem = processInventoryItem(item, allCustomItems);
-        
-        if (processedItem) {
-          console.log('Debug - Item processed successfully:', processedItem.inventoryItem.name);
-          formattedInventory.push(processedItem.inventoryItem);
+      // Batch process items for better performance
+      if (inventoryData) {
+        for (const item of inventoryData) {
+          const processedItem = processInventoryItem(item, allCustomItems);
           
-          if (item.sent_by_username) {
-            formattedHistory.push(processedItem.historyItem);
+          if (processedItem) {
+            formattedInventory.push(processedItem.inventoryItem);
+            
+            if (item.sent_by_username) {
+              formattedHistory.push(processedItem.historyItem);
+            }
           }
-        } else {
-          console.log('Debug - Item not processed:', item.item_id);
         }
       }
-
-      console.log('Debug - Final formatted inventory count:', formattedInventory.length);
 
       // Update states
       setInventory(formattedInventory);
       setHistoryItems(formattedHistory);
       
       // Cache the data
-      const cacheData = {
+      const newCacheData = {
         inventory: formattedInventory,
         history: formattedHistory,
         timestamp: Date.now()
       };
-      setCachedData(cacheData);
-      sessionStorage.setItem(`bagData_${currentUser}`, JSON.stringify(cacheData));
+      setCachedData(newCacheData);
+      sessionStorage.setItem(`bagData_${currentUser}`, JSON.stringify(newCacheData));
       
       setIsLoading(false);
       
     } catch (error) {
-      console.error('Error loading data:', error);
-      // Fallback to cache if available
+      console.error('Error loading bag data:', error);
+      // Em caso de erro, tenta mostrar dados do cache se disponível
       if (cachedData) {
         setInventory(cachedData.inventory);
         setHistoryItems(cachedData.history);
@@ -259,18 +250,13 @@ export function BagApp({ onBack }: BagAppProps) {
     }
   };
 
-  // Optimized item processing
+  // Optimized item processing - sem logs excessivos
   const processInventoryItem = (item: any, allCustomItems: any) => {
-    console.log('Debug - Processing item:', item.item_id);
-    console.log('Debug - Custom items available:', Object.keys(allCustomItems));
-    console.log('Debug - Item lookup map has item:', itemLookupMap.has(item.item_id));
-    
     // Custom item processing - check if it starts with "custom_"
     if (item.item_id.startsWith('custom_') || allCustomItems[item.item_id]) {
       const customItem = allCustomItems[item.item_id];
       
       if (!customItem) {
-        console.log('Debug - Custom item not found in allCustomItems for:', item.item_id);
         // Try to create a basic custom item fallback
         const fallbackItem = {
           id: item.item_id,
@@ -307,7 +293,6 @@ export function BagApp({ onBack }: BagAppProps) {
           originalItem: fallbackItem
         };
 
-        console.log('Debug - Created fallback custom item:', inventoryItem.name);
         return { inventoryItem, historyItem };
       }
       
@@ -348,7 +333,6 @@ export function BagApp({ onBack }: BagAppProps) {
         originalItem: customItem
       };
 
-      console.log('Debug - Processed custom item:', inventoryItem.name);
       return { inventoryItem, historyItem };
     }
     
@@ -396,11 +380,10 @@ export function BagApp({ onBack }: BagAppProps) {
         effect
       };
 
-      console.log('Debug - Processed store item:', inventoryItem.name);
+      
       return { inventoryItem, historyItem };
     }
 
-    console.log('Debug - Item not found anywhere:', item.item_id);
     return null;
   };
 
@@ -412,8 +395,11 @@ export function BagApp({ onBack }: BagAppProps) {
       if (!hasCache) {
         loadAllData();
       } else {
-        // Load fresh data in background
-        setTimeout(() => loadAllData(true), 100);
+        // Load fresh data in background se o cache for antigo
+        const cacheAge = cachedData ? Date.now() - cachedData.timestamp : Infinity;
+        if (cacheAge > 10000) { // Refresh em background se cache > 10s
+          setTimeout(() => loadAllData(true), 100);
+        }
       }
     }
   }, [currentUser]);
