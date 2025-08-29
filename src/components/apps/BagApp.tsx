@@ -174,26 +174,42 @@ export default function BagApp({ onBack }: BagAppProps) {
         setCachedUserId(userId);
       }
 
-      // Parallel loading of data sources com timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
+      // Helper para aplicar timeout em promessas (aceita Thenables do Supabase)
+      const raceWithTimeout = <T,>(p: PromiseLike<T> | T, ms = 6000) =>
+        Promise.race([Promise.resolve(p as any), new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))]);
 
-      const dataPromise = Promise.all([
+      // 1) Buscar inventário primeiro (rápido)
+      const inventoryResult = await raceWithTimeout(
         supabase
           .from('inventory')
           .select('item_id, quantity, sent_by_username, received_at, created_at')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
-          .limit(100), // Limita para melhor performance
-        supabase
-          .from('custom_items')
-          .select('id, name, description, item_type, icon')
-          .limit(200) // Limita custom items também
-      ]);
+          .limit(100)
+      );
+      const { data: inventoryData, error: inventoryError } = inventoryResult as any;
 
-      const [inventoryResult, customItemsFromDB] = await Promise.race([dataPromise, timeoutPromise]) as any;
-      const { data: inventoryData, error: inventoryError } = inventoryResult;
+      if (inventoryError) {
+        console.error('Inventory error:', inventoryError);
+        throw inventoryError;
+      }
+
+      // 2) Coletar apenas IDs de itens custom do usuário
+      const customIds: string[] = (inventoryData || [])
+        .map((it: any) => it.item_id)
+        .filter((id: string) => typeof id === 'string' && id.startsWith('custom_'));
+      const customIdSet = new Set(customIds);
+
+      // 3) Buscar somente os custom_items usados pelo usuário (evita baixar todo o catálogo pesado)
+      const customItemsDB = customIdSet.size > 0
+        ? await raceWithTimeout(
+            supabase
+              .from('custom_items')
+              .select('id, name, description, item_type, icon')
+              .in('id', Array.from(customIdSet))
+          )
+        : { data: [] as any[] };
+      const customItemsFromDB = customItemsDB as any;
 
       if (inventoryError) {
         console.error('Inventory error:', inventoryError);
@@ -211,9 +227,11 @@ export default function BagApp({ onBack }: BagAppProps) {
       // Merge all custom items efficiently com Map para performance
       const allCustomItems = new Map();
       
-      // Add localStorage items
+      // Add localStorage items (somente os que o usuário possui)
       Object.entries(customItems).forEach(([id, item]) => {
-        allCustomItems.set(id, item);
+        if (customIdSet.has(id)) {
+          allCustomItems.set(id, item);
+        }
       });
       
       // Add DB items (override localStorage if exists)
@@ -570,7 +588,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             {/* Show custom item icon/image if available */}
             {item.storeId === "custom" && item.originalItem?.icon ? (
               typeof item.originalItem.icon === 'string' && item.originalItem.icon.startsWith('data:') ? (
-                <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" />
+                <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" width={24} height={24} loading="lazy" decoding="async" />
               ) : (
                 <span className="text-lg">{item.originalItem.icon}</span>
               )
@@ -670,7 +688,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             {/* Show custom item icon/image if available */}
             {item.isCustom && item.originalItem?.icon ? (
               typeof item.originalItem.icon === 'string' && item.originalItem.icon.startsWith('data:') ? (
-                <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" />
+                <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" width={24} height={24} loading="lazy" decoding="async" />
               ) : (
                 <span className="text-lg">{item.originalItem.icon}</span>
               )

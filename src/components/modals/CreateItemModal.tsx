@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, Image } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGame } from "@/contexts/GameContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,17 +88,57 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
     setCurrentStep("upload");
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
+  // Comprime/redimensiona imagens do upload para evitar ícones pesados
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 512; // mantém qualidade, reduz peso
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          } else {
+            width = Math.round((width * MAX) / height);
+            height = MAX;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          reject(new Error('Canvas context não disponível'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        // converte para WEBP para reduzir ainda mais
+        const dataUrl = canvas.toDataURL('image/webp', 0.8);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
       };
-      reader.readAsDataURL(file);
-    }
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
+    });
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const dataUrl = await compressImage(file);
+        setUploadedImage(dataUrl);
+      } catch (e) {
+        console.error('Falha ao processar imagem:', e);
+      }
+    }
+  };
   const handleFinalize = async () => {
     if (!selectedCategory || !customName) return;
 
