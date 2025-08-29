@@ -65,12 +65,22 @@ export function BagApp({ onBack }: BagAppProps) {
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [selectedItemToSend, setSelectedItemToSend] = useState<InventoryItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser, updateStats, gameStats, cureDisease, diseases } = useGame();
 
-  // Cache do user_id para evitar consultas repetidas
-  const [cachedUserId, setCachedUserId] = useState<string | null>(null);
+  // Cache agressivo para performance máxima
+  const [cachedUserId, setCachedUserId] = useState<string | null>(() => 
+    sessionStorage.getItem(`userId_${currentUser}`)
+  );
+  const [cachedData, setCachedData] = useState<{
+    inventory: InventoryItem[],
+    history: HistoryItem[],
+    timestamp: number
+  } | null>(() => {
+    const cached = sessionStorage.getItem(`bagData_${currentUser}`);
+    return cached ? JSON.parse(cached) : null;
+  });
 
   // Function to hide the 4-digit code from usernames for display
   const getDisplayName = (username: string) => {
@@ -116,51 +126,75 @@ export function BagApp({ onBack }: BagAppProps) {
     }
   };
 
-  // Instant data loading with ultra-optimized queries
-  const loadAllData = async () => {
+  // Cache check - mostra dados imediatamente se disponível
+  const showCachedDataFirst = () => {
+    if (cachedData && Date.now() - cachedData.timestamp < 30000) { // Cache válido por 30s
+      setInventory(cachedData.inventory);
+      setHistoryItems(cachedData.history);
+      return true;
+    }
+    return false;
+  };
+
+  // Carregamento instantâneo com cache
+  const loadAllData = async (forceRefresh = false) => {
     if (!currentUser) return;
 
+    // Mostra dados do cache primeiro para feedback instantâneo
+    const hasCache = !forceRefresh && showCachedDataFirst();
+    
     try {
-      setIsLoading(true);
+      if (!hasCache) setIsLoading(true);
       
-      // Get user ID only once and cache it
+      // Get user ID from cache or fetch once
       let userId = cachedUserId;
       if (!userId) {
-        const { data: userRecord } = await supabase
-          .from('users')
-          .select('id')
-          .eq('username', currentUser)
-          .maybeSingle();
-        
-        if (!userRecord) {
-          setIsLoading(false);
-          return;
+        userId = sessionStorage.getItem(`userId_${currentUser}`);
+        if (!userId) {
+          const { data: userRecord } = await supabase
+            .from('users')
+            .select('id')
+            .eq('username', currentUser)
+            .maybeSingle();
+          
+          if (!userRecord) {
+            setIsLoading(false);
+            return;
+          }
+          userId = userRecord.id;
+          sessionStorage.setItem(`userId_${currentUser}`, userId);
         }
-        userId = userRecord.id;
         setCachedUserId(userId);
       }
 
       // Load custom items from localStorage (instant)
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
 
-      // Single optimized query for all inventory data
-      const { data: inventoryData, error } = await supabase
-        .from('inventory')
-        .select('item_id, quantity, sent_by_username, received_at, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      // Parallel queries with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
 
-      if (error) throw error;
-
-      // Load custom items from DB only once
-      const { data: customItemsFromDB } = await supabase
-        .from('custom_items')
-        .select('id, name, description, item_type, icon');
+      const [inventoryResult, customItemsResult] = await Promise.race([
+        Promise.all([
+          supabase
+            .from('inventory')
+            .select('item_id, quantity, sent_by_username, received_at, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(100), // Limita para os 100 itens mais recentes
+          supabase
+            .from('custom_items')
+            .select('id, name, description, item_type, icon')
+            .limit(50) // Limita custom items
+        ]),
+        timeoutPromise
+      ]) as [any, any];
 
       // Merge all custom items
       const allCustomItems = { ...customItems };
-      if (customItemsFromDB) {
-        customItemsFromDB.forEach(item => {
+      if (customItemsResult.data) {
+        customItemsResult.data.forEach((item: any) => {
           allCustomItems[item.id] = {
             id: item.id,
             name: item.name,
@@ -173,29 +207,56 @@ export function BagApp({ onBack }: BagAppProps) {
         });
       }
 
-      // Process all data in one pass
+      // Process data in batches para não travar a UI
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
-      for (const item of inventoryData || []) {
-        const processedItem = processInventoryItem(item, allCustomItems);
+      const inventoryData = inventoryResult.data || [];
+      const batchSize = 10;
+      
+      for (let i = 0; i < inventoryData.length; i += batchSize) {
+        const batch = inventoryData.slice(i, i + batchSize);
         
-        if (processedItem) {
-          formattedInventory.push(processedItem.inventoryItem);
+        for (const item of batch) {
+          const processedItem = processInventoryItem(item, allCustomItems);
           
-          if (item.sent_by_username) {
-            formattedHistory.push(processedItem.historyItem);
+          if (processedItem) {
+            formattedInventory.push(processedItem.inventoryItem);
+            
+            if (item.sent_by_username) {
+              formattedHistory.push(processedItem.historyItem);
+            }
           }
+        }
+        
+        // Pequena pausa para não travar a UI em lotes grandes
+        if (i + batchSize < inventoryData.length) {
+          await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
 
       // Update all states at once
       setInventory(formattedInventory);
       setHistoryItems(formattedHistory);
+      
+      // Cache the data for next time
+      const cacheData = {
+        inventory: formattedInventory,
+        history: formattedHistory,
+        timestamp: Date.now()
+      };
+      setCachedData(cacheData);
+      sessionStorage.setItem(`bagData_${currentUser}`, JSON.stringify(cacheData));
+      
       setIsLoading(false);
       
     } catch (error) {
       console.error('Error loading data:', error);
+      // Fallback to cache if available
+      if (!hasCache && cachedData) {
+        setInventory(cachedData.inventory);
+        setHistoryItems(cachedData.history);
+      }
       setIsLoading(false);
     }
   };
@@ -296,10 +357,17 @@ export function BagApp({ onBack }: BagAppProps) {
     return null;
   };
 
-  // Load data on component mount
+  // Load data on component mount with instant cache
   useEffect(() => {
     if (currentUser) {
-      loadAllData();
+      // Try cache first, then load fresh data
+      const hasCache = showCachedDataFirst();
+      if (!hasCache) {
+        loadAllData();
+      } else {
+        // Load fresh data in background
+        setTimeout(() => loadAllData(true), 100);
+      }
     }
   }, [currentUser]);
 
@@ -531,7 +599,7 @@ export function BagApp({ onBack }: BagAppProps) {
           .eq('item_id', item.id);
       }
 
-        loadAllData();
+        loadAllData(true); // Force refresh após usar item
     } catch (error) {
       console.error('Error using item:', error);
       toast({
@@ -839,7 +907,7 @@ export function BagApp({ onBack }: BagAppProps) {
         onClose={() => setSendItemModalOpen(false)}
         item={selectedItemToSend}
         onItemSent={() => {
-          loadAllData();
+          loadAllData(true); // Force refresh após enviar item
         }}
       />
     </div>
