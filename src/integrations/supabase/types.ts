@@ -729,6 +729,10 @@ export type Database = {
           user_id: string
         }
       }
+      decrease_alcoholism: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       decrease_hunger: {
         Args: Record<PropertyKey, never>
         Returns: Json

@@ -59,7 +59,7 @@ const getHungerDiseaseFeeling = (currentUser: string | null): string => {
 };
 
 export function LifeApp({ onBack }: LifeAppProps) {
-  const { gameStats, currentUser, diseases, checkAndFixDiseaseLevel, cureHungerDisease } = useGame();
+  const { gameStats, currentUser, diseases, checkAndFixDiseaseLevel, cureHungerDisease, updateStats } = useGame();
   const [localEffects, setLocalEffects] = useState<any[]>([]);
   const [showHungerAlert, setShowHungerAlert] = useState(false);
   const [localDiseases, setLocalDiseases] = useState(diseases);
@@ -147,6 +147,37 @@ export function LifeApp({ onBack }: LifeAppProps) {
       supabase.removeChannel(channel);
     };
   }, [currentUser, localDiseases, cureHungerDisease]);
+
+  // Listen for real-time alcoholism decreases
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel('alcoholism-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `username=eq.${currentUser}`
+        },
+        (payload) => {
+          console.log('User alcoholism update received:', payload);
+          const updatedUser = payload.new;
+          if (updatedUser.alcoholism_percentage !== undefined) {
+            updateStats({
+              alcoholism: updatedUser.alcoholism_percentage
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser]);
 
   return (
     <div className="flex flex-col h-full">
