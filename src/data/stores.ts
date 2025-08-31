@@ -1601,6 +1601,66 @@ export const STORES = {
         description: "Experiência completa de sabor e magia",
         category: "Combo Especial",
         effect: { type: "hunger", value: 30, duration: 30, message: "Uma experiência completa de sabor e magia, com uma surpresa especial." }
+      },
+
+      // Comidas
+      {
+        id: "vento_doce_montanhas",
+        name: "Vento doce das montanhas",
+        price: 35,
+        description: "Um doce leve e açucarado que dá sensação de frescor.",
+        category: "Comidas",
+        effect: { type: "hunger", value: 15, duration: 20, message: "Sabor de brisa fresca… como caminhar por campos ao amanhecer." }
+      },
+      {
+        id: "torta_galaxia_sonhos",
+        name: "Torta galáxia dos sonhos",
+        price: 50,
+        description: "Uma torta colorida que brilha no escuro.",
+        category: "Comidas",
+        effect: { type: "hunger", value: 25, duration: 25, message: "Sabor de estrelas… como um abraço do universo durante a noite." }
+      },
+      {
+        id: "encanto_lua_azul",
+        name: "Encanto da Lua Azul",
+        price: 70,
+        description: "Uma sobremesa rara que muda de cor sob a luz.",
+        category: "Comidas",
+        effect: { type: "hunger", value: 20, duration: 30, message: "Sabor de serenidade… como sentar sob a lua e ouvir o silêncio." }
+      },
+      {
+        id: "encanto_solar",
+        name: "Encanto Solar",
+        price: 65,
+        description: "Uma torta dourada que parece feita de raios de sol.",
+        category: "Comidas",
+        effect: { type: "hunger", value: 30, duration: 25, message: "Sabor de calor… como receber o abraço de um dia ensolarado." }
+      },
+      {
+        id: "sopro_geada",
+        name: "Sopro da Geada",
+        price: 40,
+        description: "Um sorvete gelado que solta vapor frio.",
+        category: "Comidas",
+        effect: { type: "hunger", value: 20, duration: 20, message: "Sabor de gelo… como mergulhar em um lago cristalino ao amanhecer." }
+      },
+
+      // Bebidas
+      {
+        id: "esfinge",
+        name: "Esfinge",
+        price: 120,
+        description: "Um licor raro que some no ar ao beber.",
+        category: "Bebidas",
+        effect: { type: "hunger", value: 5, duration: 15, message: "Sabor de mistério… como caminhar sem ser visto pelos outros." }
+      },
+      {
+        id: "oceanix",
+        name: "Oceanix",
+        price: 90,
+        description: "Bebida azul que emite sons suaves como canções de sereias.",
+        category: "Bebidas",
+        effect: { type: "hunger", value: 10, duration: 20, message: "Sabor de mar… como ouvir as canções das ondas e sentir paz profunda." }
       }
     ] as StoreItem[]
   }
