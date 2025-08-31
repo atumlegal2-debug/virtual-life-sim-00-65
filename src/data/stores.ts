@@ -1540,6 +1540,128 @@ export const STORES = {
         category: "Relógios (amizade)",
         icon: "📱",
         itemType: "object"
+      },
+      // Pulseiras
+      {
+        id: "pulseira_flores_primavera",
+        name: "Flores de primavera (solo)",
+        price: 1400,
+        description: "Pulseira delicada inspirada na beleza das flores da primavera",
+        category: "Pulseiras",
+        icon: "🌸",
+        itemType: "object"
+      },
+      {
+        id: "pulseira_amor_dois",
+        name: "Amor a dois (dating)",
+        price: 2500,
+        description: "Pulseira romântica para casais apaixonados",
+        category: "Pulseiras",
+        icon: "💕",
+        itemType: "object"
+      },
+      {
+        id: "pulseira_eclipse_eterno",
+        name: "Eclipse eterno (dating)",
+        price: 3200,
+        description: "Pulseira que simboliza um amor que eclipsa tudo",
+        category: "Pulseiras",
+        icon: "🌙",
+        itemType: "object"
+      },
+      // Brincos
+      {
+        id: "brincos_reliquias_preciosas",
+        name: "Relíquias preciosas",
+        price: 2000,
+        description: "Brincos elegantes com pedras preciosas ancestrais",
+        category: "Brincos",
+        icon: "💎",
+        itemType: "object"
+      },
+      {
+        id: "brincos_correntes_alternativas",
+        name: "Correntes alternativas",
+        price: 1500,
+        description: "Brincos modernos com design alternativo e correntes",
+        category: "Brincos",
+        icon: "⛓️",
+        itemType: "object"
+      },
+      {
+        id: "brincos_natureza_brilhante",
+        name: "Natureza brilhante",
+        price: 2400,
+        description: "Brincos inspirados na natureza com brilhos únicos",
+        category: "Brincos",
+        icon: "🍃",
+        itemType: "object"
+      },
+      // Colares
+      {
+        id: "colar_futuro_partilhado",
+        name: "Futuro partilhado (dating)",
+        price: 3500,
+        description: "Colar que simboliza um futuro construído a dois",
+        category: "Colares",
+        icon: "🔮",
+        itemType: "object"
+      },
+      {
+        id: "colar_estrela_diamantes",
+        name: "Estrela dos diamantes (solo)",
+        price: 2800,
+        description: "Colar com pingente em formato de estrela cravejada de diamantes",
+        category: "Colares",
+        icon: "⭐",
+        itemType: "object"
+      },
+      // Relógios Mágicos
+      {
+        id: "relogio_tic_tac_destino",
+        name: "Tic-Tac do Destino (solo)",
+        price: 2600,
+        description: "Relógio mágico que conta o tempo até encontrar seu destino",
+        category: "Relógios Mágicos",
+        icon: "🔮",
+        itemType: "object"
+      },
+      {
+        id: "relogio_coracoes_sincronizados",
+        name: "Corações Sincronizados (dating)",
+        price: 3800,
+        description: "Relógio que sincroniza com o coração da pessoa amada",
+        category: "Relógios Mágicos",
+        icon: "💞",
+        itemType: "object"
+      },
+      // Alfinetes
+      {
+        id: "alfinete_elegancia_discreta",
+        name: "Elegância discreta (solo)",
+        price: 1000,
+        description: "Alfinete sutil e elegante para ocasiões especiais",
+        category: "Alfinetes",
+        icon: "📌",
+        itemType: "object"
+      },
+      {
+        id: "alfinete_presente_especial",
+        name: "Presente especial (solo)",
+        price: 1300,
+        description: "Alfinete perfeito como presente para alguém especial",
+        category: "Alfinetes",
+        icon: "🎁",
+        itemType: "object"
+      },
+      {
+        id: "alfinete_brilhos_noite",
+        name: "Brilhos da noite (solo)",
+        price: 1600,
+        description: "Alfinete que captura os brilhos mágicos da noite",
+        category: "Alfinetes",
+        icon: "✨",
+        itemType: "object"
       }
     ] as StoreItem[]
   },
