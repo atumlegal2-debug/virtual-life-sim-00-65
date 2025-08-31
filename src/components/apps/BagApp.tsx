@@ -767,10 +767,12 @@ export default function BagApp({ onBack }: BagAppProps) {
           {item.isRing && item.relationshipType && (
             <div className="mb-3 p-2 bg-love/10 rounded border border-love/20">
               <p className="text-xs text-love font-medium">
-                💍 Anel de {item.relationshipType === 'dating' ? 'Namoro' : item.relationshipType === 'engagement' ? 'Noivado' : 'Casamento'}
+                💍 Anel de {item.relationshipType === 'dating' ? 'Namoro' : item.relationshipType === 'engagement' ? 'Noivado' : item.relationshipType === 'friendship' ? 'Amizade' : 'Casamento'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Use este anel para fazer uma proposta romântica especial
+                {item.relationshipType === 'friendship' 
+                  ? 'Use este anel para criar uma amizade épica especial'
+                  : 'Use este anel para fazer uma proposta romântica especial'}
               </p>
             </div>
           )}
@@ -802,7 +804,9 @@ export default function BagApp({ onBack }: BagAppProps) {
                 className="flex-1 bg-love hover:bg-love/90 text-white"
               >
                 <Heart size={14} className="mr-1" />
-                Fazer pedido romântico
+                {item.relationshipType === 'friendship' 
+                  ? 'Que tal a gente criar uma amizade épica'
+                  : 'Fazer pedido romântico'}
               </Button>
             ) : item.relationshipType === "friendship" ? (
               <Button
