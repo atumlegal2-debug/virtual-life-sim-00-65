@@ -22,7 +22,7 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
     endRelationship 
   } = useRelationship();
   
-  const [selectedTab, setSelectedTab] = useState<'status' | 'proposals'>('status');
+  const [selectedTab, setSelectedTab] = useState<'status' | 'proposals' | 'connected'>('status');
   
   const userProposals = currentUser ? proposals.filter(p => p.toUserId === currentUser) : [];
 
@@ -83,17 +83,28 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
           variant={selectedTab === 'status' ? 'default' : 'outline'}
           onClick={() => setSelectedTab('status')}
           className="flex-1"
+          size="sm"
         >
-          <Heart size={16} className="mr-2" />
-          Status
+          <Heart size={14} />
+          <span className="ml-1 text-xs">Status</span>
+        </Button>
+        <Button
+          variant={selectedTab === 'connected' ? 'default' : 'outline'}
+          onClick={() => setSelectedTab('connected')}
+          className="flex-1"
+          size="sm"
+        >
+          <Users size={14} />
+          <span className="ml-1 text-xs">Almas Conectadas</span>
         </Button>
         <Button
           variant={selectedTab === 'proposals' ? 'default' : 'outline'}
           onClick={() => setSelectedTab('proposals')}
           className="flex-1 relative"
+          size="sm"
         >
-          <Gift size={16} className="mr-2" />
-          Pedidos
+          <Gift size={14} />
+          <span className="ml-1 text-xs">Pedidos</span>
           {userProposals.length > 0 && (
             <Badge className="absolute -top-2 -right-2 w-5 h-5 p-0 text-xs bg-red-500 animate-pulse">
               {userProposals.length}
@@ -206,6 +217,36 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     💍 Compre anéis na loja para fazer propostas especiais
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {selectedTab === 'connected' && (
+          <div className="space-y-4">
+            <Card className="bg-gradient-card border-border/50">
+              <CardContent className="pt-6 text-center space-y-4">
+                <div className="text-6xl">🤝</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Almas Conectadas</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Em breve você poderá conectar almas com seus amigos especiais!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Info Card */}
+            <Card className="bg-gradient-card border-border/50">
+              <CardContent className="pt-4">
+                <div className="text-center space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    👥 Use itens de amizade da joalheria para criar laços especiais
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    💎 Anéis, pulseiras, colares e relógios de amizade disponíveis em breve
                   </p>
                 </div>
               </CardContent>
