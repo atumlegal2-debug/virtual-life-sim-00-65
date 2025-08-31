@@ -21,14 +21,14 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 // Manager passwords for each store
 const MANAGER_PASSWORDS: Record<string, string> = {
-  "bar": "Bar9264",
-  "jewelry": "Joalheria3478", 
-  "restaurant": "Restaurante5082",
+  "bar": "Bar6291",
+  "jewelry": "Joalheria8547", 
+  "restaurant": "Restaurante3852",
   "pharmacy": "Farmacia1817",
-  "cafeteria": "Cafeteria2943",
+  "cafeteria": "Cafeteria4926",
   "pizzeria": "1616",
-  "sexshop": "Sexshop7631",
-  "icecream": "Sorveteria6159",
+  "sexshop": "Sexshop7304",
+  "icecream": "Sorveteria5173",
   "hospital": "2023"
 };
 
