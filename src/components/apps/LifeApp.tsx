@@ -107,62 +107,46 @@ export function LifeApp({ onBack }: LifeAppProps) {
     }
   }, [gameStats.hunger, localDiseases]);
 
-  // Listen for consultation approval events to cure hunger disease
+  // Listen for real-time updates on hospital treatment requests
   useEffect(() => {
-    const checkConsultationApproval = async () => {
-      if (!currentUser) return;
+    if (!currentUser) return;
 
-      try {
-        // Get user profile to get user_id
-        const { data: profile } = await supabase
-          .from('users')
-          .select('id')
-          .eq('username', currentUser)
-          .single();
-
-        if (!profile) return;
-
-        // Check for approved treatment requests for this user
-        const { data: approvedTreatments, error } = await supabase
-          .from('hospital_treatment_requests')
-          .select('*')
-          .eq('user_id', profile.id)
-          .eq('status', 'accepted')
-          .order('processed_at', { ascending: false })
-          .limit(10);
-
-        if (error) {
-          console.error('Error checking treatment requests:', error);
-          return;
-        }
-
-        // Check if any approved treatment is for hunger disease cure
-        const hungerTreatment = approvedTreatments?.find(treatment => 
-          treatment.treatment_type.includes('Desnutrição') || 
-          treatment.request_message.includes('Desnutrição')
-        );
-
-        if (hungerTreatment && localDiseases.some(d => d.name === "Desnutrição")) {
-          console.log('Hunger disease treatment approved, curing patient');
-          await cureHungerDisease();
+    const channel = supabase
+      .channel('hospital-treatment-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'hospital_treatment_requests',
+          filter: `username=eq.${currentUser}`
+        },
+        async (payload) => {
+          console.log('Hospital treatment update received:', payload);
           
-          // Mark this treatment as processed so we don't cure again
-          await supabase
-            .from('hospital_treatment_requests')
-            .update({ manager_notes: (hungerTreatment.manager_notes || '') + ' [CURED]' })
-            .eq('id', hungerTreatment.id);
+          const treatment = payload.new;
+          if (treatment.status === 'accepted' && 
+              (treatment.treatment_type.includes('Desnutrição') || 
+               treatment.request_message.includes('Desnutrição')) &&
+              localDiseases.some(d => d.name === "Desnutrição")) {
+            
+            console.log('Real-time hunger disease treatment approved, curing patient');
+            await cureHungerDisease();
+            
+            // Mark this treatment as processed so we don't cure again
+            await supabase
+              .from('hospital_treatment_requests')
+              .update({ manager_notes: (treatment.manager_notes || '') + ' [CURED]' })
+              .eq('id', treatment.id);
+          }
         }
-      } catch (error) {
-        console.error('Error checking consultation approval:', error);
-      }
-    };
+      )
+      .subscribe();
 
-    // Check every 30 seconds if user is logged in and has hunger disease
-    if (currentUser && localDiseases.some(d => d.name === "Desnutrição")) {
-      const interval = setInterval(checkConsultationApproval, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [currentUser, localDiseases]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, localDiseases, cureHungerDisease]);
 
   return (
     <div className="flex flex-col h-full">
