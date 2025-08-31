@@ -206,15 +206,6 @@ export const STORES = {
       },
       // Proteção Solar & Encantamentos
       {
-        id: "protetor_sombra",
-        name: "Protetor Solar Luz de Sombra",
-        price: 70,
-        description: "Bloqueia até a mais maligna das queimaduras solares",
-        category: "Proteção Solar & Encantamentos",
-        type: "medicine",
-        cures: "Queimadura Solar Arcana"
-      },
-      {
         id: "filtro_dragao",
         name: "Filtro Solar do Dragão Dourado",
         price: 65,
