@@ -1835,3 +1835,5 @@ export const STORES = {
     ] as StoreItem[]
   }
 };
+
+// Força atualização - produtos adicionados
