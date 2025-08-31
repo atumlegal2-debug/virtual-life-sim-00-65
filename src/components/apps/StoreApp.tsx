@@ -5,8 +5,7 @@ import { useStore } from "@/contexts/StoreContext";
 import { useGame } from "@/contexts/GameContext";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { ArrowLeft, ShoppingCart, Coffee, Pizza, UtensilsCrossed, ShoppingBag, 
-         Heart, Zap, IceCream, Wine, Pill, Shield, Crown, Sparkles } from "lucide-react";
-import { ManagerButton } from "@/components/ui/manager-button";
+         Heart, Zap, IceCream, Wine, Pill, Shield, Crown, Sparkles, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { STORES, StoreItem, CartItem } from "@/data/stores";
 import { Input } from "@/components/ui/input";
@@ -85,6 +84,8 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [currentProposal, setCurrentProposal] = useState<any>(null);
+  const [showCartCheckout, setShowCartCheckout] = useState(false);
+  const [orderProcessing, setOrderProcessing] = useState(false);
   
   const { cart, addToCart, removeFromCart, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
@@ -155,10 +156,14 @@ export function StoreApp({ onBack }: StoreAppProps) {
     }
 
     if (selectedStore && currentUser) {
+      setOrderProcessing(true);
       await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4));
+      setShowCartCheckout(false);
+      setOrderProcessing(false);
       toast({
         title: "Pedido enviado!",
-        description: "Aguarde a aprovação do gerente da loja"
+        description: "Olá, seu pedido está em processo, entre em contato com o chat do estabelecimento e aguarde",
+        duration: 5000
       });
     }
   };
@@ -386,11 +391,14 @@ export function StoreApp({ onBack }: StoreAppProps) {
             <span className="text-xs font-medium text-money">{money} CM</span>
           </div>
           
-          <ManagerButton storeName={store.name} />
-          
           {/* Cart */}
           <div className="relative">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowCartCheckout(true)}
+              disabled={cart.length === 0}
+            >
               <ShoppingCart size={16} />
               {cart.length > 0 && (
                 <Badge className="absolute -top-2 -right-2 w-5 h-5 p-0 text-xs">
@@ -495,69 +503,81 @@ export function StoreApp({ onBack }: StoreAppProps) {
         ))}
       </div>
 
-      {/* Modern Cart Summary */}
-      {cart.length > 0 && (
-        <Card className="bg-gradient-to-br from-card to-card/80 border-primary/20 shadow-lg">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ShoppingCart size={18} className="text-primary" />
-                Carrinho ({cart.length})
-              </CardTitle>
-              <Badge className="bg-money/10 text-money border-money/20">
-                {getCartTotal()} CM
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-3 mb-4 max-h-32 overflow-y-auto">
-              {cart.map(item => (
-                <div key={item.id} className="flex justify-between items-center p-2 rounded-lg bg-muted/30">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-foreground truncate block">
-                      {item.quantity}x {item.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {item.price} CM cada
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span className="text-money font-semibold text-sm">
-                      {item.price * item.quantity} CM
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeFromCart(item.id)}
-                      className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      ×
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="border-t border-border pt-3">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-bold text-lg">Total:</span>
-                <span className="font-bold text-lg text-money">{getCartTotal()} CM</span>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={clearCart} className="flex-1">
-                  Limpar Carrinho
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSubmitOrder}
-                  className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+      {/* Cart Checkout Modal */}
+      {showCartCheckout && cart.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border shadow-xl">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShoppingCart size={20} className="text-primary" />
+                  Finalizar Compra
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCartCheckout(false)}
+                  className="h-8 w-8 p-0"
                 >
-                  Finalizar Pedido
+                  <X size={16} />
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
+                {cart.map(item => (
+                  <div key={item.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate block">
+                        {item.quantity}x {item.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {item.price} CM cada
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      <span className="text-money font-semibold text-sm">
+                        {item.price * item.quantity} CM
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeFromCart(item.id)}
+                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-lg">Total:</span>
+                  <span className="font-bold text-lg text-money">{getCartTotal()} CM</span>
+                </div>
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={clearCart} 
+                    className="flex-1"
+                    disabled={orderProcessing}
+                  >
+                    Limpar
+                  </Button>
+                  <Button 
+                    onClick={handleSubmitOrder}
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    disabled={orderProcessing}
+                  >
+                    {orderProcessing ? "Processando..." : "Finalizar Compra"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
       
       {/* Modals */}
