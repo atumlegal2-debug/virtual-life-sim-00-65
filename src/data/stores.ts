@@ -1573,6 +1573,7 @@ export const STORES = {
         price: 250,
         description: "Anel que simboliza amizade eterna e inquebrantável",
         category: "Anéis (amizade)",
+        relationshipType: "friendship",
         icon: "👍",
         itemType: "object"
       },
@@ -1583,6 +1584,7 @@ export const STORES = {
         price: 180,
         description: "Pulseira que conecta almas de verdadeiros parceiros",
         category: "Pulseiras (amizade)",
+        relationshipType: "friendship",
         icon: "🤝",
         itemType: "object"
       },
@@ -1593,6 +1595,7 @@ export const STORES = {
         price: 220,
         description: "Colar para celebrar as melhores aventuras entre amigos",
         category: "Colares (amizade)",
+        relationshipType: "friendship",
         icon: "🎭",
         itemType: "object"
       },
@@ -1603,6 +1606,7 @@ export const STORES = {
         price: 350,
         description: "Relógio que marca o tempo de uma amizade sem fim",
         category: "Relógios (amizade)",
+        relationshipType: "friendship",
         icon: "⏰",
         itemType: "object"
       }
