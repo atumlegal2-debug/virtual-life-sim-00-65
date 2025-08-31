@@ -8,6 +8,7 @@ import { GameProvider } from "@/contexts/GameContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { RelationshipProvider } from "@/contexts/RelationshipContext";
 import { FriendshipProvider } from "@/contexts/FriendshipContext";
+import { FriendshipItemProvider } from "@/contexts/FriendshipItemContext";
 import { PregnancyProvider } from "@/contexts/PregnancyContext";
 import Index from "./pages/Index";
 import Manager from "./pages/Manager";
@@ -22,7 +23,8 @@ const App = () => (
         <StoreProvider>
           <RelationshipProvider>
             <FriendshipProvider>
-              <PregnancyProvider>
+              <FriendshipItemProvider>
+                <PregnancyProvider>
                 <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -35,7 +37,8 @@ const App = () => (
                   </Routes>
                 </BrowserRouter>
                 </TooltipProvider>
-              </PregnancyProvider>
+                </PregnancyProvider>
+              </FriendshipItemProvider>
             </FriendshipProvider>
           </RelationshipProvider>
         </StoreProvider>

@@ -5,6 +5,7 @@ import { ArrowLeft, Heart, Users, Gift, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useGame } from "@/contexts/GameContext";
 import { useRelationship } from "@/contexts/RelationshipContext";
+import { useFriendshipItems } from "@/contexts/FriendshipItemContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface RelationshipAppProps {
@@ -21,10 +22,24 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
     rejectProposal,
     endRelationship 
   } = useRelationship();
+  const {
+    friendshipRequests,
+    connectedSouls,
+    acceptFriendshipItem,
+    rejectFriendshipItem
+  } = useFriendshipItems();
   
   const [selectedTab, setSelectedTab] = useState<'status' | 'proposals' | 'connected'>('status');
   
   const userProposals = currentUser ? proposals.filter(p => p.toUserId === currentUser) : [];
+  const userFriendshipRequests = currentUser ? friendshipRequests.filter(r => r.to_username === currentUser && r.status === 'pending') : [];
+  const userConnectedSouls = currentUser ? connectedSouls.filter(s => 
+    s.user1_username === currentUser || s.user2_username === currentUser
+  ) : [];
+
+  const getDisplayName = (username: string) => {
+    return username.replace(/\d{4}$/, '');
+  };
 
   const getRelationshipTypeText = (type: string) => {
     switch (type) {
@@ -105,9 +120,9 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
         >
           <Gift size={14} />
           <span className="ml-1 text-xs">Pedidos</span>
-          {userProposals.length > 0 && (
+          {(userProposals.length + userFriendshipRequests.length) > 0 && (
             <Badge className="absolute -top-2 -right-2 w-5 h-5 p-0 text-xs bg-red-500 animate-pulse">
-              {userProposals.length}
+              {userProposals.length + userFriendshipRequests.length}
             </Badge>
           )}
         </Button>
@@ -226,27 +241,70 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
 
         {selectedTab === 'connected' && (
           <div className="space-y-4">
-            <Card className="bg-gradient-card border-border/50">
-              <CardContent className="pt-6 text-center space-y-4">
-                <div className="text-6xl">🤝</div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Almas Conectadas</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Em breve você poderá conectar almas com seus amigos especiais!
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {userConnectedSouls.length > 0 ? (
+              userConnectedSouls.map(soul => {
+                const friendUsername = soul.user1_username === currentUser ? soul.user2_username : soul.user1_username;
+                return (
+                  <Card key={soul.id} className="bg-gradient-card border-border/50">
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold">
+                              {getDisplayName(friendUsername).slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground">{getDisplayName(friendUsername)}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Almas conectadas através de {soul.item_name}
+                            </p>
+                          </div>
+                          <Badge className="bg-primary text-white">
+                            🤝 Conectado
+                          </Badge>
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">{soul.item_data.icon || "💎"}</span>
+                            <div>
+                              <p className="font-medium text-foreground">{soul.item_name}</p>
+                              <p className="text-sm text-muted-foreground">{soul.item_data.description}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Conectados em {new Date(soul.connected_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card className="bg-gradient-card border-border/50">
+                <CardContent className="pt-6 text-center space-y-4">
+                  <div className="text-6xl">🤝</div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Almas Conectadas</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Você ainda não possui almas conectadas.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Info Card */}
             <Card className="bg-gradient-card border-border/50">
               <CardContent className="pt-4">
                 <div className="text-center space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    👥 Use itens de amizade da joalheria para criar laços especiais
+                    👥 Use itens de amizade da joalheria para conectar almas
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    💎 Anéis, pulseiras, colares e relógios de amizade disponíveis em breve
+                    💎 Anéis, pulseiras, colares e relógios de amizade disponíveis
                   </p>
                 </div>
               </CardContent>
@@ -256,66 +314,131 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
 
         {selectedTab === 'proposals' && (
           <div className="space-y-4">
-            {userProposals.length > 0 ? (
-              userProposals.map(proposal => (
-                <Card key={proposal.id} className="bg-gradient-card border-border/50">
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
-                          <span className="text-primary-foreground font-bold">
-                            {proposal.fromUsername.slice(0, 2).toUpperCase()}
-                          </span>
+            {/* Romantic Proposals */}
+            {userProposals.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-foreground">Pedidos Românticos</h4>
+                {userProposals.map(proposal => (
+                  <Card key={proposal.id} className="bg-gradient-card border-border/50">
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold">
+                              {getDisplayName(proposal.fromUsername).slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground">{getDisplayName(proposal.fromUsername)}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Pedido de {getRelationshipTypeText(proposal.type)}
+                            </p>
+                          </div>
+                          <Badge className="bg-love text-white">
+                            {getRelationshipTypeText(proposal.type)}
+                          </Badge>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-foreground">{proposal.fromUsername}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Pedido de {getRelationshipTypeText(proposal.type)}
-                          </p>
-                        </div>
-                        <Badge className="bg-love text-white">
-                          {getRelationshipTypeText(proposal.type)}
-                        </Badge>
-                      </div>
 
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">{proposal.ring.icon || "💍"}</span>
-                          <div>
-                            <p className="font-medium text-foreground">{proposal.ring.name}</p>
-                            <p className="text-sm text-muted-foreground">{proposal.ring.description}</p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">{proposal.ring.icon || "💍"}</span>
+                            <div>
+                              <p className="font-medium text-foreground">{proposal.ring.name}</p>
+                              <p className="text-sm text-muted-foreground">{proposal.ring.description}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => acceptProposal(proposal)}
-                          className="flex-1 bg-success hover:bg-success/90"
-                        >
-                          <Heart size={16} className="mr-2" />
-                          Aceitar
-                        </Button>
-                        <Button
-                          onClick={() => rejectProposal(proposal)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Rejeitar
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => acceptProposal(proposal)}
+                            className="flex-1 bg-success hover:bg-success/90"
+                          >
+                            <Heart size={16} className="mr-2" />
+                            Aceitar
+                          </Button>
+                          <Button
+                            onClick={() => rejectProposal(proposal)}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            Rejeitar
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Friendship Item Requests */}
+            {userFriendshipRequests.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-foreground">Itens de Amizade</h4>
+                {userFriendshipRequests.map(request => (
+                  <Card key={request.id} className="bg-gradient-card border-border/50">
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold">
+                              {getDisplayName(request.from_username).slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground">{getDisplayName(request.from_username)}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Quer conectar almas com você
+                            </p>
+                          </div>
+                          <Badge className="bg-primary text-white">
+                            💎 Amizade
+                          </Badge>
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">{request.item_data.icon || "💎"}</span>
+                            <div>
+                              <p className="font-medium text-foreground">{request.item_data.name}</p>
+                              <p className="text-sm text-muted-foreground">{request.item_data.description}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => acceptFriendshipItem(request)}
+                            className="flex-1 bg-success hover:bg-success/90"
+                          >
+                            <Users size={16} className="mr-2" />
+                            Aceitar
+                          </Button>
+                          <Button
+                            onClick={() => rejectFriendshipItem(request)}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            Rejeitar
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* No requests message */}
+            {userProposals.length === 0 && userFriendshipRequests.length === 0 && (
               <Card className="bg-gradient-card border-border/50">
                 <CardContent className="pt-6 text-center space-y-4">
                   <div className="text-6xl">💌</div>
                   <div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum pedido</h3>
                     <p className="text-sm text-muted-foreground">
-                      Você não possui pedidos de relacionamento pendentes.
+                      Você não possui pedidos pendentes.
                     </p>
                   </div>
                 </CardContent>

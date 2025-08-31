@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart, History, Clock } from "lucide-react";
+import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart, History, Clock, Users } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,7 @@ import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffect
 import { SendRingModal } from "@/components/modals/SendRingModal";
 
 import { SendItemModal } from "@/components/modals/SendItemModal";
+import { SendFriendshipItemModal } from "@/components/modals/SendFriendshipItemModal";
 import { StoreItem } from "@/data/stores";
 
 interface BagAppProps {
@@ -71,8 +72,10 @@ export default function BagApp({ onBack }: BagAppProps) {
   const [activeTab, setActiveTab] = useState<"food" | "drink" | "object" | "history">("food");
   const [sendRingModalOpen, setSendRingModalOpen] = useState(false);
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
+  const [sendFriendshipItemModalOpen, setSendFriendshipItemModalOpen] = useState(false);
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [selectedItemToSend, setSelectedItemToSend] = useState<InventoryItem | null>(null);
+  const [selectedFriendshipItem, setSelectedFriendshipItem] = useState<InventoryItem | null>(null);
 
   // Cache em memória para dados da bolsa
   const [cachedData, setCachedData] = useState<{
@@ -672,6 +675,11 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
   };
 
+  const handleSendFriendshipItem = (item: InventoryItem) => {
+    setSelectedFriendshipItem(item);
+    setSendFriendshipItemModalOpen(true);
+  };
+
   // Group inventory by category
   const foodItems = inventory.filter(item => item.itemType === "food");
   const drinkItems = inventory.filter(item => item.itemType === "drink");
@@ -756,6 +764,15 @@ export default function BagApp({ onBack }: BagAppProps) {
               >
                 <Heart size={14} className="mr-1" />
                 Fazer pedido romântico
+              </Button>
+            ) : item.relationshipType === "friendship" ? (
+              <Button
+                size="sm"
+                onClick={() => handleSendFriendshipItem(item)}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Users size={14} className="mr-1" />
+                Enviar para amigo
               </Button>
             ) : item.canSend && (
               <Button
@@ -947,6 +964,13 @@ export default function BagApp({ onBack }: BagAppProps) {
         onItemSent={() => {
           loadAllData(true); // Force refresh após enviar item
         }}
+      />
+      
+      {/* Send Friendship Item Modal */}
+      <SendFriendshipItemModal
+        isOpen={sendFriendshipItemModalOpen}
+        onClose={() => setSendFriendshipItemModalOpen(false)}
+        item={selectedFriendshipItem}
       />
     </div>
   );
