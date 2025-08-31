@@ -433,74 +433,98 @@ export function StoreApp({ onBack }: StoreAppProps) {
         </div>
       </div>
 
-      {/* Store Items */}
-      <div className="flex-1 space-y-3 mb-4">
-        {store.items.map(item => (
-          <Card key={item.id} className="bg-gradient-card border-border/50 hover:shadow-md transition-all group">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                        {item.name}
-                      </h3>
-                      {item.isMagical && (
-                        <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">
-                          ✨ MÁGICO
-                        </Badge>
-                      )}
-                    </div>
-                    {item.category && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {item.category}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                    {item.description}
-                  </p>
-                  {item.visualEffect && (
-                    <p className="text-xs text-muted-foreground/80 mb-2 italic">
-                      Efeito: {item.visualEffect}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-money font-bold text-lg">{item.price} CM</span>
-                    <div className="flex gap-1">
-                      {item.relationshipType && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.relationshipType === "namoro" && "💕"}
-                          {item.relationshipType === "noivado" && "👑"}
-                          {item.relationshipType === "casamento" && "💍"}
-                          {item.relationshipType}
-                        </Badge>
-                      )}
-                      {item.effect && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.effect.type === "health" && "💊"}
-                          {item.effect.type === "hunger" && "🍽️"}
-                          {item.effect.type === "mood" && "😊"}
-                          {item.effect.type === "energy" && "⚡"}
-                          {item.effect.type === "alcoholism" && "🍷"}
-                          +{item.effect.value}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleAddToCart(item)}
-                  className="shrink-0 group-hover:scale-105 transition-transform"
-                >
-                  <ShoppingBag size={16} className="mr-1" />
-                  Adicionar
-                </Button>
+      {/* Store Items grouped by category */}
+      <div className="flex-1 overflow-y-auto space-y-6 mb-4">
+        {(() => {
+          // Group items by category
+          const itemsByCategory = store.items.reduce((acc, item) => {
+            const category = item.category || 'Outros';
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(item);
+            return acc;
+          }, {} as Record<string, StoreItem[]>);
+
+          // Sort categories alphabetically
+          const sortedCategories = Object.keys(itemsByCategory).sort();
+
+          return sortedCategories.map(category => (
+            <div key={category} className="space-y-3">
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-2">
+                <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wide flex items-center gap-2">
+                  <span className="text-primary">{category}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {itemsByCategory[category].length} {itemsByCategory[category].length === 1 ? 'item' : 'itens'}
+                  </Badge>
+                </h2>
+                <div className="h-px bg-border/50 mt-2"></div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              
+              {itemsByCategory[category].map(item => (
+                <Card key={item.id} className="bg-gradient-card border-border/50 hover:shadow-md transition-all group">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                              {item.name}
+                            </h3>
+                            {item.isMagical && (
+                              <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">
+                                ✨ MÁGICO
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                          {item.description}
+                        </p>
+                        {item.visualEffect && (
+                          <p className="text-xs text-muted-foreground/80 mb-2 italic">
+                            Efeito: {item.visualEffect}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-money font-bold text-lg">{item.price} CM</span>
+                          <div className="flex gap-1">
+                            {item.relationshipType && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.relationshipType === "namoro" && "💕"}
+                                {item.relationshipType === "noivado" && "👑"}
+                                {item.relationshipType === "casamento" && "💍"}
+                                {item.relationshipType}
+                              </Badge>
+                            )}
+                            {item.effect && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.effect.type === "health" && "💊"}
+                                {item.effect.type === "hunger" && "🍽️"}
+                                {item.effect.type === "mood" && "😊"}
+                                {item.effect.type === "energy" && "⚡"}
+                                {item.effect.type === "alcoholism" && "🍷"}
+                                +{item.effect.value}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddToCart(item)}
+                        className="shrink-0 group-hover:scale-105 transition-transform"
+                      >
+                        <ShoppingBag size={16} className="mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* Cart Checkout Modal */}
