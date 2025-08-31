@@ -201,6 +201,16 @@ export function LifeApp({ onBack }: LifeAppProps) {
               value={gameStats.disease || 0}
               color="health"
             />
+            <StatBar
+              label="Felicidade"
+              value={gameStats.happiness || 100}
+              color="happiness"
+            />
+            <StatBar
+              label="Energia"
+              value={gameStats.energy || 100}
+              color="energy"
+            />
           </CardContent>
         </Card>
 

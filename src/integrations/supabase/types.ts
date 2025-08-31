@@ -646,7 +646,9 @@ export type Database = {
           created_at: string
           disease_percentage: number | null
           email: string
+          energy_percentage: number | null
           family: string | null
+          happiness_percentage: number | null
           hunger_percentage: number | null
           id: string
           life_percentage: number | null
@@ -669,7 +671,9 @@ export type Database = {
           created_at?: string
           disease_percentage?: number | null
           email: string
+          energy_percentage?: number | null
           family?: string | null
+          happiness_percentage?: number | null
           hunger_percentage?: number | null
           id?: string
           life_percentage?: number | null
@@ -692,7 +696,9 @@ export type Database = {
           created_at?: string
           disease_percentage?: number | null
           email?: string
+          energy_percentage?: number | null
           family?: string | null
+          happiness_percentage?: number | null
           hunger_percentage?: number | null
           id?: string
           life_percentage?: number | null

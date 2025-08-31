@@ -4,7 +4,7 @@ interface StatBarProps {
   label: string;
   value: number;
   maxValue?: number;
-  color: "health" | "hunger" | "money" | "love" | "primary";
+  color: "health" | "hunger" | "money" | "love" | "primary" | "happiness" | "energy";
   className?: string;
 }
 
@@ -16,7 +16,9 @@ export function StatBar({ label, value, maxValue = 100, color, className }: Stat
     hunger: "bg-hunger", 
     money: "bg-money",
     love: "bg-love",
-    primary: "bg-primary"
+    primary: "bg-primary",
+    happiness: "bg-happiness",
+    energy: "bg-energy"
   };
 
   const bgColorClasses = {
@@ -24,7 +26,9 @@ export function StatBar({ label, value, maxValue = 100, color, className }: Stat
     hunger: "bg-hunger/20",
     money: "bg-money/20", 
     love: "bg-love/20",
-    primary: "bg-primary/20"
+    primary: "bg-primary/20",
+    happiness: "bg-happiness/20",
+    energy: "bg-energy/20"
   };
 
   return (

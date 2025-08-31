@@ -53,6 +53,8 @@
     --hunger: 25 85% 55%;
     --money: 142 75% 50%;
     --love: 340 75% 65%;
+    --happiness: 52 98% 65%;
+    --energy: 200 85% 60%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(240 75% 65%), hsl(260 75% 75%));

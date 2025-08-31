@@ -8,6 +8,8 @@ interface GameStats {
   alcoholism: number;
   disease: number;
   mood: string;
+  happiness: number;
+  energy: number;
 }
 
 interface TemporaryEffect {
@@ -80,7 +82,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     hunger: 100,
     alcoholism: 0,
     disease: 0,
-    mood: "Sentindo-se bem"
+    mood: "Sentindo-se bem",
+    happiness: 100,
+    energy: 100
   });
   const [money, setMoney] = useState(2000); // Initial wallet balance: 2,000 CM
   const [diseases, setDiseases] = useState<Disease[]>([]);
@@ -154,7 +158,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           hunger: profile.hunger_percentage || 100,
           alcoholism: profile.alcoholism_percentage || 0,
           disease: profile.disease_percentage || 0,
-          mood: profile.mood?.toString() || "Sentindo-se bem"
+          mood: profile.mood?.toString() || "Sentindo-se bem",
+          happiness: profile.happiness_percentage || 100,
+          energy: profile.energy_percentage || 100
         });
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via auth ID:', profile.wallet_balance);
@@ -189,7 +195,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           hunger: profile.hunger_percentage || 100,
           alcoholism: profile.alcoholism_percentage || 0,
           disease: profile.disease_percentage || 0,
-          mood: profile.mood?.toString() || "Sentindo-se bem"
+          mood: profile.mood?.toString() || "Sentindo-se bem",
+          happiness: profile.happiness_percentage || 100,
+          energy: profile.energy_percentage || 100
         });
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via username:', profile.wallet_balance);
@@ -316,7 +324,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         hunger: profile.hunger_percentage || 100,
         alcoholism: profile.alcoholism_percentage || 0,
         disease: profile.disease_percentage || 0,
-        mood: profile.mood?.toString() || "Sentindo-se bem"
+        mood: profile.mood?.toString() || "Sentindo-se bem",
+        happiness: profile.happiness_percentage || 100,
+        energy: profile.energy_percentage || 100
       });
       setMoney(profile.wallet_balance || 2000); // Default to 2000 if null
       
@@ -424,7 +434,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         hunger: 100,
         alcoholism: 0,
         disease: 0,
-        mood: "Sentindo-se bem"
+        mood: "Sentindo-se bem",
+        happiness: 100,
+        energy: 100
       });
       
       // Try to sign out from Supabase but don't let it block logout
@@ -465,6 +477,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (stats.alcoholism !== undefined) updateData.alcoholism_percentage = stats.alcoholism;
       if (stats.disease !== undefined) updateData.disease_percentage = stats.disease;
       if (stats.mood !== undefined) updateData.mood = stats.mood;
+      if (stats.happiness !== undefined) updateData.happiness_percentage = stats.happiness;
+      if (stats.energy !== undefined) updateData.energy_percentage = stats.energy;
       
       if (Object.keys(updateData).length > 0) {
         console.log('Syncing stats to database:', updateData);
