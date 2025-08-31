@@ -5,7 +5,7 @@ import { useStore } from "@/contexts/StoreContext";
 import { useGame } from "@/contexts/GameContext";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { ArrowLeft, ShoppingCart, Coffee, Pizza, UtensilsCrossed, ShoppingBag, 
-         Heart, Zap, IceCream, Wine, Pill, Shield, Crown, Sparkles, X } from "lucide-react";
+         Heart, Zap, IceCream, Wine, Pill, Shield, Crown, Sparkles, X, Plus, Minus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { STORES, StoreItem, CartItem } from "@/data/stores";
 import { Input } from "@/components/ui/input";
@@ -87,7 +87,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [showCartCheckout, setShowCartCheckout] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
   
-  const { cart, addToCart, removeFromCart, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword } = useStore();
+  const { cart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
   const { proposals, getProposalsForUser, acceptProposal, rejectProposal } = useRelationship();
   const { toast } = useToast();
@@ -553,13 +553,32 @@ export function StoreApp({ onBack }: StoreAppProps) {
                   <div key={item.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-foreground truncate block">
-                        {item.quantity}x {item.name}
+                        {item.name}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {item.price} CM cada
                       </span>
                     </div>
                     <div className="flex items-center gap-2 ml-2">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => decreaseQuantity(item.id)}
+                          className="h-6 w-6 p-0 hover:bg-muted"
+                        >
+                          <Minus size={12} />
+                        </Button>
+                        <span className="w-8 text-center text-xs font-medium">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => increaseQuantity(item.id)}
+                          className="h-6 w-6 p-0 hover:bg-muted"
+                        >
+                          <Plus size={12} />
+                        </Button>
+                      </div>
                       <span className="text-money font-semibold text-sm">
                         {item.price * item.quantity} CM
                       </span>

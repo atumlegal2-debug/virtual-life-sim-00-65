@@ -8,6 +8,8 @@ interface StoreContextType {
   orders: StoreOrder[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
+  increaseQuantity: (itemId: string) => void;
+  decreaseQuantity: (itemId: string) => void;
   clearCart: () => void;
   submitOrder: (storeId: string, buyerId: string, buyerName: string) => Promise<void>;
   approveOrder: (orderId: string, buyerId: string, deductMoney: (amount: number) => void, addToBag: (items: CartItem[]) => void) => void;
@@ -52,6 +54,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = (itemId: string) => {
     setCart(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const increaseQuantity = (itemId: string) => {
+    setCart(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      )
+    );
+  };
+
+  const decreaseQuantity = (itemId: string) => {
+    setCart(prev =>
+      prev.map(item =>
+        item.id === itemId && item.quantity > 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      ).filter(item => item.quantity > 0)
+    );
   };
 
   const clearCart = () => {
@@ -182,6 +204,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       orders,
       addToCart,
       removeFromCart,
+      increaseQuantity,
+      decreaseQuantity,
       clearCart,
       submitOrder,
       approveOrder,
