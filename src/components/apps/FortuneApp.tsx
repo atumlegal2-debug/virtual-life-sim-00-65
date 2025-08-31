@@ -54,10 +54,14 @@ export function FortuneApp({ onBack }: FortuneAppProps) {
   const [isOpening, setIsOpening] = useState(false);
 
   useEffect(() => {
-    // Load last open time from localStorage
+    // Load last open time and message from localStorage
     const savedOpenTime = localStorage.getItem('lastFortuneOpenTime');
+    const savedMessage = localStorage.getItem('currentFortuneMessage');
     if (savedOpenTime) {
       setLastOpenTime(new Date(savedOpenTime));
+    }
+    if (savedMessage) {
+      setCurrentMessage(savedMessage);
     }
   }, []);
 
@@ -83,7 +87,9 @@ export function FortuneApp({ onBack }: FortuneAppProps) {
         } else {
           setTimeUntilNext('');
           setLastOpenTime(null);
+          setCurrentMessage(null);
           localStorage.removeItem('lastFortuneOpenTime');
+          localStorage.removeItem('currentFortuneMessage');
         }
       }, 1000);
 
@@ -114,10 +120,11 @@ export function FortuneApp({ onBack }: FortuneAppProps) {
       setCurrentMessage(selectedMessage);
       setIsOpening(false);
       
-      // Save open time
+      // Save open time and message
       const now = new Date();
       setLastOpenTime(now);
       localStorage.setItem('lastFortuneOpenTime', now.toISOString());
+      localStorage.setItem('currentFortuneMessage', selectedMessage);
       
       toast({
         title: "🥠 Biscoito aberto!",
