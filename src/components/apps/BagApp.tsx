@@ -36,6 +36,13 @@ interface InventoryItem {
     type: string;
     value: number;
     message: string;
+  } | {
+    type: "multiple";
+    effects: Array<{
+      type: string;
+      value: number;
+    }>;
+    message: string;
   };
 }
 
@@ -515,40 +522,70 @@ export default function BagApp({ onBack }: BagAppProps) {
         let effectMessage = `Você usou ${item.name}`;
 
         if (item.effect) {
-          switch (item.effect.type) {
-            case "health":
-              const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
-              dbUpdateStats.life_percentage = newHealth;
-              gameContextStats.health = newHealth;
-              effectMessage = item.effect.message;
-              break;
-            case "hunger":
-              const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
-              dbUpdateStats.hunger_percentage = newHunger;
-              gameContextStats.hunger = newHunger;
-              effectMessage = item.effect.message;
-              break;
-            case "mood":
-              const newMood = Math.min(100, userRecord.mood + item.effect.value);
-              dbUpdateStats.mood = newMood;
-              gameContextStats.mood = newMood.toString();
-              effectMessage = item.effect.message;
-              break;
+          if (item.effect.type === "multiple" && "effects" in item.effect) {
+            // Handle multiple effects for drinks
+            for (const effect of item.effect.effects) {
+              switch (effect.type) {
+                case "hunger":
+                  const newHunger = Math.min(100, userRecord.hunger_percentage + effect.value);
+                  dbUpdateStats.hunger_percentage = newHunger;
+                  gameContextStats.hunger = newHunger;
+                  break;
+                case "happiness":
+                  const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + effect.value);
+                  dbUpdateStats.happiness_percentage = newHappiness;
+                  gameContextStats.happiness = newHappiness;
+                  break;
+                case "energy":
+                  const { data: userData } = await supabase
+                    .from('users')
+                    .select('energy_percentage')
+                    .eq('id', userRecord.id)
+                    .single();
+                  const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + effect.value);
+                  dbUpdateStats.energy_percentage = newEnergy;
+                  gameContextStats.energy = newEnergy;
+                  break;
+              }
+            }
+            effectMessage = item.effect.message;
+          } else {
+            // Handle single effects
+            switch (item.effect.type) {
+              case "health":
+                const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
+                dbUpdateStats.life_percentage = newHealth;
+                gameContextStats.health = newHealth;
+                effectMessage = item.effect.message;
+                break;
+              case "hunger":
+                const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
+                dbUpdateStats.hunger_percentage = newHunger;
+                gameContextStats.hunger = newHunger;
+                effectMessage = item.effect.message;
+                break;
+              case "mood":
+                const newMood = Math.min(100, userRecord.mood + item.effect.value);
+                dbUpdateStats.mood = newMood;
+                gameContextStats.mood = newMood.toString();
+                effectMessage = item.effect.message;
+                break;
+            }
           }
+        }
 
-          // Update user stats in database
-          if (Object.keys(dbUpdateStats).length > 0) {
-            const { error: updateError } = await supabase
-              .from('users')
-              .update(dbUpdateStats)
-              .eq('id', userRecord.id);
-            if (updateError) throw updateError;
-          }
+        // Update user stats in database
+        if (Object.keys(dbUpdateStats).length > 0) {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(dbUpdateStats)
+            .eq('id', userRecord.id);
+          if (updateError) throw updateError;
+        }
 
-          // Update GameContext stats
-          if (Object.keys(gameContextStats).length > 0) {
-            await updateStats(gameContextStats);
-          }
+        // Update GameContext stats
+        if (Object.keys(gameContextStats).length > 0) {
+          await updateStats(gameContextStats);
         }
 
         toast({
@@ -571,7 +608,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             .eq('item_id', item.id);
         }
 
-        loadAllData();
+        await loadAllData(true);
         return;
       }
 
@@ -777,11 +814,17 @@ export default function BagApp({ onBack }: BagAppProps) {
             </div>
           )}
           
-          {item.effect && !item.isRing && (
+           {item.effect && !item.isRing && (
             <div className="mb-3">
               <Badge variant="outline" className="text-xs">
-                {getEffectIcon(item.effect.type as any)}
-                +{item.effect.value} {getEffectName(item.effect.type as any)}
+                {item.effect.type === "multiple" && "effects" in item.effect ? (
+                  "✨ Múltiplos efeitos"
+                ) : (
+                  <>
+                    {getEffectIcon(item.effect.type as any)}
+                    +{(item.effect as any).value} {getEffectName(item.effect.type as any)}
+                  </>
+                )}
               </Badge>
             </div>
           )}

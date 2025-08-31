@@ -200,6 +200,27 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
 
       // Store custom item data in localStorage for backward compatibility
       const customItems = JSON.parse(localStorage.getItem('customItems') || '{}');
+      
+      // Define effects for created items
+      let itemEffect = null;
+      if (selectedCategory === "food") {
+        itemEffect = {
+          type: "hunger",
+          value: 10,
+          message: `Você comeu ${customName} e se sente mais satisfeito! (+10 fome)`
+        };
+      } else if (selectedCategory === "drink") {
+        itemEffect = {
+          type: "multiple",
+          effects: [
+            { type: "hunger", value: 10 },
+            { type: "happiness", value: 10 },
+            { type: "energy", value: 10 }
+          ],
+          message: `Você bebeu ${customName} e se sente revigorado! (+10 fome, +10 felicidade, +10 energia)`
+        };
+      }
+      
       customItems[customItemId] = {
         id: customItemId,
         name: customName,
@@ -207,7 +228,7 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
         itemType: selectedCategory,
         icon: uploadedImage || selectedIcon,
         isCustom: true,
-        effect: null
+        effect: itemEffect
       };
       localStorage.setItem('customItems', JSON.stringify(customItems));
 
