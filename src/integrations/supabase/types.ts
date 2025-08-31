@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      connected_souls: {
+        Row: {
+          connected_at: string
+          created_at: string
+          id: string
+          item_data: Json
+          item_name: string
+          updated_at: string
+          user1_id: string
+          user1_username: string
+          user2_id: string
+          user2_username: string
+        }
+        Insert: {
+          connected_at?: string
+          created_at?: string
+          id?: string
+          item_data: Json
+          item_name: string
+          updated_at?: string
+          user1_id: string
+          user1_username: string
+          user2_id: string
+          user2_username: string
+        }
+        Update: {
+          connected_at?: string
+          created_at?: string
+          id?: string
+          item_data?: Json
+          item_name?: string
+          updated_at?: string
+          user1_id?: string
+          user1_username?: string
+          user2_id?: string
+          user2_username?: string
+        }
+        Relationships: []
+      }
       custom_items: {
         Row: {
           created_at: string
@@ -88,6 +127,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      friendship_item_requests: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          from_username: string
+          id: string
+          item_data: Json
+          processed_at: string | null
+          status: string
+          to_user_id: string
+          to_username: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          from_username: string
+          id?: string
+          item_data: Json
+          processed_at?: string | null
+          status?: string
+          to_user_id: string
+          to_username: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          from_username?: string
+          id?: string
+          item_data?: Json
+          processed_at?: string | null
+          status?: string
+          to_user_id?: string
+          to_username?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       hospital_birth_requests: {
         Row: {
