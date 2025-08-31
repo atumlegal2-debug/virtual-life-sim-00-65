@@ -24,6 +24,8 @@ interface ConnectedSoul {
   item_name: string;
   item_data: any;
   connected_at: string;
+  user1_avatar?: string;
+  user2_avatar?: string;
 }
 
 interface FriendshipItemContextType {
@@ -32,6 +34,7 @@ interface FriendshipItemContextType {
   sendFriendshipItem: (toUsername: string, itemData: any) => Promise<void>;
   acceptFriendshipItem: (request: FriendshipItemRequest) => Promise<void>;
   rejectFriendshipItem: (request: FriendshipItemRequest) => Promise<void>;
+  removeFriendship: (soulId: string) => Promise<void>;
   refreshData: () => Promise<void>;
 }
 
@@ -67,7 +70,7 @@ export function FriendshipItemProvider({ children }: { children: ReactNode }) {
         setFriendshipRequests(requests as FriendshipItemRequest[]);
       }
 
-      // Fetch connected souls
+      // Fetch connected souls with user avatars
       const { data: souls, error: soulsError } = await supabase
         .from('connected_souls')
         .select('*')
@@ -75,7 +78,25 @@ export function FriendshipItemProvider({ children }: { children: ReactNode }) {
         .order('connected_at', { ascending: false });
 
       if (!soulsError && souls) {
-        setConnectedSouls(souls as ConnectedSoul[]);
+        // Get user avatars separately 
+        const userIds = [...new Set(souls.flatMap(soul => [soul.user1_id, soul.user2_id]))];
+        
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, avatar')
+          .in('id', userIds);
+
+        const soulsWithAvatars = souls.map(soul => {
+          const user1Data = usersData?.find(u => u.id === soul.user1_id);
+          const user2Data = usersData?.find(u => u.id === soul.user2_id);
+          return {
+            ...soul,
+            user1_avatar: user1Data?.avatar,
+            user2_avatar: user2Data?.avatar
+          };
+        });
+        
+        setConnectedSouls(soulsWithAvatars as ConnectedSoul[]);
       }
     } catch (error) {
       console.error('Error refreshing friendship item data:', error);
@@ -258,6 +279,39 @@ export function FriendshipItemProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const removeFriendship = async (soulId: string) => {
+    try {
+      const { error } = await supabase
+        .from('connected_souls')
+        .delete()
+        .eq('id', soulId);
+
+      if (error) {
+        console.error('Error removing friendship:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao desfazer amizade",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "💔 Amizade Desfeita",
+        description: "A amizade foi desfeita com sucesso"
+      });
+
+      await refreshData();
+    } catch (error) {
+      console.error('Error in removeFriendship:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao desfazer amizade",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       refreshData();
@@ -272,6 +326,7 @@ export function FriendshipItemProvider({ children }: { children: ReactNode }) {
         sendFriendshipItem,
         acceptFriendshipItem,
         rejectFriendshipItem,
+        removeFriendship,
         refreshData
       }}
     >

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Heart, Users, Gift, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useGame } from "@/contexts/GameContext";
@@ -26,7 +27,8 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
     friendshipRequests,
     connectedSouls,
     acceptFriendshipItem,
-    rejectFriendshipItem
+    rejectFriendshipItem,
+    removeFriendship
   } = useFriendshipItems();
   
   const [selectedTab, setSelectedTab] = useState<'status' | 'proposals' | 'connected'>('status');
@@ -244,16 +246,21 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
             {userConnectedSouls.length > 0 ? (
               userConnectedSouls.map(soul => {
                 const friendUsername = soul.user1_username === currentUser ? soul.user2_username : soul.user1_username;
+                const friendAvatar = soul.user1_username === currentUser ? soul.user2_avatar : soul.user1_avatar;
                 return (
                   <Card key={soul.id} className="bg-gradient-card border-border/50">
                     <CardContent className="pt-4">
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
-                            <span className="text-primary-foreground font-bold">
-                              {getDisplayName(friendUsername).slice(0, 2).toUpperCase()}
-                            </span>
-                          </div>
+                          <Avatar className="w-12 h-12 border-2 border-primary/20">
+                            {friendAvatar ? (
+                              <AvatarImage src={friendAvatar} alt="Profile" />
+                            ) : (
+                              <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold">
+                                {getDisplayName(friendUsername).slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
                           <div className="flex-1">
                             <h3 className="font-medium text-foreground">{getDisplayName(friendUsername)}</h3>
                             <p className="text-sm text-muted-foreground">
@@ -277,6 +284,36 @@ export function RelationshipApp({ onBack }: RelationshipAppProps) {
                             Conectados em {new Date(soul.connected_at).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
+
+                        {/* Desfazer Amizade Button */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            >
+                              💔 Desfazer amizade
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Desfazer Amizade</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja desfazer a amizade com {getDisplayName(friendUsername)}? 
+                                Esta ação não pode ser desfeita e a conexão será removida para ambos os usuários.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Não</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => removeFriendship(soul.id)} 
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Sim, desfazer amizade
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </CardContent>
                   </Card>
