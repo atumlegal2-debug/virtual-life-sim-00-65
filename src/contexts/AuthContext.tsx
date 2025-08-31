@@ -269,10 +269,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear all local storage first (most important step)
+      // Clear user session but preserve saved profiles
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentUserId');
       localStorage.removeItem('userDiseases');
+      // Note: We intentionally keep 'savedProfiles' for quick login
       
       // Clear all Supabase auth tokens and sessions
       Object.keys(localStorage).forEach((key) => {
@@ -308,8 +309,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
     } catch (error) {
       console.error('Erro no logout:', error);
-      // Even if everything fails, force clear all local state
+      // Even if everything fails, force clear local state but preserve saved profiles
+      const savedProfiles = localStorage.getItem('savedProfiles');
       localStorage.clear();
+      if (savedProfiles) {
+        localStorage.setItem('savedProfiles', savedProfiles);
+      }
       sessionStorage.clear();
       setSession(null);
       setUser(null);

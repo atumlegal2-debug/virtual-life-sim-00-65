@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Users, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Users, ArrowLeft, User, X } from "lucide-react";
 
 interface User {
   id: string;
@@ -14,25 +14,51 @@ interface User {
   created_at: string;
 }
 
+interface SavedProfile {
+  username: string;
+  displayName: string;
+  savedAt: string;
+}
+
 export function LoginForm() {
   const [username, setUsername] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [showUsersList, setShowUsersList] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  // Load saved login on component mount
+  // Load saved profiles on component mount
   useEffect(() => {
+    const profiles = localStorage.getItem('savedProfiles');
+    if (profiles) {
+      try {
+        setSavedProfiles(JSON.parse(profiles));
+      } catch (error) {
+        console.error('Error parsing saved profiles:', error);
+        localStorage.removeItem('savedProfiles');
+      }
+    }
+    
+    // Legacy support - convert old remembered username
     const savedUsername = localStorage.getItem('rememberedUsername');
-    if (savedUsername) {
-      setUsername(savedUsername);
-      setRememberLogin(true);
+    if (savedUsername && !profiles) {
+      const profile: SavedProfile = {
+        username: savedUsername,
+        displayName: getDisplayName(savedUsername),
+        savedAt: new Date().toISOString()
+      };
+      const newProfiles = [profile];
+      localStorage.setItem('savedProfiles', JSON.stringify(newProfiles));
+      localStorage.removeItem('rememberedUsername');
+      setSavedProfiles(newProfiles);
     }
   }, []);
 
@@ -40,6 +66,73 @@ export function LoginForm() {
   const getDisplayName = (username: string) => {
     // Remove the last 4 digits if they exist
     return username.replace(/\d{4}$/, '');
+  };
+
+  // Function to save profile when "remember me" is checked
+  const saveProfile = (username: string) => {
+    const profile: SavedProfile = {
+      username,
+      displayName: getDisplayName(username),
+      savedAt: new Date().toISOString()
+    };
+    
+    const existingProfiles = [...savedProfiles];
+    const existingIndex = existingProfiles.findIndex(p => p.username === username);
+    
+    if (existingIndex >= 0) {
+      existingProfiles[existingIndex] = profile;
+    } else {
+      existingProfiles.unshift(profile); // Add to beginning
+    }
+    
+    // Keep only last 5 profiles
+    const limitedProfiles = existingProfiles.slice(0, 5);
+    
+    localStorage.setItem('savedProfiles', JSON.stringify(limitedProfiles));
+    setSavedProfiles(limitedProfiles);
+  };
+
+  // Function to remove a saved profile
+  const removeSavedProfile = (username: string) => {
+    const updatedProfiles = savedProfiles.filter(p => p.username !== username);
+    localStorage.setItem('savedProfiles', JSON.stringify(updatedProfiles));
+    setSavedProfiles(updatedProfiles);
+  };
+
+  // Function to handle quick login from saved profile
+  const handleQuickLogin = async (username: string) => {
+    setIsLoading(true);
+    
+    try {
+      const result = await signIn(username);
+      
+      if (result.error) {
+        toast({
+          title: "Erro no login",
+          description: result.error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Update profile timestamp
+      saveProfile(username);
+      
+      toast({
+        title: "Login realizado!",
+        description: `Bem-vindo de volta, ${getDisplayName(username)}!`
+      });
+
+    } catch (error) {
+      console.error('Auth error:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -74,9 +167,9 @@ export function LoginForm() {
           return;
         }
         
-        // Save username if remember me is checked
+        // Save profile if remember me is checked
         if (rememberLogin) {
-          localStorage.setItem('rememberedUsername', username);
+          saveProfile(username);
         }
         
         toast({
@@ -96,11 +189,9 @@ export function LoginForm() {
           return;
         }
         
-        // Save or remove username based on "remember me" checkbox
+        // Save or remove profile based on "remember me" checkbox
         if (rememberLogin) {
-          localStorage.setItem('rememberedUsername', username);
-        } else {
-          localStorage.removeItem('rememberedUsername');
+          saveProfile(username);
         }
         
         toast({
@@ -334,16 +425,108 @@ export function LoginForm() {
     );
   }
 
+  // Main screen - show saved profiles if any, otherwise show login form
+  if (!showLoginForm && !showUsersList && savedProfiles.length > 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-gradient-card border-border/50">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              RPG Real Life Virtual
+            </CardTitle>
+            <CardDescription>
+              Escolha um perfil para entrar rapidamente
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            {/* Saved Profiles */}
+            <div className="space-y-2">
+              {savedProfiles.map((profile) => (
+                <div
+                  key={profile.username}
+                  className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/20 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
+                      <User size={20} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{profile.displayName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Último acesso: {new Date(profile.savedAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeSavedProfile(profile.username)}
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X size={14} />
+                    </Button>
+                    <Button
+                      onClick={() => handleQuickLogin(profile.username)}
+                      disabled={isLoading}
+                      className="px-4"
+                    >
+                      {isLoading ? "..." : "Entrar"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Options */}
+            <div className="border-t border-border/50 pt-4 space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowLoginForm(true)}
+              >
+                Usar Outro Usuário
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                className="w-full"
+                onClick={() => setShowUsersList(true)}
+              >
+                <Users size={16} className="mr-2" />
+                Ver Todos os Usuários
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gradient-card border-border/50">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            RPG Real Life Virtual
-          </CardTitle>
-          <CardDescription>
-            {isRegistering ? "Crie sua conta para começar" : "Entre em sua conta"}
-          </CardDescription>
+          <div className="flex items-center gap-3 mb-4">
+            {(showLoginForm && savedProfiles.length > 0) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowLoginForm(false)}
+              >
+                <ArrowLeft size={20} />
+              </Button>
+            )}
+            <div className="flex-1">
+              <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                RPG Real Life Virtual
+              </CardTitle>
+              <CardDescription>
+                {isRegistering ? "Crie sua conta para começar" : "Entre em sua conta"}
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         
         <CardContent>
