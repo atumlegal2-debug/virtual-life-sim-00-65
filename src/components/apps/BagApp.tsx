@@ -800,7 +800,9 @@ export default function BagApp({ onBack }: BagAppProps) {
             {item.isRing ? (
               <Button
                 size="sm"
-                onClick={() => handleRomanticProposal(item)}
+                onClick={() => item.relationshipType === 'friendship' 
+                  ? handleSendFriendshipItem(item) 
+                  : handleRomanticProposal(item)}
                 className="flex-1 bg-love hover:bg-love/90 text-white"
               >
                 <Heart size={14} className="mr-1" />
