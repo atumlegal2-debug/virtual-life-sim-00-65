@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send } from "lucide-react";
+import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send, Save, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { STORES } from "@/data/stores";
@@ -64,6 +64,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [currentManager, setCurrentManager] = useState<any>(null);
+  const [savedLogins, setSavedLogins] = useState<string[]>([]);
+  const [showSavedLogins, setShowSavedLogins] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const [birthRequests, setBirthRequests] = useState<BirthRequest[]>([]);
@@ -74,6 +76,41 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [transferAmount, setTransferAmount] = useState("");
   const [patientHistory, setPatientHistory] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Load saved logins from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('managerSavedLogins');
+    if (saved) {
+      setSavedLogins(JSON.parse(saved));
+    }
+  }, []);
+
+  const saveLogin = (username: string) => {
+    const updated = [...savedLogins.filter(u => u !== username), username];
+    setSavedLogins(updated);
+    localStorage.setItem('managerSavedLogins', JSON.stringify(updated));
+    toast({
+      title: "Login salvo!",
+      description: "Este usuário foi salvo para acesso rápido.",
+    });
+  };
+
+  const removeSavedLogin = (username: string) => {
+    const updated = savedLogins.filter(u => u !== username);
+    setSavedLogins(updated);
+    localStorage.setItem('managerSavedLogins', JSON.stringify(updated));
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentManager(null);
+    setUsername("");
+    setCurrentView("dashboard");
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado do painel gerencial.",
+    });
+  };
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('pt-BR').format(amount);
@@ -995,7 +1032,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           <h1 className="text-xl font-bold text-foreground">Painel Gerencial</h1>
         </div>
 
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center p-4">
           <Card className="w-full max-w-sm bg-gradient-card border-border/50">
             <CardHeader className="text-center">
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1004,14 +1041,70 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               <CardTitle className="text-lg">Login do Gerente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              {/* Saved Logins */}
+              {savedLogins.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Logins Salvos:</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowSavedLogins(!showSavedLogins)}
+                    >
+                      {showSavedLogins ? "Ocultar" : "Mostrar"}
+                    </Button>
+                  </div>
+                  {showSavedLogins && (
+                    <div className="space-y-1 max-h-32 overflow-y-auto border border-border rounded-lg p-2">
+                      {savedLogins.map((savedUsername) => (
+                        <div key={savedUsername} className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex-1 justify-start text-left"
+                            onClick={() => {
+                              setUsername(savedUsername);
+                              setShowSavedLogins(false);
+                            }}
+                          >
+                            {savedUsername}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSavedLogin(savedUsername)}
+                            className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="space-y-2">
                 <Input
                   placeholder="Usuário do Gerente"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                 />
+                {username && !savedLogins.includes(username) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => saveLogin(username)}
+                    className="w-full text-xs"
+                  >
+                    <Save size={12} className="mr-1" />
+                    Salvar este login
+                  </Button>
+                )}
               </div>
-              <Button onClick={handleLogin} className="w-full">
+              
+              <Button onClick={handleLogin} className="w-full" disabled={!username.trim()}>
                 Entrar
               </Button>
             </CardContent>
@@ -1219,13 +1312,19 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft size={20} />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">
+            Painel - {currentManager.username}
+          </h1>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleLogout}>
+          <LogOut size={16} className="mr-2" />
+          Sair
         </Button>
-        <h1 className="text-xl font-bold text-foreground">
-          Painel - {currentManager.username}
-        </h1>
       </div>
 
       <Card className="bg-gradient-card border-border/50 mb-6">
