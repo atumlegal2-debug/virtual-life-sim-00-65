@@ -390,13 +390,17 @@ export default function BagApp({ onBack }: BagAppProps) {
     if (itemData) {
       const { item: storeItem, storeId } = itemData;
       const itemType = getItemType(storeId, storeItem.id);
-      const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop";
+      const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop" || (storeId === "jewelry" && !(storeItem as any).relationshipType);
       const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
       
       const effect = storeItem.effect ? {
         type: storeItem.effect.type,
         value: storeItem.effect.value,
         message: storeItem.effect.message || `Efeito de ${storeItem.name}`
+      } : storeId === "jewelry" && !(storeItem as any).relationshipType ? {
+        type: "mood" as const,
+        value: 15,
+        message: `Você usou ${storeItem.name} e se sente mais feliz!`
       } : undefined;
       
       const inventoryItem = {
@@ -408,7 +412,7 @@ export default function BagApp({ onBack }: BagAppProps) {
         storeId,
         price: storeItem.price,
         canUse: canUse && !isRing,
-        canSend: !isRing,
+        canSend: !isRing && !(storeId === "jewelry" && (storeItem as any).relationshipType === "friendship"),
         isRing,
         relationshipType: (storeItem as any).relationshipType,
         originalItem: storeItem,
@@ -461,13 +465,48 @@ export default function BagApp({ onBack }: BagAppProps) {
       // Get the user record from users table by username
       const { data: userRecord, error: userError } = await supabase
         .from('users')
-        .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage')
+        .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage, happiness_percentage')
         .eq('username', currentUser)
         .maybeSingle();
 
       if (userError || !userRecord) return;
 
       // (hooks já desestruturados no topo do componente)
+
+      // Handle jewelry items that increase happiness
+      if (item.storeId === "jewelry" && !item.relationshipType) {
+        const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + 15);
+        
+        await supabase
+          .from('users')
+          .update({ happiness_percentage: newHappiness })
+          .eq('id', userRecord.id);
+
+        updateStats({ happiness: newHappiness });
+        
+        toast({
+          title: "✨ Item de Joalheria Usado",
+          description: `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`
+        });
+
+        // Remove one item from inventory
+        if (item.quantity <= 1) {
+          await supabase
+            .from('inventory')
+            .delete()
+            .eq('user_id', userRecord.id)
+            .eq('item_id', item.id);
+        } else {
+          await supabase
+            .from('inventory')
+            .update({ quantity: item.quantity - 1 })
+            .eq('user_id', userRecord.id)
+            .eq('item_id', item.id);
+        }
+
+        await loadAllData(true);
+        return;
+      }
 
       // Handle custom items
       if (item.storeId === "custom") {
