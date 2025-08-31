@@ -218,7 +218,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Handle alcoholism decrease, hunger disease check, and clear expired effects
+  // Handle alcoholism decrease, hunger disease check, happiness/energy decrease, and clear expired effects
   useEffect(() => {
     if (!isLoggedIn) return;
     
@@ -275,7 +275,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return prev;
       });
 
-      // 4) Se não há doenças ativas, zera porcentagem de doença
+      // 4) Diminui felicidade e energia a cada 20 minutos (2 pontos cada)
+      const currentTime = Date.now();
+      const lastHappinessDecrease = localStorage.getItem(`${currentUser}_last_happiness_decrease`);
+      const lastEnergyDecrease = localStorage.getItem(`${currentUser}_last_energy_decrease`);
+      
+      // Check happiness decrease (every 20 minutes = 1200000ms)
+      if (!lastHappinessDecrease || (currentTime - parseInt(lastHappinessDecrease)) >= 1200000) {
+        setGameStats(prev => {
+          const newHappiness = Math.max(0, (prev.happiness || 100) - 2);
+          if (userId && newHappiness !== prev.happiness) {
+            supabase
+              .from('users')
+              .update({ happiness_percentage: newHappiness })
+              .eq('id', userId)
+              .then(() => console.log('Happiness decreased to:', newHappiness));
+          }
+          localStorage.setItem(`${currentUser}_last_happiness_decrease`, currentTime.toString());
+          return { ...prev, happiness: newHappiness };
+        });
+      }
+      
+      // Check energy decrease (every 20 minutes = 1200000ms)  
+      if (!lastEnergyDecrease || (currentTime - parseInt(lastEnergyDecrease)) >= 1200000) {
+        setGameStats(prev => {
+          const newEnergy = Math.max(0, (prev.energy || 100) - 2);
+          if (userId && newEnergy !== prev.energy) {
+            supabase
+              .from('users')
+              .update({ energy_percentage: newEnergy })
+              .eq('id', userId)
+              .then(() => console.log('Energy decreased to:', newEnergy));
+          }
+          localStorage.setItem(`${currentUser}_last_energy_decrease`, currentTime.toString());
+          return { ...prev, energy: newEnergy };
+        });
+      }
+
+      // 5) Se não há doenças ativas, zera porcentagem de doença
       if (diseases.length === 0 && gameStats.disease > 0) {
         const newDiseaseLevel = 0;
         setGameStats(prev => ({ ...prev, disease: newDiseaseLevel }));
@@ -287,12 +324,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 5) Limpa efeitos temporários expirados
+      // 6) Limpa efeitos temporários expirados
       clearExpiredEffects();
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
-  }, [isLoggedIn, userId, diseases.length, gameStats.disease, gameStats.hunger]);
+  }, [isLoggedIn, userId, diseases.length, gameStats.disease, gameStats.hunger, currentUser]);
 
   // Auto-cure removed: Desnutrição is only cured after hospital consultation approved by manager
 
