@@ -358,6 +358,15 @@ export function StoreApp({ onBack }: StoreAppProps) {
 
   const store = STORES[selectedStore];
 
+  // Debug: log para verificar dados da joalheria
+  useEffect(() => {
+    if (selectedStore === 'jewelry') {
+      console.log('Jewelry store data:', store);
+      console.log('Jewelry items count:', store?.items?.length);
+      console.log('Jewelry items:', store?.items);
+    }
+  }, [selectedStore, store]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
