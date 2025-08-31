@@ -1403,33 +1403,6 @@ export const STORES = {
         icon: "👍",
         itemType: "object"
       },
-      {
-        id: "anel_companheirismo_dourado",
-        name: "Companheirismo Dourado → Argola da Brotherhood",
-        price: 300,
-        description: "Anel dourado para celebrar a verdadeira irmandade",
-        category: "Anéis (amizade)",
-        icon: "🔗",
-        itemType: "object"
-      },
-      {
-        id: "anel_cumplicidade_prata",
-        name: "Cumplicidade de Prata → Aliança da Confiança",
-        price: 280,
-        description: "Anel prateado que representa lealdade e confiança mútua",
-        category: "Anéis (amizade)",
-        icon: "🤞",
-        itemType: "object"
-      },
-      {
-        id: "anel_parceria_eterna",
-        name: "Parceria Eterna → Sinete dos Manos",
-        price: 320,
-        description: "Anel exclusivo para parcerias que duram para sempre",
-        category: "Anéis (amizade)",
-        icon: "💍",
-        itemType: "object"
-      },
       // Pulseiras de Amizade
       {
         id: "pulseira_laco_amizade",
@@ -1438,33 +1411,6 @@ export const STORES = {
         description: "Pulseira que conecta almas de verdadeiros parceiros",
         category: "Pulseiras (amizade)",
         icon: "🤝",
-        itemType: "object"
-      },
-      {
-        id: "pulseira_brotherhood_couro",
-        name: "Brotherhood de Couro → Pulseira do Respeito",
-        price: 150,
-        description: "Pulseira em couro legítimo para os brothers de verdade",
-        category: "Pulseiras (amizade)",
-        icon: "🫱",
-        itemType: "object"
-      },
-      {
-        id: "pulseira_conexao_infinita",
-        name: "Conexão Infinita → Bracelete dos Melhores",
-        price: 200,
-        description: "Pulseira metálica com símbolo do infinito gravado",
-        category: "Pulseiras (amizade)",
-        icon: "♾️",
-        itemType: "object"
-      },
-      {
-        id: "pulseira_uniao_sagrada",
-        name: "União Sagrada → Pulseira da Fidelidade",
-        price: 220,
-        description: "Pulseira especial para amizades inquebrantáveis",
-        category: "Pulseiras (amizade)",
-        icon: "🙏",
         itemType: "object"
       },
       // Colares de Amizade
@@ -1477,33 +1423,6 @@ export const STORES = {
         icon: "🎭",
         itemType: "object"
       },
-      {
-        id: "colar_amizade_verdadeira",
-        name: "Amizade Verdadeira → Corrente da Lealdade",
-        price: 260,
-        description: "Corrente robusta com pingente em formato de coração dividido",
-        category: "Colares (amizade)",
-        icon: "💛",
-        itemType: "object"
-      },
-      {
-        id: "colar_brothers_forever",
-        name: "Brothers Forever → Medalha da Irmandade",
-        price: 300,
-        description: "Colar com medalha gravada 'Brothers 4ever'",
-        category: "Colares (amizade)",
-        icon: "🏅",
-        itemType: "object"
-      },
-      {
-        id: "colar_alma_gemea_fraternal",
-        name: "Alma Gêmea Fraternal → Pingente da Sintonia",
-        price: 280,
-        description: "Colar especial para amigos que são como família",
-        category: "Colares (amizade)",
-        icon: "👥",
-        itemType: "object"
-      },
       // Relógios de Amizade
       {
         id: "relogio_lacos_eternos",
@@ -1512,155 +1431,6 @@ export const STORES = {
         description: "Relógio que marca o tempo de uma amizade sem fim",
         category: "Relógios (amizade)",
         icon: "⏰",
-        itemType: "object"
-      },
-      {
-        id: "relogio_tempo_parceria",
-        name: "Tempo de Parceria → Cronômetro da Confiança",
-        price: 380,
-        description: "Relógio esportivo para cronometrar aventuras juntos",
-        category: "Relógios (amizade)",
-        icon: "⌚",
-        itemType: "object"
-      },
-      {
-        id: "relogio_momentos_eternos",
-        name: "Momentos Eternos → Relógio da Memória",
-        price: 420,
-        description: "Relógio clássico que eterniza os melhores momentos",
-        category: "Relógios (amizade)",
-        icon: "🕰️",
-        itemType: "object"
-      },
-      {
-        id: "relogio_sincronizacao_bros",
-        name: "Sincronização Bros → Smartwatch da Amizade",
-        price: 500,
-        description: "Smartwatch que sincroniza com o do seu melhor amigo",
-        category: "Relógios (amizade)",
-        icon: "📱",
-        itemType: "object"
-      },
-      // Pulseiras
-      {
-        id: "pulseira_flores_primavera",
-        name: "Flores de primavera (solo)",
-        price: 1400,
-        description: "Pulseira delicada inspirada na beleza das flores da primavera",
-        category: "Pulseiras",
-        icon: "🌸",
-        itemType: "object"
-      },
-      {
-        id: "pulseira_amor_dois",
-        name: "Amor a dois (dating)",
-        price: 2500,
-        description: "Pulseira romântica para casais apaixonados",
-        category: "Pulseiras",
-        icon: "💕",
-        itemType: "object"
-      },
-      {
-        id: "pulseira_eclipse_eterno",
-        name: "Eclipse eterno (dating)",
-        price: 3200,
-        description: "Pulseira que simboliza um amor que eclipsa tudo",
-        category: "Pulseiras",
-        icon: "🌙",
-        itemType: "object"
-      },
-      // Brincos
-      {
-        id: "brincos_reliquias_preciosas",
-        name: "Relíquias preciosas",
-        price: 2000,
-        description: "Brincos elegantes com pedras preciosas ancestrais",
-        category: "Brincos",
-        icon: "💎",
-        itemType: "object"
-      },
-      {
-        id: "brincos_correntes_alternativas",
-        name: "Correntes alternativas",
-        price: 1500,
-        description: "Brincos modernos com design alternativo e correntes",
-        category: "Brincos",
-        icon: "⛓️",
-        itemType: "object"
-      },
-      {
-        id: "brincos_natureza_brilhante",
-        name: "Natureza brilhante",
-        price: 2400,
-        description: "Brincos inspirados na natureza com brilhos únicos",
-        category: "Brincos",
-        icon: "🍃",
-        itemType: "object"
-      },
-      // Colares
-      {
-        id: "colar_futuro_partilhado",
-        name: "Futuro partilhado (dating)",
-        price: 3500,
-        description: "Colar que simboliza um futuro construído a dois",
-        category: "Colares",
-        icon: "🔮",
-        itemType: "object"
-      },
-      {
-        id: "colar_estrela_diamantes",
-        name: "Estrela dos diamantes (solo)",
-        price: 2800,
-        description: "Colar com pingente em formato de estrela cravejada de diamantes",
-        category: "Colares",
-        icon: "⭐",
-        itemType: "object"
-      },
-      // Relógios Mágicos
-      {
-        id: "relogio_tic_tac_destino",
-        name: "Tic-Tac do Destino (solo)",
-        price: 2600,
-        description: "Relógio mágico que conta o tempo até encontrar seu destino",
-        category: "Relógios Mágicos",
-        icon: "🔮",
-        itemType: "object"
-      },
-      {
-        id: "relogio_coracoes_sincronizados",
-        name: "Corações Sincronizados (dating)",
-        price: 3800,
-        description: "Relógio que sincroniza com o coração da pessoa amada",
-        category: "Relógios Mágicos",
-        icon: "💞",
-        itemType: "object"
-      },
-      // Alfinetes
-      {
-        id: "alfinete_elegancia_discreta",
-        name: "Elegância discreta (solo)",
-        price: 1000,
-        description: "Alfinete sutil e elegante para ocasiões especiais",
-        category: "Alfinetes",
-        icon: "📌",
-        itemType: "object"
-      },
-      {
-        id: "alfinete_presente_especial",
-        name: "Presente especial (solo)",
-        price: 1300,
-        description: "Alfinete perfeito como presente para alguém especial",
-        category: "Alfinetes",
-        icon: "🎁",
-        itemType: "object"
-      },
-      {
-        id: "alfinete_brilhos_noite",
-        name: "Brilhos da noite (solo)",
-        price: 1600,
-        description: "Alfinete que captura os brilhos mágicos da noite",
-        category: "Alfinetes",
-        icon: "✨",
         itemType: "object"
       }
     ] as StoreItem[]
@@ -1835,5 +1605,3 @@ export const STORES = {
     ] as StoreItem[]
   }
 };
-
-// Força atualização - produtos adicionados

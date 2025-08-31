@@ -106,16 +106,6 @@ export function StoreApp({ onBack }: StoreAppProps) {
     }
   }, [selectedStore, currentUser, refreshWallet]);
 
-  // Debug: log para verificar dados da joalheria (sempre executado)
-  useEffect(() => {
-    if (selectedStore === 'jewelry') {
-      const store = STORES[selectedStore];
-      console.log('Jewelry store data:', store);
-      console.log('Jewelry items count:', store?.items?.length);
-      console.log('Jewelry items:', store?.items);
-    }
-  }, [selectedStore]);
-
   const handleManagerLogin = (storeId: string) => {
     const store = STORES[storeId as StoreType];
     const correctPassword = getManagerPassword(storeId);
@@ -366,9 +356,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
     );
   }
 
-  const store = selectedStore ? STORES[selectedStore] : null;
-  
-  if (!store) return null;
+  const store = STORES[selectedStore];
 
   return (
     <div className="flex flex-col h-full">
@@ -383,8 +371,8 @@ export function StoreApp({ onBack }: StoreAppProps) {
           </Button>
           <div className="flex items-center gap-3">
             {(() => {
-              const StoreIcon = STORE_ICONS[selectedStore!];
-              const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore!));
+              const StoreIcon = STORE_ICONS[selectedStore];
+              const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore));
               return (
                 <>
                   <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category?.color || 'from-primary to-primary'} flex items-center justify-center`}>
