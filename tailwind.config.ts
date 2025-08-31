@@ -66,6 +66,8 @@ export default {
 				hunger: 'hsl(var(--hunger))',
 				money: 'hsl(var(--money))',
 				love: 'hsl(var(--love))',
+				happiness: 'hsl(var(--happiness))',
+				energy: 'hsl(var(--energy))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
