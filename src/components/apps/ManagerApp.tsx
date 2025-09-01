@@ -706,6 +706,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     if (isLoggedIn && currentManager) {
       loadPendingOrders();
       loadSalesHistory();
+      loadMotoboyOrders(); // Load motoboy orders on login
       if (currentManager.store_id === 'hospital') {
         loadBirthRequests();
         loadTreatmentRequests();
@@ -721,6 +722,44 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       loadMotoboyOrders();
     }
   }, [isLoggedIn, currentManager, currentView]);
+
+  // Real-time subscriptions for motoboy orders
+  useEffect(() => {
+    if (!isLoggedIn || !currentManager) return;
+
+    console.log('=== CONFIGURANDO SUBSCRIPTION PARA MOTOBOY ORDERS ===');
+    console.log('Store ID:', currentManager.store_id);
+
+    const subscription = supabase
+      .channel('motoboy_orders_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'motoboy_orders',
+          filter: `store_id=eq.${currentManager.store_id}`
+        },
+        (payload) => {
+          console.log('=== MOTOBOY ORDER UPDATE RECEIVED ===');
+          console.log('Payload:', payload);
+          
+          toast({
+            title: "Novo pedido de motoboy!",
+            description: "Um novo pedido foi recebido.",
+          });
+          
+          // Reload motoboy orders
+          loadMotoboyOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('=== REMOVENDO SUBSCRIPTION MOTOBOY ORDERS ===');
+      subscription.unsubscribe();
+    };
+  }, [isLoggedIn, currentManager]);
 
   // Hospital Management View
   if (currentView === "hospital") {
@@ -1035,6 +1074,163 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                     Enviar
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Motoboy Orders View
+  if (currentView === "motoboy-orders") {
+    const pendingMotoboyOrders = motoboyOrders.filter(o => o.manager_status === 'pending');
+    const processedMotoboyOrders = motoboyOrders.filter(o => o.manager_status !== 'pending');
+
+    const handleMotoboyOrder = async (orderId: string, action: 'accept' | 'reject', notes?: string) => {
+      try {
+        const { error } = await supabase
+          .from('motoboy_orders')
+          .update({ 
+            manager_status: action === 'accept' ? 'accepted' : 'rejected',
+            manager_notes: notes || (action === 'accept' ? 'Pedido aprovado para entrega' : 'Pedido rejeitado'),
+            manager_processed_at: new Date().toISOString()
+          })
+          .eq('id', orderId);
+
+        if (error) throw error;
+
+        toast({
+          title: action === 'accept' ? "Pedido aprovado! ✅" : "Pedido rejeitado ❌",
+          description: action === 'accept' 
+            ? "O pedido foi liberado para o motoboy" 
+            : "O pedido foi rejeitado"
+        });
+
+        await loadMotoboyOrders();
+      } catch (error) {
+        console.error('Error handling motoboy order:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível processar o pedido",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => setCurrentView("dashboard")}>
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Pedidos de Motoboy</h1>
+        </div>
+
+        <div className="space-y-4 overflow-y-auto">
+          {/* Pending Motoboy Orders */}
+          {pendingMotoboyOrders.length > 0 && (
+            <Card className="bg-orange-800 border-orange-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Pedidos Pendentes ({pendingMotoboyOrders.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pendingMotoboyOrders.map((order) => (
+                  <div key={order.id} className="bg-orange-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
+                        <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
+                        <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
+                        <p className="text-xs text-orange-400 mt-1">
+                          {new Date(order.created_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-orange-600 text-orange-100">
+                        Pendente
+                      </Badge>
+                    </div>
+                    
+                    {/* Items */}
+                    <div className="mb-3 p-2 bg-orange-600 rounded">
+                      <p className="text-xs text-orange-200 mb-1">Itens:</p>
+                      {Array.isArray(order.items) && order.items.map((item: any, index: number) => (
+                        <div key={index} className="flex justify-between text-xs text-white">
+                          <span>{item.name} x{item.quantity}</span>
+                          <span>{formatMoney(item.price * item.quantity)} CM</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleMotoboyOrder(order.id, 'accept')}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle size={16} className="mr-1" />
+                        Aprovar para Entrega
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleMotoboyOrder(order.id, 'reject')}
+                        className="flex-1"
+                      >
+                        <XCircle size={16} className="mr-1" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Processed Motoboy Orders */}
+          {processedMotoboyOrders.length > 0 && (
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Pedidos Processados ({processedMotoboyOrders.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {processedMotoboyOrders.slice(0, 10).map((order) => (
+                  <div key={order.id} className="bg-gray-700 rounded-lg p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-white text-sm">{getDisplayName(order.customer_username)}</h4>
+                        <p className="text-xs text-gray-300">{formatMoney(order.total_amount)} CM</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(order.manager_processed_at || order.updated_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <Badge 
+                        variant={order.manager_status === 'accepted' ? 'default' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {order.manager_status === 'accepted' ? '✅ Aprovado' : '❌ Rejeitado'}
+                      </Badge>
+                    </div>
+                    {order.manager_notes && (
+                      <p className="text-xs text-gray-400 mt-1">{order.manager_notes}</p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {pendingMotoboyOrders.length === 0 && processedMotoboyOrders.length === 0 && (
+            <Card className="bg-orange-800 border-orange-700">
+              <CardContent className="pt-6 text-center">
+                <Truck className="h-16 w-16 mx-auto text-orange-400 mb-4" />
+                <p className="text-orange-300">Nenhum pedido de motoboy no momento</p>
               </CardContent>
             </Card>
           )}
