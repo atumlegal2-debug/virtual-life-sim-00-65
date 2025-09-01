@@ -909,6 +909,8 @@ export const STORES = {
         price: 15,
         description: "Sorvete clássico que acalma a alma",
         category: "Sorvetes Tradicionais",
+        itemType: "food",
+        icon: "🍦",
         effect: { type: "hunger", value: 15, duration: 15, message: "É como um abraço doce na alma..." }
       },
       {
@@ -917,7 +919,9 @@ export const STORES = {
         price: 18,
         description: "Chocolate com poderes mágicos",
         category: "Sorvetes Tradicionais",
-        effect: { type: "hunger", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" }
+        itemType: "food",
+        icon: "🍫",
+        effect: { type: "mood", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" }
       },
       {
         id: "morango_encantado",
@@ -925,7 +929,9 @@ export const STORES = {
         price: 18,
         description: "Morango doce que desperta o amor",
         category: "Sorvetes Tradicionais",
-        effect: { type: "hunger", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." }
+        itemType: "food",
+        icon: "🍓",
+        effect: { type: "mood", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." }
       },
       {
         id: "napolitano",
@@ -933,6 +939,8 @@ export const STORES = {
         price: 20,
         description: "Três sabores em perfeita harmonia",
         category: "Sorvetes Tradicionais",
+        itemType: "food",
+        icon: "🍨",
         effect: { type: "hunger", value: 20, duration: 20, message: "Impossível escolher o melhor, cada colher é uma surpresa." }
       },
       {
@@ -941,7 +949,9 @@ export const STORES = {
         price: 20,
         description: "Creme cremoso com caramelo dourado",
         category: "Sorvetes Tradicionais",
-        effect: { type: "hunger", value: 20, duration: 25, message: "Derrete na boca como se fosse pura felicidade..." }
+        itemType: "food",
+        icon: "🍮",
+        effect: { type: "mood", value: 20, duration: 25, message: "Derrete na boca como se fosse pura felicidade..." }
       },
 
       // Sorvetes Mágicos
@@ -951,7 +961,9 @@ export const STORES = {
         price: 25,
         description: "Explosão refrescante de sabor",
         category: "Sorvetes Mágicos",
-        effect: { type: "hunger", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" }
+        itemType: "food",
+        icon: "🌿",
+        effect: { type: "energy", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" }
       },
       {
         id: "creme_nuvens",
@@ -959,7 +971,9 @@ export const STORES = {
         price: 30,
         description: "Leve como nuvens do céu",
         category: "Sorvetes Mágicos",
-        effect: { type: "hunger", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." }
+        itemType: "food",
+        icon: "☁️",
+        effect: { type: "mood", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." }
       },
       {
         id: "frutas_arco_iris",
@@ -967,7 +981,9 @@ export const STORES = {
         price: 32,
         description: "Muda de sabor a cada lambida",
         category: "Sorvetes Mágicos",
-        effect: { type: "hunger", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" }
+        itemType: "food",
+        icon: "🌈",
+        effect: { type: "mood", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" }
       },
       {
         id: "estelar_mirtilo",
@@ -975,7 +991,9 @@ export const STORES = {
         price: 35,
         description: "Azul brilhante que faz a língua cintilar",
         category: "Sorvetes Mágicos",
-        effect: { type: "hunger", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" }
+        itemType: "food",
+        icon: "🫐",
+        effect: { type: "energy", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" }
       },
       {
         id: "doce_crepusculo",
@@ -983,7 +1001,9 @@ export const STORES = {
         price: 38,
         description: "Sorvete mágico com sabor de pôr do sol",
         category: "Sorvetes Mágicos",
-        effect: { type: "hunger", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." }
+        itemType: "food",
+        icon: "🌅",
+        effect: { type: "mood", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." }
       },
 
       // Milk-Shakes
@@ -993,6 +1013,8 @@ export const STORES = {
         price: 28,
         description: "O bom e velho shake tradicional",
         category: "Milk-Shakes",
+        itemType: "drink",
+        icon: "🥤",
         effect: { type: "hunger", value: 28, duration: 20, message: "Ahh... nada como o bom e velho shake." }
       },
       {
@@ -1001,7 +1023,9 @@ export const STORES = {
         price: 32,
         description: "Dois sabores em perfeita harmonia",
         category: "Milk-Shakes",
-        effect: { type: "hunger", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" }
+        itemType: "drink",
+        icon: "🥤",
+        effect: { type: "energy", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" }
       },
       {
         id: "shake_encantado",
@@ -1009,7 +1033,9 @@ export const STORES = {
         price: 38,
         description: "Shake que muda de cor magicamente",
         category: "Milk-Shakes",
-        effect: { type: "hunger", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" }
+        itemType: "drink",
+        icon: "🥤",
+        effect: { type: "mood", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" }
       },
       {
         id: "shake_gelido",
@@ -1017,7 +1043,9 @@ export const STORES = {
         price: 40,
         description: "Tão gelado que congela a respiração",
         category: "Milk-Shakes",
-        effect: { type: "hunger", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" }
+        itemType: "drink",
+        icon: "🧊",
+        effect: { type: "energy", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" }
       },
       {
         id: "shake_supremo",
@@ -1025,7 +1053,9 @@ export const STORES = {
         price: 45,
         description: "O shake mais especial da casa",
         category: "Milk-Shakes",
-        effect: { type: "hunger", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" }
+        itemType: "drink",
+        icon: "👑",
+        effect: { type: "mood", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" }
       },
 
       // Açaí
@@ -1035,7 +1065,9 @@ export const STORES = {
         price: 30,
         description: "Açaí refrescante com frutas tropicais",
         category: "Açaí",
-        effect: { type: "hunger", value: 20, duration: 20, message: "Refrescante e cheio de vida... combina com verão." }
+        itemType: "food",
+        icon: "🫐",
+        effect: { type: "energy", value: 20, duration: 20, message: "Refrescante e cheio de vida... combina com verão." }
       },
       {
         id: "acai_supremo",
@@ -1043,7 +1075,9 @@ export const STORES = {
         price: 38,
         description: "Açaí especial que brilha magicamente",
         category: "Açaí",
-        effect: { type: "hunger", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." }
+        itemType: "food",
+        icon: "✨",
+        effect: { type: "mood", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." }
       },
       {
         id: "acai_energetico",
@@ -1051,7 +1085,9 @@ export const STORES = {
         price: 45,
         description: "Açaí que restaura energia instantaneamente",
         category: "Açaí",
-        effect: { type: "hunger", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" }
+        itemType: "food",
+        icon: "⚡",
+        effect: { type: "energy", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" }
       },
       {
         id: "acai_chocolate",
@@ -1059,6 +1095,8 @@ export const STORES = {
         price: 35,
         description: "Combinação perfeita de açaí e chocolate",
         category: "Açaí",
+        itemType: "food",
+        icon: "🍫",
         effect: { type: "hunger", value: 20, duration: 15, message: "A mistura perfeita... doce e forte ao mesmo tempo." }
       },
       {
@@ -1067,7 +1105,9 @@ export const STORES = {
         price: 42,
         description: "Açaí mágico que surpreende a cada colherada",
         category: "Açaí",
-        effect: { type: "hunger", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" }
+        itemType: "food",
+        icon: "🔮",
+        effect: { type: "mood", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" }
       },
 
       // Crepes
