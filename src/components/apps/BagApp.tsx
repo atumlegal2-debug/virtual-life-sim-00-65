@@ -103,12 +103,16 @@ export default function BagApp({ onBack }: BagAppProps) {
   // Create item lookup map for better performance (memoized)
   const itemLookupMap = useMemo(() => {
     const lookupMap = new Map();
+    const nameToIdMap = new Map(); // Novo mapa para busca por nome
+    
     for (const [storeId, store] of Object.entries(STORES)) {
       for (const item of store.items) {
         lookupMap.set(item.id, { item, storeId });
+        // Adiciona mapeamento nome -> ID para itens do motoboy
+        nameToIdMap.set(item.name, { item, storeId });
       }
     }
-    return lookupMap;
+    return { lookupMap, nameToIdMap };
   }, []);
 
   // Cache user ID to avoid repeated lookups
@@ -405,7 +409,7 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
     
     // Store item processing with cached lookup
-    const itemData = itemLookupMap.get(item.item_id);
+    const itemData = itemLookupMap.lookupMap.get(item.item_id) || itemLookupMap.nameToIdMap.get(item.item_id);
     if (itemData) {
       const { item: storeItem, storeId } = itemData;
       const itemType = getItemType(storeId, storeItem.id);
@@ -457,7 +461,7 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
 
     return null;
-  }, [itemLookupMap]);
+  }, [itemLookupMap.lookupMap, itemLookupMap.nameToIdMap]);
 
   // Load data on component mount with instant cache
   useEffect(() => {
