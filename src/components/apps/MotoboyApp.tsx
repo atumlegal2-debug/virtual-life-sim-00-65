@@ -72,6 +72,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const loadOrders = async () => {
     setLoading(true);
     try {
+      console.log('=== CARREGANDO PEDIDOS MOTOBOY APP ===');
       const { data, error } = await supabase
         .from('motoboy_orders')
         .select('*')
@@ -79,6 +80,9 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         .eq('motoboy_status', 'waiting')
         .order('created_at', { ascending: false });
 
+      console.log('Query result:', { data, error });
+      console.log('Pedidos encontrados para motoboy:', data?.length || 0);
+      
       if (error) throw error;
       setOrders(data || []);
     } catch (error) {
@@ -323,23 +327,9 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             <CardTitle>Estatísticas do Dia</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">0</div>
-                <div className="text-xs text-muted-foreground">Entregas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">R$ 0,00</div>
-                <div className="text-xs text-muted-foreground">Ganhos</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">0 km</div>
-                <div className="text-xs text-muted-foreground">Distância</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">0h 0m</div>
-                <div className="text-xs text-muted-foreground">Tempo Ativo</div>
-              </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">0</div>
+              <div className="text-xs text-muted-foreground">Entregas</div>
             </div>
           </CardContent>
         </Card>

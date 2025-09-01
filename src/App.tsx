@@ -12,6 +12,7 @@ import { FriendshipItemProvider } from "@/contexts/FriendshipItemContext";
 import { PregnancyProvider } from "@/contexts/PregnancyContext";
 import Index from "./pages/Index";
 import Manager from "./pages/Manager";
+import Motoboy from "./pages/Motoboy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/manager" element={<Manager />} />
+                    <Route path="/motoboy" element={<Motoboy />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
