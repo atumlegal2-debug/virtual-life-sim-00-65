@@ -2,8 +2,17 @@ export function getItemType(storeId: string, itemId: string): "food" | "drink" |
   // Bar items are always drinks
   if (storeId === "bar") return "drink";
   
-  // Restaurant and pizzeria items are food
-  if (storeId === "restaurant" || storeId === "pizzeria") return "food";
+  // Restaurant items are food
+  if (storeId === "restaurant") return "food";
+  
+  // Pizzeria items can be both food and drinks
+  if (storeId === "pizzeria") {
+    const drinkItems = [
+      "refrigerante", "suco_natural", "agua_mineral", "agua_com_gas", 
+      "cha_gelado", "limonada_siciliana", "smoothie_frutas", "cafe_expresso"
+    ];
+    return drinkItems.includes(itemId) ? "drink" : "food";
+  }
   
   // Cafeteria items can be both food and drinks
   if (storeId === "cafeteria") {

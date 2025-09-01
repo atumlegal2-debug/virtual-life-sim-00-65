@@ -263,16 +263,9 @@ export default function BagApp({ onBack }: BagAppProps) {
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
-      // Debug: Log raw inventory data
-      console.log('=== BOLSA DEBUG ===');
-      console.log('Raw inventory data:', inventoryData);
-      console.log('Current user:', currentUser);
-      console.log('User ID:', userId);
-      
       // Batch process items
       if (inventoryData) {
         inventoryData.forEach((item: any) => {
-          console.log('Processing item:', item);
           const processedItem = processInventoryItemOptimized(item, allCustomItems);
           
           if (processedItem) {
@@ -281,14 +274,9 @@ export default function BagApp({ onBack }: BagAppProps) {
             if (item.sent_by_username) {
               formattedHistory.push(processedItem.historyItem);
             }
-          } else {
-            console.log('Item não processado:', item);
           }
         });
       }
-      
-      console.log('Final inventory:', formattedInventory);
-      console.log('Final history:', formattedHistory);
 
       // Update states em batch
       setInventory(formattedInventory);
