@@ -158,12 +158,13 @@ export function StoreApp({ onBack }: StoreAppProps) {
         const isHospital = false; // Hospital is not in current stores
         
         if (deliveryOption === "motoboy" && !isHospital) {
-          // Create motoboy order
+          // Create motoboy order - use the correct store ID from STORES data
+          const storeData = STORES[selectedStore];
           const { error } = await supabase
             .from('motoboy_orders')
             .insert({
               order_id: crypto.randomUUID(),
-              store_id: selectedStore,
+              store_id: storeData.id,
               customer_name: currentUser,
               customer_username: currentUser.slice(0, -4),
               items: cart as any,
