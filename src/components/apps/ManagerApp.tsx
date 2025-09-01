@@ -140,11 +140,22 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         .eq('username', username)
         .maybeSingle();
       
-      const displayName = data?.nickname || (username.length > 4 ? username.slice(0, -4) : username);
+      // Se tem nickname, usar ele. Senão, verificar se tem código de 4 dígitos no final
+      let displayName;
+      if (data?.nickname) {
+        displayName = data.nickname;
+      } else {
+        // Só remover os últimos 4 caracteres se forem dígitos
+        const hasCodeSuffix = /\d{4}$/.test(username);
+        displayName = hasCodeSuffix ? username.slice(0, -4) : username;
+      }
+      
       setDisplayNames(prev => ({ ...prev, [username]: displayName }));
       return displayName;
     } catch {
-      const fallbackName = username.length > 4 ? username.slice(0, -4) : username;
+      // Só remover os últimos 4 caracteres se forem dígitos  
+      const hasCodeSuffix = /\d{4}$/.test(username);
+      const fallbackName = hasCodeSuffix ? username.slice(0, -4) : username;
       setDisplayNames(prev => ({ ...prev, [username]: fallbackName }));
       return fallbackName;
     }
