@@ -30,7 +30,51 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [rememberLogin, setRememberLogin] = useState(false);
   const [orders, setOrders] = useState<MotoboyOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  const getDisplayName = (username: string) => {
+    if (!username) return 'Cliente desconhecido';
+    
+    // Se já tem o display name carregado, usa ele
+    if (displayNames[username]) return displayNames[username];
+    
+    // Fallback: remove últimos 4 dígitos se terminar com números
+    const hasCodeSuffix = /\d{4}$/.test(username);
+    return hasCodeSuffix ? username.slice(0, -4) : username;
+  };
+
+  const loadDisplayNameForUser = async (username: string) => {
+    if (!username || displayNames[username]) return displayNames[username] || username;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username, nickname')
+        .eq('username', username)
+        .maybeSingle();
+      
+      let displayName: string;
+      
+      if (error || !data) {
+        // Fallback: remove últimos 4 dígitos do username se terminar com números
+        const hasCodeSuffix = /\d{4}$/.test(username);
+        displayName = hasCodeSuffix ? username.slice(0, -4) : username;
+      } else {
+        // Usa nickname se disponível, senão username sem dígitos
+        const hasCodeSuffix = /\d{4}$/.test(username);
+        displayName = data.nickname || (hasCodeSuffix ? username.slice(0, -4) : username);
+      }
+      
+      setDisplayNames(prev => ({ ...prev, [username]: displayName }));
+      return displayName;
+    } catch (error) {
+      console.error('Error loading display name for user:', error);
+      const fallbackName = username.length > 4 ? username.slice(0, -4) : username;
+      setDisplayNames(prev => ({ ...prev, [username]: fallbackName }));
+      return fallbackName;
+    }
+  };
 
   useEffect(() => {
     // Check if login is saved
@@ -84,7 +128,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       console.log('Pedidos encontrados para motoboy:', data?.length || 0);
       
       if (error) throw error;
-      setOrders(data || []);
+      
+      // Load display names for customers
+      const ordersWithDisplayNames = data || [];
+      for (const order of ordersWithDisplayNames) {
+        if (order.customer_username) {
+          await loadDisplayNameForUser(order.customer_username);
+        }
+      }
+      
+      setOrders(ordersWithDisplayNames);
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
@@ -276,7 +329,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                     </span>
                   </div>
                   <div className="text-sm">
-                    <strong>Cliente:</strong> {order.customer_name} (@{order.customer_username})
+                    <strong>Cliente:</strong> {getDisplayName(order.customer_username)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
