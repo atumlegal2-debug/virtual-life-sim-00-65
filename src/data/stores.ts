@@ -12,6 +12,12 @@ export interface StoreItem {
     duration?: number; // in minutes
     message?: string;
   };
+  effects?: Array<{
+    type: "health" | "hunger" | "mood" | "alcoholism" | "energy";
+    value: number;
+    duration?: number; // in minutes
+    message?: string;
+  }>;
   // Relationship ring properties
   relationshipType?: "namoro" | "noivado" | "casamento" | "dating" | "engagement" | "marriage";
   relationshipPhrase?: string;
@@ -450,21 +456,24 @@ export const STORES = {
         name: "Refresco de Pêssego do Vale",
         price: 50,
         description: "Nossa, que frescor doce! Parece que acordei de um sonho bom.",
-        effect: { type: "energy", value: 25, duration: 20, message: "Nossa, que frescor doce! Parece que acordei de um sonho bom." }
+        effect: { type: "energy", value: 25, duration: 20, message: "Nossa, que frescor doce! Parece que acordei de um sonho bom." },
+        secondaryEffect: { type: "mood", value: 20, duration: 15 }
       },
       {
         id: "cha_gelado",
         name: "Chá Gélido da Montanha Azul",
         price: 55,
         description: "É como beber o vento da montanha... minha mente ficou clara.",
-        effect: { type: "energy", value: 30, duration: 15, message: "É como beber o vento da montanha... minha mente ficou clara." }
+        effect: { type: "energy", value: 30, duration: 15, message: "É como beber o vento da montanha... minha mente ficou clara." },
+        secondaryEffect: { type: "mood", value: 25, duration: 12 }
       },
       {
         id: "leite_dourado",
         name: "Leite Dourado da Manhã",
         price: 50,
         description: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo.",
-        effect: { type: "energy", value: 25, duration: 25, message: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo." }
+        effect: { type: "energy", value: 25, duration: 25, message: "Ah... que paz. Acho que vou acabar cochilando aqui mesmo." },
+        secondaryEffect: { type: "mood", value: 20, duration: 20 }
       },
       // Bebidas Alcoólicas e Fortes
       {
@@ -472,14 +481,18 @@ export const STORES = {
         name: "Soju Brando da Vila",
         price: 80,
         description: "Hehe... vocês são meus melhores amigos, sabia?",
-        effect: { type: "alcoholism", value: 5, duration: 30, message: "Hehe... vocês são meus melhores amigos, sabia?" }
+        effect: { type: "alcoholism", value: 5, duration: 30, message: "Hehe... vocês são meus melhores amigos, sabia?" },
+        secondaryEffect: { type: "energy", value: 15, duration: 20 },
+        tertiaryEffect: { type: "mood", value: 25, duration: 25 }
       },
       {
         id: "makgeolli_floresta",
         name: "Makgeolli da Floresta Densa",
         price: 90,
         description: "Hahaha! Até o copo parece engraçado agora.",
-        effect: { type: "alcoholism", value: 10, duration: 30, message: "Hahaha! Até o copo parece engraçado agora." }
+        effect: { type: "alcoholism", value: 10, duration: 30, message: "Hahaha! Até o copo parece engraçado agora." },
+        secondaryEffect: { type: "energy", value: 18, duration: 15 },
+        tertiaryEffect: { type: "mood", value: 30, duration: 20 }
       },
       {
         id: "licor_lua",
@@ -685,7 +698,8 @@ export const STORES = {
         price: 100,
         description: "Chá que facilita meditação e foco mágico",
         category: "Bebidas Encantadas",
-        effect: { type: "hunger", value: 3, duration: 20, message: "Acalma os pensamentos e facilita meditação ou foco mágico." }
+        effect: { type: "energy", value: 20, duration: 20, message: "Acalma os pensamentos e facilita meditação ou foco mágico." },
+        secondaryEffect: { type: "mood", value: 15, duration: 15 }
       },
       {
         id: "suco_fruta_fantasma",
@@ -693,7 +707,8 @@ export const STORES = {
         price: 100,
         description: "Suco que reanima o espírito",
         category: "Bebidas Encantadas",
-        effect: { type: "hunger", value: 3, duration: 15, message: "Reanima o espírito, trazendo uma sensação refrescante e leve." }
+        effect: { type: "energy", value: 18, duration: 15, message: "Reanima o espírito, trazendo uma sensação refrescante e leve." },
+        secondaryEffect: { type: "mood", value: 20, duration: 12 }
       },
       {
         id: "vinho_cerejeira",
@@ -701,7 +716,8 @@ export const STORES = {
         price: 80,
         description: "Vinho que causa leve flutuação",
         category: "Bebidas Encantadas",
-        effect: { type: "hunger", value: 3, duration: 0.5, message: "Causa leve flutuação do corpo, como se estivesse em sonho." }
+        effect: { type: "energy", value: 15, duration: 8, message: "Causa leve flutuação do corpo, como se estivesse em sonho." },
+        secondaryEffect: { type: "mood", value: 25, duration: 10 }
       }
     ] as StoreItem[]
   },
@@ -863,7 +879,8 @@ export const STORES = {
         description: "Refrescante, dá até gás pra continuar o dia.",
         category: "Bebidas",
         itemType: "drink",
-        effect: { type: "energy", value: 15, duration: 10, message: "Refrescante, dá até gás pra continuar o dia." }
+        effect: { type: "energy", value: 15, duration: 10, message: "Refrescante, dá até gás pra continuar o dia." },
+        secondaryEffect: { type: "mood", value: 12, duration: 8 }
       },
       {
         id: "suco_natural",
@@ -872,7 +889,8 @@ export const STORES = {
         description: "Natural e delicioso... como um gole de vida.",
         category: "Bebidas",
         itemType: "drink",
-        effect: { type: "energy", value: 18, duration: 15, message: "Natural e delicioso... como um gole de vida." }
+        effect: { type: "energy", value: 18, duration: 15, message: "Natural e delicioso... como um gole de vida." },
+        secondaryEffect: { type: "mood", value: 15, duration: 12 }
       },
       {
         id: "suco_encantado",
@@ -882,7 +900,8 @@ export const STORES = {
         category: "Bebidas",
         itemType: "drink",
         isMagical: true,
-        effect: { type: "energy", value: 22, duration: 20, message: "Uau! Mudou de sabor com meu humor... isso é mágico!" }
+        effect: { type: "energy", value: 22, duration: 20, message: "Uau! Mudou de sabor com meu humor... isso é mágico!" },
+        secondaryEffect: { type: "mood", value: 20, duration: 15 }
       },
       {
         id: "refresco_mago",
@@ -892,7 +911,8 @@ export const STORES = {
         category: "Bebidas",
         itemType: "drink",
         isMagical: true,
-        effect: { type: "energy", value: 20, duration: 15, message: "Esse frescor mágico na boca é viciante!" }
+        effect: { type: "energy", value: 20, duration: 15, message: "Esse frescor mágico na boca é viciante!" },
+        secondaryEffect: { type: "mood", value: 18, duration: 12 }
       }
     ] as StoreItem[]
   },
@@ -911,7 +931,11 @@ export const STORES = {
         category: "Sorvetes Tradicionais",
         itemType: "food",
         icon: "🍦",
-        effect: { type: "hunger", value: 15, duration: 15, message: "É como um abraço doce na alma..." }
+        effects: [
+          { type: "hunger", value: 15, duration: 15, message: "É como um abraço doce na alma..." },
+          { type: "energy", value: 12, duration: 10 },
+          { type: "mood", value: 15, duration: 12 }
+        ]
       },
       {
         id: "chocolate_feiticeiro",
@@ -921,7 +945,10 @@ export const STORES = {
         category: "Sorvetes Tradicionais",
         itemType: "food",
         icon: "🍫",
-        effect: { type: "mood", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" }
+        effects: [
+          { type: "mood", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" },
+          { type: "energy", value: 15, duration: 15 }
+        ]
       },
       {
         id: "morango_encantado",
@@ -931,7 +958,10 @@ export const STORES = {
         category: "Sorvetes Tradicionais",
         itemType: "food",
         icon: "🍓",
-        effect: { type: "mood", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." }
+        effects: [
+          { type: "mood", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." },
+          { type: "energy", value: 12, duration: 10 }
+        ]
       },
       {
         id: "napolitano",
@@ -941,7 +971,11 @@ export const STORES = {
         category: "Sorvetes Tradicionais",
         itemType: "food",
         icon: "🍨",
-        effect: { type: "hunger", value: 20, duration: 20, message: "Impossível escolher o melhor, cada colher é uma surpresa." }
+        effects: [
+          { type: "hunger", value: 20, duration: 20, message: "Impossível escolher o melhor, cada colher é uma surpresa." },
+          { type: "energy", value: 18, duration: 15 },
+          { type: "mood", value: 20, duration: 18 }
+        ]
       },
       {
         id: "creme_caramelo",
@@ -951,7 +985,10 @@ export const STORES = {
         category: "Sorvetes Tradicionais",
         itemType: "food",
         icon: "🍮",
-        effect: { type: "mood", value: 20, duration: 25, message: "Derrete na boca como se fosse pura felicidade..." }
+        effects: [
+          { type: "mood", value: 20, duration: 25, message: "Derrete na boca como se fosse pura felicidade..." },
+          { type: "energy", value: 15, duration: 20 }
+        ]
       },
 
       // Sorvetes Mágicos
@@ -963,7 +1000,10 @@ export const STORES = {
         category: "Sorvetes Mágicos",
         itemType: "food",
         icon: "🌿",
-        effect: { type: "energy", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" }
+        effects: [
+          { type: "energy", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" },
+          { type: "mood", value: 22, duration: 12 }
+        ]
       },
       {
         id: "creme_nuvens",
@@ -973,7 +1013,10 @@ export const STORES = {
         category: "Sorvetes Mágicos",
         itemType: "food",
         icon: "☁️",
-        effect: { type: "mood", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." }
+        effects: [
+          { type: "mood", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." },
+          { type: "energy", value: 25, duration: 12 }
+        ]
       },
       {
         id: "frutas_arco_iris",
@@ -983,7 +1026,10 @@ export const STORES = {
         category: "Sorvetes Mágicos",
         itemType: "food",
         icon: "🌈",
-        effect: { type: "mood", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" }
+        effects: [
+          { type: "mood", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" },
+          { type: "energy", value: 30, duration: 18 }
+        ]
       },
       {
         id: "estelar_mirtilo",
@@ -993,7 +1039,10 @@ export const STORES = {
         category: "Sorvetes Mágicos",
         itemType: "food",
         icon: "🫐",
-        effect: { type: "energy", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" }
+        effects: [
+          { type: "energy", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" },
+          { type: "mood", value: 28, duration: 8 }
+        ]
       },
       {
         id: "doce_crepusculo",
@@ -1003,7 +1052,10 @@ export const STORES = {
         category: "Sorvetes Mágicos",
         itemType: "food",
         icon: "🌅",
-        effect: { type: "mood", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." }
+        effects: [
+          { type: "mood", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." },
+          { type: "energy", value: 30, duration: 15 }
+        ]
       },
 
       // Milk-Shakes
@@ -1015,7 +1067,11 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🥤",
-        effect: { type: "hunger", value: 28, duration: 20, message: "Ahh... nada como o bom e velho shake." }
+        effects: [
+          { type: "hunger", value: 28, duration: 20, message: "Ahh... nada como o bom e velho shake." },
+          { type: "energy", value: 20, duration: 15 },
+          { type: "mood", value: 22, duration: 18 }
+        ]
       },
       {
         id: "shake_duplo",
@@ -1025,7 +1081,10 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🥤",
-        effect: { type: "energy", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" }
+        effects: [
+          { type: "energy", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" },
+          { type: "mood", value: 28, duration: 18 }
+        ]
       },
       {
         id: "shake_encantado",
@@ -1035,7 +1094,10 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🥤",
-        effect: { type: "mood", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" }
+        effects: [
+          { type: "mood", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" },
+          { type: "energy", value: 32, duration: 12 }
+        ]
       },
       {
         id: "shake_gelido",
@@ -1045,7 +1107,10 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🧊",
-        effect: { type: "energy", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" }
+        effects: [
+          { type: "energy", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" },
+          { type: "mood", value: 35, duration: 12 }
+        ]
       },
       {
         id: "shake_supremo",
@@ -1055,7 +1120,10 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "👑",
-        effect: { type: "mood", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" }
+        effects: [
+          { type: "mood", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" },
+          { type: "energy", value: 38, duration: 20 }
+        ]
       },
 
       // Açaí
@@ -1067,7 +1135,10 @@ export const STORES = {
         category: "Açaí",
         itemType: "food",
         icon: "🫐",
-        effect: { type: "energy", value: 20, duration: 20, message: "Refrescante e cheio de vida... combina com verão." }
+        effects: [
+          { type: "energy", value: 20, duration: 20, message: "Refrescante e cheio de vida... combina com verão." },
+          { type: "mood", value: 18, duration: 15 }
+        ]
       },
       {
         id: "acai_supremo",
@@ -1077,7 +1148,10 @@ export const STORES = {
         category: "Açaí",
         itemType: "food",
         icon: "✨",
-        effect: { type: "mood", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." }
+        effects: [
+          { type: "mood", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." },
+          { type: "energy", value: 32, duration: 20 }
+        ]
       },
       {
         id: "acai_energetico",
@@ -1087,7 +1161,10 @@ export const STORES = {
         category: "Açaí",
         itemType: "food",
         icon: "⚡",
-        effect: { type: "energy", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" }
+        effects: [
+          { type: "energy", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" },
+          { type: "mood", value: 40, duration: 8 }
+        ]
       },
       {
         id: "acai_chocolate",
@@ -1097,7 +1174,11 @@ export const STORES = {
         category: "Açaí",
         itemType: "food",
         icon: "🍫",
-        effect: { type: "hunger", value: 20, duration: 15, message: "A mistura perfeita... doce e forte ao mesmo tempo." }
+        effects: [
+          { type: "hunger", value: 20, duration: 15, message: "A mistura perfeita... doce e forte ao mesmo tempo." },
+          { type: "energy", value: 18, duration: 12 },
+          { type: "mood", value: 20, duration: 15 }
+        ]
       },
       {
         id: "acai_encantado",
@@ -1107,7 +1188,10 @@ export const STORES = {
         category: "Açaí",
         itemType: "food",
         icon: "🔮",
-        effect: { type: "mood", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" }
+        effects: [
+          { type: "mood", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" },
+          { type: "energy", value: 22, duration: 15 }
+        ]
       },
 
       // Crepes
@@ -1119,7 +1203,10 @@ export const STORES = {
         category: "Crepes",
         itemType: "food",
         icon: "🥞",
-        effect: { type: "mood", value: 30, duration: 20, message: "Que explosão de sabores! Me sinto nas nuvens de felicidade!" }
+        effects: [
+          { type: "mood", value: 30, duration: 20, message: "Que explosão de sabores! Me sinto nas nuvens de felicidade!" },
+          { type: "energy", value: 25, duration: 15 }
+        ]
       },
 
       // Milkshakes Especiais
@@ -1131,7 +1218,11 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🥤",
-        effect: { type: "hunger", value: 50, duration: 30, message: "Que delícia! Os churros quentinhos com o milkshake gelado... perfeição!" }
+        effects: [
+          { type: "hunger", value: 50, duration: 30, message: "Que delícia! Os churros quentinhos com o milkshake gelado... perfeição!" },
+          { type: "energy", value: 35, duration: 25 },
+          { type: "mood", value: 40, duration: 20 }
+        ]
       },
       {
         id: "milkshake_pinky",
@@ -1141,7 +1232,11 @@ export const STORES = {
         category: "Milk-Shakes",
         itemType: "drink",
         icon: "🌸",
-        effect: { type: "hunger", value: 30, duration: 20, message: "Tão fofo e rosa! Me sinto uma princesa tomando isso!" }
+        effects: [
+          { type: "hunger", value: 30, duration: 20, message: "Tão fofo e rosa! Me sinto uma princesa tomando isso!" },
+          { type: "energy", value: 22, duration: 15 },
+          { type: "mood", value: 28, duration: 18 }
+        ]
       },
 
       // Smoothies
@@ -1153,7 +1248,10 @@ export const STORES = {
         category: "Smoothies",
         itemType: "drink",
         icon: "🍓",
-        effect: { type: "energy", value: 15, duration: 15, message: "Que refrescante! As frutas vermelhas dão uma energia incrível!" }
+        effects: [
+          { type: "energy", value: 15, duration: 15, message: "Que refrescante! As frutas vermelhas dão uma energia incrível!" },
+          { type: "mood", value: 12, duration: 12 }
+        ]
       },
       {
         id: "smoothie_manga",
@@ -1163,7 +1261,10 @@ export const STORES = {
         category: "Smoothies",
         itemType: "drink",
         icon: "🥭",
-        effect: { type: "energy", value: 18, duration: 15, message: "A manga tropical com chocolate... que combinação perfeita!" }
+        effects: [
+          { type: "energy", value: 18, duration: 15, message: "A manga tropical com chocolate... que combinação perfeita!" },
+          { type: "mood", value: 15, duration: 12 }
+        ]
       },
 
       // Sobremesas
@@ -1175,7 +1276,10 @@ export const STORES = {
         category: "Sobremesas",
         itemType: "food",
         icon: "🍰",
-        effect: { type: "mood", value: 40, duration: 25, message: "Que brownie divino! O contraste do quente com o gelado é pura felicidade!" }
+        effects: [
+          { type: "mood", value: 40, duration: 25, message: "Que brownie divino! O contraste do quente com o gelado é pura felicidade!" },
+          { type: "energy", value: 30, duration: 20 }
+        ]
       },
 
       // Sorvetes de Rolo
@@ -1187,7 +1291,10 @@ export const STORES = {
         category: "Sorvetes de Rolo",
         itemType: "food",
         icon: "🌸",
-        effect: { type: "mood", value: 20, duration: 15, message: "Que aroma relaxante... a lavanda acalma minha alma!" }
+        effects: [
+          { type: "mood", value: 20, duration: 15, message: "Que aroma relaxante... a lavanda acalma minha alma!" },
+          { type: "energy", value: 15, duration: 12 }
+        ]
       },
       {
         id: "licor_rolo",
@@ -1197,7 +1304,11 @@ export const STORES = {
         category: "Sorvetes de Rolo",
         itemType: "food",
         icon: "🍫",
-        effect: { type: "alcoholism", value: 25, duration: 20, message: "Mmm... esse licor de chocolate tem um sabor único e intenso!" }
+        effects: [
+          { type: "alcoholism", value: 25, duration: 20, message: "Mmm... esse licor de chocolate tem um sabor único e intenso!" },
+          { type: "energy", value: 20, duration: 15 },
+          { type: "mood", value: 30, duration: 18 }
+        ]
       },
       {
         id: "ice_moscow_mule",
@@ -1207,7 +1318,11 @@ export const STORES = {
         category: "Sorvetes de Rolo",
         itemType: "food",
         icon: "🍋",
-        effect: { type: "alcoholism", value: 20, duration: 15, message: "Que combinação refrescante! O gengibre com limão é surpreendente!" }
+        effects: [
+          { type: "alcoholism", value: 20, duration: 15, message: "Que combinação refrescante! O gengibre com limão é surpreendente!" },
+          { type: "energy", value: 18, duration: 12 },
+          { type: "mood", value: 25, duration: 15 }
+        ]
       },
       {
         id: "rolo_napolitano",
@@ -1217,7 +1332,11 @@ export const STORES = {
         category: "Sorvetes de Rolo",
         itemType: "food",
         icon: "🍨",
-        effect: { type: "hunger", value: 28, duration: 20, message: "O clássico napolitano em formato de rolo... que inovação deliciosa!" }
+        effects: [
+          { type: "hunger", value: 28, duration: 20, message: "O clássico napolitano em formato de rolo... que inovação deliciosa!" },
+          { type: "energy", value: 22, duration: 15 },
+          { type: "mood", value: 25, duration: 18 }
+        ]
       },
 
       // Sorvetes Especiais
@@ -1229,7 +1348,10 @@ export const STORES = {
         category: "Sorvetes Especiais",
         itemType: "food",
         icon: "🍭",
-        effect: { type: "energy", value: 35, duration: 10, message: "Tanto açúcar! Me sinto como uma criança na festa junina!" }
+        effects: [
+          { type: "energy", value: 35, duration: 10, message: "Tanto açúcar! Me sinto como uma criança na festa junina!" },
+          { type: "mood", value: 32, duration: 12 }
+        ]
       },
       {
         id: "sorvete_caipirinha",
@@ -1239,7 +1361,11 @@ export const STORES = {
         category: "Sorvetes Especiais",
         itemType: "food",
         icon: "🍹",
-        effect: { type: "mood", value: 35, duration: 20, message: "Que refrescante! Me sinto num clima de praia e festa!" }
+        effects: [
+          { type: "mood", value: 35, duration: 20, message: "Que refrescante! Me sinto num clima de praia e festa!" },
+          { type: "energy", value: 28, duration: 15 },
+          { type: "alcoholism", value: 15, duration: 18 }
+        ]
       }
     ] as StoreItem[]
   },
