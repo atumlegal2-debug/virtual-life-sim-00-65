@@ -18,7 +18,8 @@ import {
   ChevronDown,
   Sparkles,
   Cookie,
-  Activity
+  Activity,
+  Bike
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -38,12 +39,13 @@ import { FriendsApp } from "./FriendsApp";
 import { CreationApp } from "./CreationApp";
 import { MeyBabyApp } from "./MeyBabyApp";
 import { FortuneApp } from "./FortuneApp";
+import { MotoboyApp } from "./MotoboyApp";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation" | "meybaby" | "fortune";
+type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation" | "meybaby" | "fortune" | "motoboy";
 
 export function HomeScreen() {
   const { currentUser, logout } = useGame();
@@ -140,6 +142,7 @@ export function HomeScreen() {
     { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
     { id: "meybaby" as const, icon: Baby, label: "My Baby" },
     { id: "fortune" as const, icon: Cookie, label: "Biscoito da Sorte" },
+    { id: "motoboy" as const, icon: Bike, label: "Motoboy" },
   ];
 
   const renderApp = () => {
@@ -174,6 +177,8 @@ export function HomeScreen() {
         return <MeyBabyApp onBack={() => setCurrentApp("home")} />;
       case "fortune":
         return <FortuneApp onBack={() => setCurrentApp("home")} />;
+      case "motoboy":
+        return <MotoboyApp onBack={() => setCurrentApp("home")} />;
       default:
         return null;
     }
