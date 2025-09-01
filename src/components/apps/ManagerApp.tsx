@@ -121,7 +121,13 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
   const getDisplayName = (username: string) => {
     if (!username) return 'Usuário desconhecido';
-    return displayNames[username] || (username.length > 4 ? username.slice(0, -4) : username);
+    // Se já temos o display name carregado, usar ele
+    if (displayNames[username]) return displayNames[username];
+    
+    // Se o username tem exatamente 4 dígitos no final, remover eles
+    // Caso contrário, usar o username como está (já foi processado)
+    const hasCodeSuffix = /\d{4}$/.test(username);
+    return hasCodeSuffix ? username.slice(0, -4) : username;
   };
 
   const loadDisplayNameForUser = async (username: string) => {
