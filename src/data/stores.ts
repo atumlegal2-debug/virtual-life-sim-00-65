@@ -1566,17 +1566,7 @@ export const STORES = {
         description: "Kit iniciante completo",
         category: "Pacotes Promocionais"
       },
-      // Anéis de Amizade
-      {
-        id: "anel_laco_inquebravel",
-        name: "Laço Inquebrável → Dedão da Amizade",
-        price: 250,
-        description: "Anel que simboliza amizade eterna e inquebrantável",
-        category: "Anéis (amizade)",
-        relationshipType: "friendship",
-        icon: "👍",
-        itemType: "object"
-      },
+      // Anéis de Amizade removido
       // Pulseiras de Amizade
       {
         id: "pulseira_laco_amizade",
@@ -1588,17 +1578,7 @@ export const STORES = {
         icon: "🤝",
         itemType: "object"
       },
-      // Colares de Amizade
-      {
-        id: "colar_dois_amigos",
-        name: "Dois amigos → Pingente do Rolê",
-        price: 220,
-        description: "Colar para celebrar as melhores aventuras entre amigos",
-        category: "Colares (amizade)",
-        relationshipType: "friendship",
-        icon: "🎭",
-        itemType: "object"
-      },
+      // Colares de Amizade removido
       // Relógios de Amizade
       {
         id: "relogio_lacos_eternos",
