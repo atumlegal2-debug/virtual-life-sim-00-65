@@ -155,8 +155,8 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       // Load display names for all customers
       const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
       for (const order of allOrders) {
-        if (order.customer_username) {
-          await loadDisplayNameForUser(order.customer_username);
+        if (order.customer_name) {
+          await loadDisplayNameForUser(order.customer_name);
         }
       }
       
@@ -199,12 +199,21 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
   const handleSendItems = async (order: MotoboyOrder) => {
     try {
-      // Buscar dados do usuário
+      console.log('=== ENVIANDO ITENS ===');
+      console.log('customer_username:', order.customer_username);
+      console.log('customer_name:', order.customer_name);
+      
+      // Buscar dados do usuário - usar customer_name que tem o username completo
+      const usernameToSearch = order.customer_name || order.customer_username;
+      console.log('Buscando usuário:', usernameToSearch);
+      
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, wallet_balance')
-        .eq('username', order.customer_username)
+        .select('id, username, wallet_balance, nickname')
+        .eq('username', usernameToSearch)
         .single();
+
+      console.log('Resultado da busca do usuário:', { userData, userError });
 
       if (userError || !userData) {
         throw new Error('Usuário não encontrado');
@@ -215,11 +224,11 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         throw new Error('Usuário não tem saldo suficiente');
       }
 
-      // Atualizar saldo do usuário
+      // Atualizar saldo do usuário  
       const { error: balanceError } = await supabase
         .from('users')
         .update({ wallet_balance: newBalance })
-        .eq('username', order.customer_username);
+        .eq('username', usernameToSearch);
 
       if (balanceError) throw balanceError;
 
@@ -251,9 +260,11 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
       if (error) throw error;
 
+      const displayName = userData.nickname || (userData.username.endsWith('1919') || userData.username.endsWith('4444') || userData.username.endsWith('3852') || userData.username.endsWith('5555') ? userData.username.slice(0, -4) : userData.username);
+
       toast({
         title: "Itens enviados!",
-        description: `Itens enviados para ${getDisplayName(order.customer_username)} e ${order.total_amount.toFixed(2)} CM descontado`
+        description: `Itens enviados para ${displayName} e ${order.total_amount.toFixed(2)} CM descontado`
       });
 
       loadOrders();
@@ -423,7 +434,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                     </span>
                   </div>
                   <div className="text-sm">
-                    <strong>Cliente:</strong> {getDisplayName(order.customer_username)}
+                    <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
@@ -469,7 +480,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                     </span>
                   </div>
                   <div className="text-sm">
-                    <strong>Cliente:</strong> {getDisplayName(order.customer_username)}
+                    <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
