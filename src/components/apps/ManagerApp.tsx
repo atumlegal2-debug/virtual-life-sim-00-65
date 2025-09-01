@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send, Save, LogOut } from "lucide-react";
+import { ArrowLeft, Store, DollarSign, ShoppingBag, CheckCircle, XCircle, Heart, Baby, Clock, Send, Save, LogOut, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { STORES } from "@/data/stores";
@@ -70,7 +70,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const [birthRequests, setBirthRequests] = useState<BirthRequest[]>([]);
   const [treatmentRequests, setTreatmentRequests] = useState<TreatmentRequest[]>([]);
-  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers" | "patient-history">("dashboard");
+  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers" | "patient-history" | "motoboy-orders">("dashboard");
+  const [motoboyOrders, setMotoboyOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [transferAmount, setTransferAmount] = useState("");
@@ -567,6 +568,23 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
   };
 
+  const loadMotoboyOrders = async () => {
+    if (!currentManager) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('motoboy_orders')
+        .select('*')
+        .eq('store_id', currentManager.store_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMotoboyOrders(data || []);
+    } catch (error) {
+      console.error('Error loading motoboy orders:', error);
+    }
+  };
+
   const loadPatientHistory = async () => {
     try {
       // Load all treatment and birth requests for patient history
@@ -698,6 +716,9 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
     if (currentView === "patient-history") {
       loadPatientHistory();
+    }
+    if (currentView === "motoboy-orders") {
+      loadMotoboyOrders();
     }
   }, [isLoggedIn, currentManager, currentView]);
 
@@ -1357,6 +1378,18 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           <ShoppingBag size={16} className="mr-2" />
           Pedidos Pendentes ({pendingOrders.length})
         </Button>
+        
+        {/* Show motoboy orders for non-hospital stores */}
+        {currentManager?.store_id !== 'hospital' && (
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setCurrentView("motoboy-orders")}
+          >
+            <Truck size={16} className="mr-2" />
+            Pedidos do Motoboy ({motoboyOrders.filter(o => o.manager_status === 'pending').length})
+          </Button>
+        )}
         <Button
           variant="outline"
           className="w-full justify-start"

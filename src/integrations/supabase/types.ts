@@ -394,6 +394,66 @@ export type Database = {
           },
         ]
       }
+      motoboy_orders: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_username: string
+          delivered_at: string | null
+          delivery_address: string | null
+          id: string
+          items: Json
+          manager_notes: string | null
+          manager_processed_at: string | null
+          manager_status: string
+          motoboy_accepted_at: string | null
+          motoboy_notes: string | null
+          motoboy_status: string
+          order_id: string
+          store_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_username: string
+          delivered_at?: string | null
+          delivery_address?: string | null
+          id?: string
+          items: Json
+          manager_notes?: string | null
+          manager_processed_at?: string | null
+          manager_status?: string
+          motoboy_accepted_at?: string | null
+          motoboy_notes?: string | null
+          motoboy_status?: string
+          order_id: string
+          store_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_username?: string
+          delivered_at?: string | null
+          delivery_address?: string | null
+          id?: string
+          items?: Json
+          manager_notes?: string | null
+          manager_processed_at?: string | null
+          manager_status?: string
+          motoboy_accepted_at?: string | null
+          motoboy_notes?: string | null
+          motoboy_status?: string
+          order_id?: string
+          store_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           approved_at: string | null

@@ -86,6 +86,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [currentProposal, setCurrentProposal] = useState<any>(null);
   const [showCartCheckout, setShowCartCheckout] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
+  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "motoboy">("pickup");
   
   const { cart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
@@ -140,12 +141,6 @@ export function StoreApp({ onBack }: StoreAppProps) {
     
     const total = getCartTotal();
     
-    console.log('Verificando saldo:', { 
-      userMoney: money, 
-      orderTotal: total, 
-      hasEnoughMoney: money >= total 
-    });
-    
     if (money < total) {
       toast({
         title: "Saldo insuficiente",
@@ -157,14 +152,56 @@ export function StoreApp({ onBack }: StoreAppProps) {
 
     if (selectedStore && currentUser) {
       setOrderProcessing(true);
-      await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4));
-      setShowCartCheckout(false);
-      setOrderProcessing(false);
-      toast({
-        title: "Pedido enviado!",
-        description: "Olá, seu pedido está em processo, entre em contato com o chat do estabelecimento e aguarde",
-        duration: 5000
-      });
+      
+      try {
+        // Check if this is a hospital order (no motoboy delivery for hospital)
+        const isHospital = false; // Hospital is not in current stores
+        
+        if (deliveryOption === "motoboy" && !isHospital) {
+          // Create motoboy order
+          const { error } = await supabase
+            .from('motoboy_orders')
+            .insert({
+              order_id: crypto.randomUUID(),
+              store_id: selectedStore,
+              customer_name: currentUser,
+              customer_username: currentUser.slice(0, -4),
+              items: cart as any,
+              total_amount: total,
+              manager_status: 'pending',
+              motoboy_status: 'waiting'
+            });
+
+          if (error) throw error;
+
+          toast({
+            title: "Pedido enviado para o gerente!",
+            description: "Aguarde a aprovação para envio ao motoboy",
+            duration: 5000
+          });
+        } else {
+          // Regular order submission
+          await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4));
+          toast({
+            title: "Pedido enviado!",
+            description: "Olá, seu pedido está em processo, entre em contato com o chat do estabelecimento e aguarde",
+            duration: 5000
+          });
+        }
+
+        setShowCartCheckout(false);
+        clearCart();
+        setDeliveryOption("pickup");
+      } catch (error) {
+        console.error('Error submitting order:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao processar pedido",
+          variant: "destructive"
+        });
+      } finally {
+        setOrderProcessing(false);
+      }
     }
   };
 
@@ -600,6 +637,35 @@ export function StoreApp({ onBack }: StoreAppProps) {
                   <span className="font-bold text-lg">Total:</span>
                   <span className="font-bold text-lg text-money">{getCartTotal()} CM</span>
                 </div>
+                {/* Delivery Option Selection */}
+                <div className="space-y-3 mb-4">
+                  <div className="text-sm font-medium">Opção de entrega:</div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="deliveryOption"
+                        value="pickup"
+                        checked={deliveryOption === "pickup"}
+                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "motoboy")}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Retirada no local</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="deliveryOption"
+                        value="motoboy"
+                        checked={deliveryOption === "motoboy"}
+                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "motoboy")}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Entrega por motoboy</span>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="flex gap-3">
                   <Button 
                     variant="outline" 
