@@ -48,11 +48,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     if (!username || displayNames[username]) return displayNames[username] || username;
     
     try {
+      console.log('=== CARREGANDO DISPLAY NAME ===');
+      console.log('Username:', username);
+      
       const { data, error } = await supabase
         .from('users')
         .select('username, nickname')
         .eq('username', username)
         .maybeSingle();
+      
+      console.log('Resultado da consulta:', { data, error });
       
       let displayName: string;
       
@@ -60,10 +65,12 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         // Fallback: remove últimos 4 dígitos do username se terminar com números
         const hasCodeSuffix = /\d{4}$/.test(username);
         displayName = hasCodeSuffix ? username.slice(0, -4) : username;
+        console.log('Usando fallback:', displayName);
       } else {
         // Usa nickname se disponível, senão username sem dígitos
         const hasCodeSuffix = /\d{4}$/.test(username);
         displayName = data.nickname || (hasCodeSuffix ? username.slice(0, -4) : username);
+        console.log('Nome final:', displayName, '(nickname:', data.nickname, ')');
       }
       
       setDisplayNames(prev => ({ ...prev, [username]: displayName }));
