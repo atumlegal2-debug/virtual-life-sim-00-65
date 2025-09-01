@@ -32,6 +32,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [acceptedOrders, setAcceptedOrders] = useState<MotoboyOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+  const [todayDeliveries, setTodayDeliveries] = useState(0);
   const { toast } = useToast();
 
   const getDisplayName = (username: string) => {
@@ -95,6 +96,13 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     if (savedAuth === 'true') {
       setIsAuthenticated(true);
       loadOrders();
+    }
+    
+    // Load today's delivery count
+    const today = new Date().toDateString();
+    const savedDeliveries = localStorage.getItem(`motoboy_deliveries_${today}`);
+    if (savedDeliveries) {
+      setTodayDeliveries(parseInt(savedDeliveries, 10));
     }
   }, []);
 
@@ -266,6 +274,14 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         title: "Itens enviados!",
         description: `Itens enviados para ${displayName} e ${order.total_amount.toFixed(2)} CM descontado`
       });
+
+      // Incrementar estatísticas do dia
+      const newDeliveryCount = todayDeliveries + 1;
+      setTodayDeliveries(newDeliveryCount);
+      
+      // Salvar no localStorage
+      const today = new Date().toDateString();
+      localStorage.setItem(`motoboy_deliveries_${today}`, newDeliveryCount.toString());
 
       loadOrders();
     } catch (error) {
@@ -532,7 +548,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">0</div>
+              <div className="text-2xl font-bold text-primary">{todayDeliveries}</div>
               <div className="text-xs text-muted-foreground">Entregas</div>
             </div>
           </CardContent>
