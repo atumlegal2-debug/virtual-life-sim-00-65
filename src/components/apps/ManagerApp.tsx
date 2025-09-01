@@ -579,7 +579,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMotoboyOrders(data || []);
+      
+      // Load display names for all customers
+      const ordersWithDisplayNames = data || [];
+      for (const order of ordersWithDisplayNames) {
+        if (order.customer_username) {
+          await loadDisplayNameForUser(order.customer_username);
+        }
+      }
+      
+      setMotoboyOrders(ordersWithDisplayNames);
     } catch (error) {
       console.error('Error loading motoboy orders:', error);
     }
