@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGame } from "@/contexts/GameContext";
-import { ArrowLeft, Coins, Send, History, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowLeft, Coins, Send, History, ArrowUpRight, ArrowDownRight, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,6 +40,22 @@ export function WalletApp({ onBack }: WalletAppProps) {
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('pt-BR').format(amount);
+  };
+
+  // Map store IDs to display names
+  const getStoreName = (storeId: string) => {
+    const storeNames: Record<string, string> = {
+      "farmacia": "Farmácia",
+      "bar": "Bar",
+      "joalheria": "Joalheria", 
+      "restaurante": "Restaurante",
+      "cafeteria": "Cafeteria",
+      "pizzeria": "Pizzaria",
+      "sexshop": "Sex Shop",
+      "sorveteria": "Sorveteria",
+      "hospital": "Hospital"
+    };
+    return storeNames[storeId] || storeId;
   };
 
   const loadUserProfile = async () => {
@@ -236,6 +252,7 @@ export function WalletApp({ onBack }: WalletAppProps) {
               const isTransfer = transaction.transaction_type === 'transfer';
               const isReceived = isTransfer && transaction.to_username === currentUser;
               const isPurchase = transaction.transaction_type === 'purchase';
+              const isMotoboyDelivery = transaction.transaction_type === 'motoboy_delivery';
               const otherUser = isTransfer ? (isReceived ? transaction.from_username : transaction.to_username) : null;
               const displayName = otherUser ? getDisplayName(otherUser) : null;
               
@@ -246,12 +263,15 @@ export function WalletApp({ onBack }: WalletAppProps) {
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           isReceived ? 'bg-green-500/20' : 
-                          isPurchase ? 'bg-blue-500/20' : 'bg-red-500/20'
+                          isPurchase ? 'bg-blue-500/20' : 
+                          isMotoboyDelivery ? 'bg-orange-500/20' : 'bg-red-500/20'
                         }`}>
                           {isReceived ? (
                             <ArrowDownRight size={20} className="text-green-500" />
                           ) : isPurchase ? (
                             <Coins size={20} className="text-blue-500" />
+                          ) : isMotoboyDelivery ? (
+                            <Truck size={20} className="text-orange-500" />
                           ) : (
                             <ArrowUpRight size={20} className="text-red-500" />
                           )}
@@ -260,6 +280,7 @@ export function WalletApp({ onBack }: WalletAppProps) {
                           <p className="font-medium text-foreground">
                             {isReceived ? `Recebido de ${displayName}` : 
                              isPurchase ? (transaction.description || 'Compra') :
+                             isMotoboyDelivery ? `Entrega via Motoboy - ${getStoreName(transaction.to_username)}` :
                              `Enviado para ${displayName}`}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -271,9 +292,10 @@ export function WalletApp({ onBack }: WalletAppProps) {
                           </p>
                         </div>
                       </div>
-                      <div className={`font-bold ${
+                       <div className={`font-bold ${
                         isReceived ? 'text-green-500' : 
-                        isPurchase ? 'text-blue-500' : 'text-red-500'
+                        isPurchase ? 'text-blue-500' : 
+                        isMotoboyDelivery ? 'text-orange-500' : 'text-red-500'
                       }`}>
                         {isReceived ? '+' : '-'}{formatMoney(transaction.amount)} CM
                       </div>
