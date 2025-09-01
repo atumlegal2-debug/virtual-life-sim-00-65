@@ -1068,6 +1068,138 @@ export const STORES = {
         description: "Açaí mágico que surpreende a cada colherada",
         category: "Açaí",
         effect: { type: "hunger", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" }
+      },
+
+      // Crepes
+      {
+        id: "crepe_explosao_sabores",
+        name: "Crepe Explosão de Sabores",
+        price: 30,
+        description: "Uma deliciosa massa de chocolate branco ou preto, com sorvete de baunilha, morango ou chocolate. Acrescido de biscoito crocante e frutas.",
+        category: "Crepes",
+        itemType: "food",
+        icon: "🥞",
+        effect: { type: "mood", value: 30, duration: 20, message: "Que explosão de sabores! Me sinto nas nuvens de felicidade!" }
+      },
+
+      // Milkshakes Especiais
+      {
+        id: "milkshake_churros",
+        name: "Milkshake de Churros",
+        price: 45,
+        description: "Milkshake tradicional de baunilha com calda de churros junto de uma bandejinha de churros fritos na hora.",
+        category: "Milk-Shakes",
+        itemType: "drink",
+        icon: "🥤",
+        effect: { type: "hunger", value: 50, duration: 30, message: "Que delícia! Os churros quentinhos com o milkshake gelado... perfeição!" }
+      },
+      {
+        id: "milkshake_pinky",
+        name: "Milkshake Pinky",
+        price: 30,
+        description: "Feito para os amantes da cor rosa e as patricinhas de plantão, um delicioso sorvete de morango com oreo rosa.",
+        category: "Milk-Shakes",
+        itemType: "drink",
+        icon: "🌸",
+        effect: { type: "hunger", value: 30, duration: 20, message: "Tão fofo e rosa! Me sinto uma princesa tomando isso!" }
+      },
+
+      // Smoothies
+      {
+        id: "smoothie_frutas_vermelhas",
+        name: "Smoothie de Frutas Vermelhas",
+        price: 15,
+        description: "Uma bebida cremosa e doce, feita de frutas congeladas",
+        category: "Smoothies",
+        itemType: "drink",
+        icon: "🍓",
+        effect: { type: "energy", value: 15, duration: 15, message: "Que refrescante! As frutas vermelhas dão uma energia incrível!" }
+      },
+      {
+        id: "smoothie_manga",
+        name: "Smoothie de Manga",
+        price: 18,
+        description: "Uma bebida cremosa de manga congelada e raspas de chocolate.",
+        category: "Smoothies",
+        itemType: "drink",
+        icon: "🥭",
+        effect: { type: "energy", value: 18, duration: 15, message: "A manga tropical com chocolate... que combinação perfeita!" }
+      },
+
+      // Sobremesas
+      {
+        id: "brownie_sorvete",
+        name: "Brownie com Sorvete",
+        price: 50,
+        description: "Um brownie macio e quentinho de chocolate belga, com uma grande e generosa bola de sorvete de creme com calda de chocolate e morangos picados",
+        category: "Sobremesas",
+        itemType: "food",
+        icon: "🍰",
+        effect: { type: "mood", value: 40, duration: 25, message: "Que brownie divino! O contraste do quente com o gelado é pura felicidade!" }
+      },
+
+      // Sorvetes de Rolo
+      {
+        id: "sorvete_lavanda",
+        name: "Sorvete Lavanda",
+        price: 20,
+        description: "Um sabor diferente e doce, com cheiro floral de lavanda junto de uma camada de Chantilly e flor de açúcar",
+        category: "Sorvetes de Rolo",
+        itemType: "food",
+        icon: "🌸",
+        effect: { type: "mood", value: 20, duration: 15, message: "Que aroma relaxante... a lavanda acalma minha alma!" }
+      },
+      {
+        id: "licor_rolo",
+        name: "Licor em Rolo",
+        price: 40,
+        description: "Um sorvete alcoólico com o sabor intenso do licor de chocolate",
+        category: "Sorvetes de Rolo",
+        itemType: "food",
+        icon: "🍫",
+        effect: { type: "alcoholism", value: 25, duration: 20, message: "Mmm... esse licor de chocolate tem um sabor único e intenso!" }
+      },
+      {
+        id: "ice_moscow_mule",
+        name: "Ice Moscow Mule",
+        price: 30,
+        description: "Um sorvete alcoólico com Chantilly de limão, um sorvete feito com baunilha, gengibre e raspas de limão.",
+        category: "Sorvetes de Rolo",
+        itemType: "food",
+        icon: "🍋",
+        effect: { type: "alcoholism", value: 20, duration: 15, message: "Que combinação refrescante! O gengibre com limão é surpreendente!" }
+      },
+      {
+        id: "rolo_napolitano",
+        name: "Rolo Napolitano",
+        price: 28,
+        description: "Tradicional sorvete napolitano em rolos, com biscoitos crocantes de chocolate, morangos picados e calda de morango",
+        category: "Sorvetes de Rolo",
+        itemType: "food",
+        icon: "🍨",
+        effect: { type: "hunger", value: 28, duration: 20, message: "O clássico napolitano em formato de rolo... que inovação deliciosa!" }
+      },
+
+      // Sorvetes Especiais
+      {
+        id: "sorvete_algodao_doce",
+        name: "Sorvete de Algodão Doce",
+        price: 45,
+        description: "Para os amantes de açúcar, um sorvete colorido com um algodão doce azul, branco e rosa por cima",
+        category: "Sorvetes Especiais",
+        itemType: "food",
+        icon: "🍭",
+        effect: { type: "energy", value: 35, duration: 10, message: "Tanto açúcar! Me sinto como uma criança na festa junina!" }
+      },
+      {
+        id: "sorvete_caipirinha",
+        name: "Sorvete Caipirinha",
+        price: 45,
+        description: "Um sorvete de limão ou maracujá, com teor alcoólico, vindo em um belo copo, com frutas picadas, biscoitos e Chantilly.",
+        category: "Sorvetes Especiais",
+        itemType: "food",
+        icon: "🍹",
+        effect: { type: "mood", value: 35, duration: 20, message: "Que refrescante! Me sinto num clima de praia e festa!" }
       }
     ] as StoreItem[]
   },
