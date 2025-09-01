@@ -259,9 +259,16 @@ export default function BagApp({ onBack }: BagAppProps) {
       const formattedInventory: InventoryItem[] = [];
       const formattedHistory: HistoryItem[] = [];
       
+      // Debug: Log raw inventory data
+      console.log('=== BOLSA DEBUG ===');
+      console.log('Raw inventory data:', inventoryData);
+      console.log('Current user:', currentUser);
+      console.log('User ID:', userId);
+      
       // Batch process items
       if (inventoryData) {
         inventoryData.forEach((item: any) => {
+          console.log('Processing item:', item);
           const processedItem = processInventoryItemOptimized(item, allCustomItems);
           
           if (processedItem) {
@@ -270,9 +277,14 @@ export default function BagApp({ onBack }: BagAppProps) {
             if (item.sent_by_username) {
               formattedHistory.push(processedItem.historyItem);
             }
+          } else {
+            console.log('Item não processado:', item);
           }
         });
       }
+      
+      console.log('Final inventory:', formattedInventory);
+      console.log('Final history:', formattedHistory);
 
       // Update states em batch
       setInventory(formattedInventory);
@@ -463,6 +475,18 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
     }
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
+
+  // Auto-refresh quando receber novos itens (polling a cada 30s quando app está aberto)
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const interval = setInterval(() => {
+      // Força refresh para pegar novos itens do motoboy
+      loadAllData(true);
+    }, 30000); // 30 segundos
+    
+    return () => clearInterval(interval);
+  }, [currentUser, loadAllData]);
 
 
   const handleUseItem = async (item: InventoryItem) => {
@@ -963,6 +987,15 @@ export default function BagApp({ onBack }: BagAppProps) {
           <ArrowLeft size={20} />
         </Button>
         <h1 className="text-xl font-bold text-foreground">Bolsa</h1>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => loadAllData(true)}
+          className="hover:bg-background/20"
+          title="Atualizar bolsa"
+        >
+          🔄
+        </Button>
         <div className="ml-auto">
           <Badge variant="outline">
             {inventory.length} itens
