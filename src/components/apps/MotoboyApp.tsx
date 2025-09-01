@@ -253,7 +253,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
       toast({
         title: "Itens enviados!",
-        description: `Itens enviados para ${getDisplayName(order.customer_username)} e R$ ${order.total_amount.toFixed(2)} descontado`
+        description: `Itens enviados para ${getDisplayName(order.customer_username)} e ${order.total_amount.toFixed(2)} CM descontado`
       });
 
       loadOrders();
@@ -419,7 +419,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{order.store_id}</span>
                     <span className="text-green-600 font-bold">
-                      R$ {order.total_amount.toFixed(2)}
+                      {order.total_amount.toFixed(2)} CM
                     </span>
                   </div>
                   <div className="text-sm">
@@ -465,7 +465,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{order.store_id}</span>
                     <span className="text-green-600 font-bold">
-                      R$ {order.total_amount.toFixed(2)}
+                      {order.total_amount.toFixed(2)} CM
                     </span>
                   </div>
                   <div className="text-sm">
