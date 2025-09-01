@@ -29,6 +29,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [password, setPassword] = useState("");
   const [rememberLogin, setRememberLogin] = useState(false);
   const [orders, setOrders] = useState<MotoboyOrder[]>([]);
+  const [acceptedOrders, setAcceptedOrders] = useState<MotoboyOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -129,27 +130,38 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     setLoading(true);
     try {
       console.log('=== CARREGANDO PEDIDOS MOTOBOY APP ===');
-      const { data, error } = await supabase
+      
+      // Carregar pedidos disponíveis (waiting)
+      const { data: waitingOrders, error: waitingError } = await supabase
         .from('motoboy_orders')
         .select('*')
         .eq('manager_status', 'approved')
         .eq('motoboy_status', 'waiting')
         .order('created_at', { ascending: false });
 
-      console.log('Query result:', { data, error });
-      console.log('Pedidos encontrados para motoboy:', data?.length || 0);
+      // Carregar pedidos aceitos (accepted)
+      const { data: acceptedOrdersData, error: acceptedError } = await supabase
+        .from('motoboy_orders')
+        .select('*')
+        .eq('manager_status', 'approved')
+        .eq('motoboy_status', 'accepted')
+        .order('created_at', { ascending: false });
+
+      console.log('Query results:', { waitingOrders, acceptedOrdersData, waitingError, acceptedError });
       
-      if (error) throw error;
+      if (waitingError) throw waitingError;
+      if (acceptedError) throw acceptedError;
       
-      // Load display names for customers
-      const ordersWithDisplayNames = data || [];
-      for (const order of ordersWithDisplayNames) {
+      // Load display names for all customers
+      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
+      for (const order of allOrders) {
         if (order.customer_username) {
           await loadDisplayNameForUser(order.customer_username);
         }
       }
       
-      setOrders(ordersWithDisplayNames);
+      setOrders(waitingOrders || []);
+      setAcceptedOrders(acceptedOrdersData || []);
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
@@ -180,6 +192,76 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       toast({
         title: "Erro",
         description: "Erro ao aceitar entrega",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendItems = async (order: MotoboyOrder) => {
+    try {
+      // Buscar dados do usuário
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, wallet_balance')
+        .eq('username', order.customer_username)
+        .single();
+
+      if (userError || !userData) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      const newBalance = userData.wallet_balance - order.total_amount;
+      if (newBalance < 0) {
+        throw new Error('Usuário não tem saldo suficiente');
+      }
+
+      // Atualizar saldo do usuário
+      const { error: balanceError } = await supabase
+        .from('users')
+        .update({ wallet_balance: newBalance })
+        .eq('username', order.customer_username);
+
+      if (balanceError) throw balanceError;
+
+      // Adicionar itens à bolsa do usuário
+      for (const item of order.items) {
+        const { error: inventoryError } = await supabase
+          .from('inventory')
+          .insert({
+            user_id: userData.id,
+            item_id: item.name,
+            quantity: item.quantity,
+            sent_by_username: 'Motoboy',
+            received_at: new Date().toISOString()
+          });
+
+        if (inventoryError) {
+          console.error('Error adding item to inventory:', inventoryError);
+        }
+      }
+
+      // Marcar pedido como entregue
+      const { error } = await supabase
+        .from('motoboy_orders')
+        .update({
+          motoboy_status: 'delivered',
+          delivered_at: new Date().toISOString()
+        })
+        .eq('id', order.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Itens enviados!",
+        description: `Itens enviados para ${getDisplayName(order.customer_username)} e R$ ${order.total_amount.toFixed(2)} descontado`
+      });
+
+      loadOrders();
+    } catch (error) {
+      console.error('Error sending items:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao enviar itens",
         variant: "destructive"
       });
     }
@@ -364,6 +446,52 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* Accepted Orders - Ready to Send */}
+        {acceptedOrders.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="text-primary" size={20} />
+                Entregas Aceitas ({acceptedOrders.length})
+              </CardTitle>
+              <CardDescription>
+                Clique em "Enviar" para enviar os itens e descontar da carteira do cliente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {acceptedOrders.map((order) => (
+                <div key={order.id} className="border rounded-lg p-3 space-y-2 bg-blue-50 dark:bg-blue-950/20">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{order.store_id}</span>
+                    <span className="text-green-600 font-bold">
+                      R$ {order.total_amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <strong>Cliente:</strong> {getDisplayName(order.customer_username)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
+                      `${item.quantity}x ${item.name}`
+                    ).join(', ') : 'Itens não disponíveis'}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock size={14} />
+                    <span>Aceito em: {new Date(order.created_at).toLocaleString()}</span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={() => handleSendItems(order)}
+                  >
+                    Enviar
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Instructions */}
         <Card>
