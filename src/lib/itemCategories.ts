@@ -93,10 +93,51 @@ export function getAlcoholLevel(storeId: string, itemId: string): number {
   return 8;
 }
 
-export function getCategoryIcon(itemType: "food" | "drink" | "object"): string {
+export function getDrinkEmoji(itemName: string): string {
+  const name = itemName.toLowerCase();
+  
+  // Refrigerantes
+  if (name.includes('refrigerante') || name.includes('cola') || name.includes('guaraná')) return '🥤';
+  
+  // Sucos
+  if (name.includes('suco') || name.includes('laranja') || name.includes('maracujá') || name.includes('uva')) return '🧃';
+  
+  // Água
+  if (name.includes('água') || name.includes('agua') || name.includes('mineral')) return '💧';
+  
+  // Café
+  if (name.includes('café') || name.includes('cafe') || name.includes('espresso') || name.includes('cappuccino') || name.includes('latte') || name.includes('mocha')) return '☕';
+  
+  // Chá
+  if (name.includes('chá') || name.includes('cha')) return '🍵';
+  
+  // Chocolate quente
+  if (name.includes('chocolate quente')) return '🍫';
+  
+  // Smoothie
+  if (name.includes('smoothie')) return '🥤';
+  
+  // Limonada
+  if (name.includes('limonada') || name.includes('limão')) return '🍋';
+  
+  // Energético
+  if (name.includes('energético') || name.includes('energetico')) return '⚡';
+  
+  // Bebidas alcoólicas
+  if (name.includes('cerveja')) return '🍺';
+  if (name.includes('vinho')) return '🍷';
+  if (name.includes('whisky') || name.includes('vodka') || name.includes('rum') || name.includes('tequila') || name.includes('cachaça')) return '🥃';
+  if (name.includes('soju') || name.includes('sake')) return '🍶';
+  if (name.includes('hidromel') || name.includes('licor')) return '🍯';
+  
+  // Default para bebidas
+  return '🥤';
+}
+
+export function getCategoryIcon(itemType: "food" | "drink" | "object", itemName?: string): string {
   switch (itemType) {
     case "food": return "🍽️";
-    case "drink": return "🍺";
+    case "drink": return itemName ? getDrinkEmoji(itemName) : "🥤";
     case "object": return "📦";
     default: return "📦";
   }

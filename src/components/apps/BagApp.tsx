@@ -360,7 +360,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       // Pre-computed effects for custom items
       const effectMap = {
         food: { type: "hunger", value: 25, message: `Você comeu ${customItem.name} e se sente satisfeito!` },
-        drink: { type: "hunger", value: 20, message: `Você bebeu ${customItem.name} e se sente saciado!` },
+        drink: { type: "energy", value: 20, message: `Você bebeu ${customItem.name} e se sente energizado!` },
         object: { type: "mood", value: 15, message: `Você usou ${customItem.name} e se sente muito melhor!` }
       };
 
@@ -586,6 +586,17 @@ export default function BagApp({ onBack }: BagAppProps) {
                 gameContextStats.mood = newMood.toString();
                 effectMessage = item.effect.message;
                 break;
+              case "energy":
+                const { data: userData } = await supabase
+                  .from('users')
+                  .select('energy_percentage')
+                  .eq('id', userRecord.id)
+                  .single();
+                const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + item.effect.value);
+                dbUpdateStats.energy_percentage = newEnergy;
+                gameContextStats.energy = newEnergy;
+                effectMessage = item.effect.message;
+                break;
             }
           }
         }
@@ -801,7 +812,7 @@ export default function BagApp({ onBack }: BagAppProps) {
                 <span className="text-lg">{item.originalItem.icon}</span>
               )
             ) : (
-              <span className="text-lg">{getCategoryIcon(item.itemType)}</span>
+              <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
             {item.name}
             {item.quantity > 1 && (
@@ -922,7 +933,7 @@ export default function BagApp({ onBack }: BagAppProps) {
                 <span className="text-lg">{item.originalItem.icon}</span>
               )
             ) : (
-              <span className="text-lg">{getCategoryIcon(item.itemType)}</span>
+              <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
             {item.name}
             {item.quantity > 1 && (
@@ -979,15 +990,6 @@ export default function BagApp({ onBack }: BagAppProps) {
           <ArrowLeft size={20} />
         </Button>
         <h1 className="text-xl font-bold text-foreground">Bolsa</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => loadAllData(true)}
-          className="hover:bg-background/20"
-          title="Atualizar bolsa"
-        >
-          🔄
-        </Button>
         <div className="ml-auto">
           <Badge variant="outline">
             {inventory.length} itens
