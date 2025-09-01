@@ -589,23 +589,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     if (!currentManager) return;
     
     try {
-      console.log('=== CARREGANDO PEDIDOS MOTOBOY ===');
-      console.log('Gerente atual:', currentManager);
-      console.log('Filtrando por store_id:', currentManager.store_id);
-      
       const { data, error } = await supabase
         .from('motoboy_orders')
         .select('*')
         .eq('store_id', currentManager.store_id)
         .order('created_at', { ascending: false });
 
-      console.log('Resultado da consulta motoboy orders:', { data, error });
-
       if (error) throw error;
       
       // Load display names for all customers
       const ordersWithDisplayNames = data || [];
-      console.log('Pedidos encontrados:', ordersWithDisplayNames.length);
       
       for (const order of ordersWithDisplayNames) {
         if (order.customer_username) {
@@ -614,7 +607,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       }
       
       setMotoboyOrders(ordersWithDisplayNames);
-      console.log('=== PEDIDOS MOTOBOY CARREGADOS ===');
     } catch (error) {
       console.error('Error loading motoboy orders:', error);
     }
@@ -1119,22 +1111,15 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
   // Motoboy Orders View
   if (currentView === "motoboy-orders") {
-    console.log('=== RENDERIZANDO PEDIDOS MOTOBOY ===');
-    console.log('Total motoboyOrders:', motoboyOrders);
-    console.log('Gerente atual store_id:', currentManager?.store_id);
-    
     const pendingMotoboyOrders = motoboyOrders.filter(o => o.manager_status === 'pending');
     const processedMotoboyOrders = motoboyOrders.filter(o => o.manager_status !== 'pending');
-    
-    console.log('Pedidos pendentes:', pendingMotoboyOrders);
-    console.log('Pedidos processados:', processedMotoboyOrders);
 
     const handleMotoboyOrder = async (orderId: string, action: 'accept' | 'reject', notes?: string) => {
       try {
         const { error } = await supabase
           .from('motoboy_orders')
           .update({ 
-            manager_status: action === 'accept' ? 'accepted' : 'rejected',
+            manager_status: action === 'accept' ? 'approved' : 'rejected',
             manager_notes: notes || (action === 'accept' ? 'Pedido aprovado para entrega' : 'Pedido rejeitado'),
             manager_processed_at: new Date().toISOString()
           })
@@ -1148,6 +1133,9 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             ? "O pedido foi liberado para o motoboy" 
             : "O pedido foi rejeitado"
         });
+
+        // Reload orders to update the list
+        loadMotoboyOrders();
 
         await loadMotoboyOrders();
       } catch (error) {

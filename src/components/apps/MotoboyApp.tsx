@@ -41,6 +41,14 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     }
   }, []);
 
+  // Auto-refresh orders every 30 seconds when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const interval = setInterval(loadOrders, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const handleLogin = () => {
     if (password === "Motoboy1719") {
       setIsAuthenticated(true);
