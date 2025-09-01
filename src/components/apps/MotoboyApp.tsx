@@ -37,11 +37,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     if (!username) return 'Cliente desconhecido';
     
     // Se já tem o display name carregado, usa ele
-    if (displayNames[username]) return displayNames[username];
+    if (displayNames[username]) {
+      console.log('Display name encontrado no cache:', username, '->', displayNames[username]);
+      return displayNames[username];
+    }
     
     // Fallback: remove últimos 4 dígitos se terminar com números
     const hasCodeSuffix = /\d{4}$/.test(username);
-    return hasCodeSuffix ? username.slice(0, -4) : username;
+    const fallback = hasCodeSuffix ? username.slice(0, -4) : username;
+    console.log('Usando fallback para:', username, '->', fallback);
+    return fallback;
   };
 
   const loadDisplayNameForUser = async (username: string) => {

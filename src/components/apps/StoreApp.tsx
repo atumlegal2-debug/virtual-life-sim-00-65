@@ -166,7 +166,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
               order_id: crypto.randomUUID(),
               store_id: storeData.id,
               customer_name: currentUser,
-              customer_username: currentUser.endsWith('1919') || currentUser.endsWith('4444') || currentUser.endsWith('3852') || currentUser.endsWith('5555') ? currentUser.slice(0, -4) : currentUser,
+              customer_username: currentUser, // Salvar username completo para buscar nickname
               items: cart as any,
               total_amount: total,
               manager_status: 'pending',
