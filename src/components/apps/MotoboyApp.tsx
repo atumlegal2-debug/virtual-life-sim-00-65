@@ -268,6 +268,24 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
       if (error) throw error;
 
+      // Criar registro da transação no histórico
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          from_user_id: userData.id,
+          to_user_id: userData.id, // mesma pessoa, é um gasto
+          from_username: userData.username,
+          to_username: order.store_id,
+          amount: order.total_amount,
+          transaction_type: 'motoboy_delivery',
+          description: `Entrega de ${order.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')} da ${order.store_id}`
+        });
+
+      if (transactionError) {
+        console.error('Error creating transaction record:', transactionError);
+        // Continue mesmo se der erro na transação, pois o principal (entrega) já funcionou
+      }
+
       const displayName = userData.nickname || (userData.username.endsWith('1919') || userData.username.endsWith('4444') || userData.username.endsWith('3852') || userData.username.endsWith('5555') ? userData.username.slice(0, -4) : userData.username);
 
       toast({
