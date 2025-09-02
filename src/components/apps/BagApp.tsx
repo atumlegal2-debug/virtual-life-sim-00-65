@@ -425,7 +425,7 @@ export default function BagApp({ onBack }: BagAppProps) {
     if (itemData) {
       const { item: storeItem, storeId } = itemData;
       const itemType = getItemType(storeId, storeItem.id);
-      const canUse = !!storeItem.effect || (storeItem as any).type === "medicine" || storeId === "sexshop" || (storeId === "jewelry" && !(storeItem as any).relationshipType);
+      const canUse = !!storeItem.effect || !!storeItem.effects || (storeItem as any).type === "medicine" || storeId === "sexshop" || (storeId === "jewelry" && !(storeItem as any).relationshipType);
       const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
       
       const effect = storeItem.effect ? {
@@ -687,9 +687,11 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
 
       // Aplicar efeitos básicos
-      console.log('⚡ Aplicando efeitos básicos. Item effect:', item.effect);
+      console.log('⚡ Aplicando efeitos básicos. Item effect:', item.effect, 'Item effects:', item.originalItem?.effects);
+      
+      // Handle single effect
       if (item.effect) {
-        console.log('🎯 Item tem efeito, type:', item.effect.type, 'value:', (item.effect as any).value);
+        console.log('🎯 Item tem efeito single, type:', item.effect.type, 'value:', (item.effect as any).value);
         switch (item.effect.type) {
           case 'health': {
             const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
@@ -720,6 +722,50 @@ export default function BagApp({ onBack }: BagAppProps) {
               await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, 'other');
             }
             break;
+          }
+        }
+        effectMessage = item.effect.message || effectMessage;
+      }
+      
+      // Handle multiple effects (for ice cream items)
+      if (item.originalItem?.effects && Array.isArray(item.originalItem.effects)) {
+        console.log('🎯 Item tem múltiplos efeitos:', item.originalItem.effects.length);
+        for (const effect of item.originalItem.effects) {
+          console.log('🎯 Aplicando efeito:', effect.type, 'value:', effect.value);
+          switch (effect.type) {
+            case 'health': {
+              const newHealth = Math.min(100, (userRecord.life_percentage || 100) + effect.value);
+              dbUpdateStats.life_percentage = newHealth;
+              gameContextStats.health = newHealth;
+              break;
+            }
+            case 'hunger': {
+              const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + effect.value);
+              dbUpdateStats.hunger_percentage = newHunger;
+              gameContextStats.hunger = newHunger;
+              break;
+            }
+            case 'mood': {
+              const newMood = Math.min(100, (userRecord.mood || 5) + effect.value);
+              dbUpdateStats.mood = newMood;
+              gameContextStats.mood = newMood.toString();
+              break;
+            }
+            case 'alcoholism': {
+              const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + effect.value);
+              dbUpdateStats.alcoholism_percentage = newAlcoholism;
+              gameContextStats.alcoholism = newAlcoholism;
+              break;
+            }
+            case 'energy': {
+              if (effect.duration && effect.message) {
+                await addTemporaryEffect(effect.message, effect.duration, 'other');
+              }
+              break;
+            }
+          }
+          if (effect.message) {
+            effectMessage = effect.message;
           }
         }
       }
