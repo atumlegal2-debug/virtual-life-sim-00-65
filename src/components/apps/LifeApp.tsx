@@ -435,10 +435,9 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-green-700 dark:text-green-300">Saúde</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • 🏥 <strong>Farmácia:</strong> Kit de Primeiros Socorros, Pomada da Fênix, Água da Fonte da Vida<br/>
-                  • 🍜 <strong>Rest. Coreano:</strong> Samgyetang das Quatro Estações<br/>
-                  • 💊 Evite álcool e use remédios quando doente<br/>
-                  • 😴 Descanse adequadamente entre atividades
+                  Para melhorar a saúde, use o app do Hospital.<br/>
+                  Marque uma consulta, escolhendo de acordo com a quantidade de pontos que deseja recuperar.<br/>
+                  Após agendar, basta ir ao chat do hospital para o atendimento.
                 </p>
               </div>
 
@@ -449,10 +448,11 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-orange-700 dark:text-orange-300">Fome</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • 🍕 <strong>Pizzaria:</strong> Todas as pizzas (Clássica Aurora, Chama Dragônica)<br/>
-                  • 🍜 <strong>Rest. Coreano:</strong> Galbi de Dragão, Tteokbokki, Kimchi<br/>
-                  • 🍦 <strong>Sorveteria:</strong> Todos os sorvetes e milk-shakes<br/>
-                  • 🍽️ Mantenha alimentação regular para não ficar doente
+                  Ao sentir fome, você pode comprar qualquer comida disponível nas lojas.<br/>
+                  Verifique se a loja está aberta antes de pedir.<br/>
+                  <strong>Faça o pedido online:</strong><br/>
+                  • <strong>Retirada:</strong> vá até o chat da loja.<br/>
+                  • <strong>Motoboy:</strong> ele entregará direto no seu chat.
                 </p>
               </div>
 
@@ -463,10 +463,9 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-yellow-700 dark:text-yellow-300">Felicidade</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • 🍦 <strong>Sorveteria:</strong> Creme das Nuvens, Doce do Crepúsculo, Frutas do Arco-Íris<br/>
-                  • 💄 <strong>Farmácia:</strong> Creme da Juventude Eterna, Soro do Elfo Dourado<br/>
-                  • 🍹 <strong>Bar:</strong> Bebidas especiais e coquetéis<br/>
-                  • 👫 Interaja com amigos e relacionamentos
+                  A felicidade pode ser aumentada de duas formas:<br/>
+                  • <strong>Sorveteria:</strong> qualquer item aumenta felicidade.<br/>
+                  • <strong>Sexshop:</strong> produtos especiais que também aumentam felicidade.
                 </p>
               </div>
 
@@ -477,10 +476,9 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-blue-700 dark:text-blue-300">Energia</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • 🍹 <strong>Bar:</strong> Refresco de Pêssego, Chá Gélido da Montanha Azul<br/>
-                  • ☕ <strong>Cafeteria:</strong> Latte das Nuvens Doces, Café do Despertar<br/>
-                  • 🍦 <strong>Sorveteria:</strong> Menta Explosiva, Estelar de Mirtilo<br/>
-                  • 💊 <strong>Farmácia:</strong> Poção do Dragão Vigoroso
+                  Para recuperar energia:<br/>
+                  • Qualquer refrigerante aumenta energia.<br/>
+                  • Sorvete também ajuda a recuperar.
                 </p>
               </div>
             </div>
