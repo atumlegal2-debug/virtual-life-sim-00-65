@@ -589,6 +589,27 @@ export type Database = {
         }
         Relationships: []
       }
+      stat_decrease_control: {
+        Row: {
+          id: number
+          last_energy_decrease: string | null
+          last_happiness_decrease: string | null
+          last_hunger_decrease: string | null
+        }
+        Insert: {
+          id?: number
+          last_energy_decrease?: string | null
+          last_happiness_decrease?: string | null
+          last_hunger_decrease?: string | null
+        }
+        Update: {
+          id?: number
+          last_energy_decrease?: string | null
+          last_happiness_decrease?: string | null
+          last_hunger_decrease?: string | null
+        }
+        Relationships: []
+      }
       store_managers: {
         Row: {
           balance: number | null
@@ -868,6 +889,14 @@ export type Database = {
         }
       }
       decrease_alcoholism: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      decrease_energy: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      decrease_happiness: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
