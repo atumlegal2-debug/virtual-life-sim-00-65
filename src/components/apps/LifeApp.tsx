@@ -435,10 +435,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-green-700 dark:text-green-300">Saúde</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • Coma alimentos saudáveis na loja<br/>
-                  • Faça exercícios no aplicativo de atividades<br/>
-                  • Evite álcool e drogas<br/>
-                  • Descanse adequadamente
+                  • 🏥 <strong>Farmácia:</strong> Kit de Primeiros Socorros, Pomada da Fênix, Água da Fonte da Vida<br/>
+                  • 🍜 <strong>Rest. Coreano:</strong> Samgyetang das Quatro Estações<br/>
+                  • 💊 Evite álcool e use remédios quando doente<br/>
+                  • 😴 Descanse adequadamente entre atividades
                 </p>
               </div>
 
@@ -449,10 +449,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-orange-700 dark:text-orange-300">Fome</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • Compre e coma alimentos na loja<br/>
-                  • Mantenha uma dieta regular<br/>
-                  • Evite ficar muito tempo sem comer<br/>
-                  • Experimente diferentes tipos de comida
+                  • 🍕 <strong>Pizzaria:</strong> Todas as pizzas (Clássica Aurora, Chama Dragônica)<br/>
+                  • 🍜 <strong>Rest. Coreano:</strong> Galbi de Dragão, Tteokbokki, Kimchi<br/>
+                  • 🍦 <strong>Sorveteria:</strong> Todos os sorvetes e milk-shakes<br/>
+                  • 🍽️ Mantenha alimentação regular para não ficar doente
                 </p>
               </div>
 
@@ -463,10 +463,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-yellow-700 dark:text-yellow-300">Felicidade</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • Interaja com amigos no app de amizades<br/>
-                  • Participe de relacionamentos<br/>
-                  • Compre itens especiais na loja<br/>
-                  • Complete objetivos diários
+                  • 🍦 <strong>Sorveteria:</strong> Creme das Nuvens, Doce do Crepúsculo, Frutas do Arco-Íris<br/>
+                  • 💄 <strong>Farmácia:</strong> Creme da Juventude Eterna, Soro do Elfo Dourado<br/>
+                  • 🍹 <strong>Bar:</strong> Bebidas especiais e coquetéis<br/>
+                  • 👫 Interaja com amigos e relacionamentos
                 </p>
               </div>
 
@@ -477,10 +477,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="font-semibold text-blue-700 dark:text-blue-300">Energia</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  • Durma adequadamente (8h por noite)<br/>
-                  • Beba bebidas energéticas da loja<br/>
-                  • Evite atividades que drenem energia<br/>
-                  • Use itens especiais de energia
+                  • 🍹 <strong>Bar:</strong> Refresco de Pêssego, Chá Gélido da Montanha Azul<br/>
+                  • ☕ <strong>Cafeteria:</strong> Latte das Nuvens Doces, Café do Despertar<br/>
+                  • 🍦 <strong>Sorveteria:</strong> Menta Explosiva, Estelar de Mirtilo<br/>
+                  • 💊 <strong>Farmácia:</strong> Poção do Dragão Vigoroso
                 </p>
               </div>
             </div>
