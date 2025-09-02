@@ -1485,7 +1485,7 @@ export const STORES = {
       {
         id: "anel_laco_inquebravel_amizade",
         name: "Laço Inquebrável",
-        price: 1200,
+        price: 670,
         description: "Anel que simboliza amizade eterna e inquebrantável",
         category: "Anéis",
         relationshipType: "friendship",
@@ -1497,7 +1497,7 @@ export const STORES = {
       {
         id: "pulseira_flores_primavera",
         name: "Flores de primavera",
-        price: 1400,
+        price: 1000,
         description: "Pulseira delicada com flores que florescem eternamente",
         category: "Pulseiras",
         icon: "🌸",
@@ -1506,7 +1506,7 @@ export const STORES = {
       {
         id: "pulseira_laco_amizade",
         name: "Laço de amizade",
-        price: 1800,
+        price: 890,
         description: "Pulseira que conecta almas de verdadeiros parceiros",
         category: "Pulseiras",
         relationshipType: "friendship",
@@ -1516,7 +1516,7 @@ export const STORES = {
       {
         id: "pulseira_amor_dois",
         name: "Amor a dois",
-        price: 2500,
+        price: 2150,
         description: "Pulseira que celebra o amor compartilhado",
         category: "Pulseiras",
         relationshipType: "dating",
@@ -1526,7 +1526,7 @@ export const STORES = {
       {
         id: "pulseira_eclipse_eterno",
         name: "Eclipse eterno",
-        price: 3200,
+        price: 2000,
         description: "Pulseira que simboliza o encontro perfeito de duas almas",
         category: "Pulseiras",
         relationshipType: "dating",
@@ -1538,7 +1538,7 @@ export const STORES = {
       {
         id: "brincos_reliquias_preciosas",
         name: "Relíquias preciosas",
-        price: 2000,
+        price: 1300,
         description: "Brincos únicos que carregam histórias antigas",
         category: "Brincos",
         icon: "💎",
@@ -1547,7 +1547,7 @@ export const STORES = {
       {
         id: "brincos_correntes_alternativas",
         name: "Correntes alternativas",
-        price: 1500,
+        price: 550,
         description: "Brincos modernos com correntes elegantes",
         category: "Brincos",
         icon: "⛓️",
@@ -1556,7 +1556,7 @@ export const STORES = {
       {
         id: "brincos_natureza_brilhante",
         name: "Natureza brilhante",
-        price: 2400,
+        price: 700,
         description: "Brincos que capturam a essência da natureza em cristais",
         category: "Brincos",
         icon: "🌿",
@@ -1567,7 +1567,7 @@ export const STORES = {
       {
         id: "colar_futuro_partilhado",
         name: "Futuro partilhado",
-        price: 3500,
+        price: 2800,
         description: "Colar que simboliza um futuro construído a dois",
         category: "Colares",
         relationshipType: "dating",
@@ -1577,7 +1577,7 @@ export const STORES = {
       {
         id: "colar_estrela_diamantes",
         name: "Estrela dos diamantes",
-        price: 2800,
+        price: 2900,
         description: "Colar com uma estrela que brilha como diamantes",
         category: "Colares",
         icon: "⭐",
@@ -1586,7 +1586,7 @@ export const STORES = {
       {
         id: "colar_dois_amigos",
         name: "Dois amigos",
-        price: 1900,
+        price: 800,
         description: "Colar para celebrar as melhores aventuras entre amigos",
         category: "Colares",
         relationshipType: "friendship",
@@ -1617,7 +1617,7 @@ export const STORES = {
       {
         id: "relogio_coracoes_sincronizados",
         name: "Corações Sincronizados",
-        price: 3800,
+        price: 3400,
         description: "Relógio que sincroniza os batimentos cardíacos dos amantes",
         category: "Relógios Mágicos",
         relationshipType: "dating",
@@ -1629,7 +1629,7 @@ export const STORES = {
       {
         id: "alfinete_elegancia_discreta",
         name: "Elegância discreta",
-        price: 1000,
+        price: 400,
         description: "Alfinete sutil que adiciona um toque de classe",
         category: "Alfinetes",
         icon: "📍",
@@ -1638,7 +1638,7 @@ export const STORES = {
       {
         id: "alfinete_presente_especial",
         name: "Presente especial",
-        price: 1300,
+        price: 550,
         description: "Alfinete único para ocasiões memoráveis",
         category: "Alfinetes",
         icon: "🎁",
@@ -1647,7 +1647,7 @@ export const STORES = {
       {
         id: "alfinete_brilhos_noite",
         name: "Brilhos da noite",
-        price: 1600,
+        price: 650,
         description: "Alfinete que captura a magia das noites estreladas",
         category: "Alfinetes",
         icon: "✨",
