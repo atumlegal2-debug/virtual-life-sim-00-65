@@ -115,6 +115,30 @@ export default function BagApp({ onBack }: BagAppProps) {
     return { lookupMap, nameToIdMap };
   }, []);
 
+  // Function to get specific ice cream icons based on category
+  const getIceCreamIcon = (item: InventoryItem | HistoryItem): string => {
+    // Check if item has an explicit icon first
+    if (item.originalItem?.icon) {
+      return item.originalItem.icon;
+    }
+    
+    const category = item.originalItem?.category;
+    if (category === "Sorvetes de Rolo" || category === "Sorvetes Especiais") {
+      return "🍨";
+    } else if (category === "Açaí") {
+      return "🫐";
+    } else if (category === "Crepes") {
+      return "🥞";
+    } else if (category === "Milk-Shakes") {
+      return "🥤";
+    } else if (category === "Smoothies") {
+      return "🥤";
+    } else if (category === "Sobremesas") {
+      return "🍰";
+    }
+    return "🍦"; // Default ice cream icon
+  };
+
   // Cache user ID to avoid repeated lookups
   const getUserId = async (username: string): Promise<string | null> => {
     const cacheKey = `userId_${username}`;
@@ -767,6 +791,42 @@ export default function BagApp({ onBack }: BagAppProps) {
         );
       }
 
+      // Aumentar fome para todos os itens da sorveteria baseado no preço
+      if (item.storeId === "icecream") {
+        const hungerIncrease = Math.floor((item.price || item.originalItem?.price || 0) / 2); // Preço dividido por 2 para determinar aumento da fome
+        const newHunger = Math.min(100, (gameStats.hunger || 0) + hungerIncrease);
+        
+        // Atualizar no banco
+        await supabase
+          .from('users')
+          .update({ hunger_percentage: newHunger })
+          .eq('id', userRecord.id);
+        
+        // Atualizar no contexto
+        await updateStats({ hunger: newHunger });
+        
+        const category = item.originalItem?.category;
+        let foodType = "guloseima";
+        
+        if (category === "Smoothies" || category === "Milk-Shakes") {
+          foodType = "bebida refrescante";
+        } else if (category === "Açaí") {
+          foodType = "açaí nutritivo";
+        } else if (category === "Crepes") {
+          foodType = "crepe delicioso";
+        } else if (category === "Sobremesas") {
+          foodType = "sobremesa divina";
+        } else if (category?.includes("Sorvetes")) {
+          foodType = "sorvete cremoso";
+        }
+        
+        await addTemporaryEffect(
+          `Que ${foodType} delicioso(a)! Sua fome diminuiu significativamente!`, 
+          20, 
+          'icecream'
+        );
+      }
+
       toast({ title: "Item usado!", description: effectMessage });
 
       await loadAllData(true);
@@ -826,6 +886,8 @@ export default function BagApp({ onBack }: BagAppProps) {
               ) : (
                 <span className="text-lg">{item.originalItem.icon}</span>
               )
+            ) : item.storeId === "icecream" ? (
+              <span className="text-lg">{getIceCreamIcon(item)}</span>
             ) : (
               <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
@@ -947,6 +1009,8 @@ export default function BagApp({ onBack }: BagAppProps) {
               ) : (
                 <span className="text-lg">{item.originalItem.icon}</span>
               )
+            ) : item.storeId === "icecream" ? (
+              <span className="text-lg">{getIceCreamIcon(item)}</span>
             ) : (
               <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
