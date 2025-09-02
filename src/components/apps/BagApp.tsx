@@ -721,10 +721,26 @@ export default function BagApp({ onBack }: BagAppProps) {
         await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, tempType as any);
       }
 
-      // Aumentar felicidade e energia para produtos do sex shop e sorvetes
-      if (item.storeId === "sexshop" || item.storeId === "icecream") {
-        const happinessIncrease = item.storeId === "sexshop" ? 15 : 10; // Sex shop +15, sorvete +10
-        const energyIncrease = item.storeId === "sexshop" ? 12 : 8;     // Sex shop +12, sorvete +8
+      // Aumentar felicidade e energia para produtos da sorveteria, bebidas e sexshop
+      const shouldIncreaseHappinessEnergy = 
+        item.storeId === "sexshop" || 
+        item.storeId === "icecream" || 
+        item.itemType === "drink";
+        
+      if (shouldIncreaseHappinessEnergy) {
+        let happinessIncrease = 10;
+        let energyIncrease = 8;
+        let happinessType = "doçura";
+        
+        if (item.storeId === "sexshop") {
+          happinessIncrease = 15;
+          energyIncrease = 12;
+          happinessType = "prazer";
+        } else if (item.itemType === "drink") {
+          happinessIncrease = 12;
+          energyIncrease = 15;
+          happinessType = "refrescância";
+        }
         
         const newHappiness = Math.min(100, (gameStats.happiness || 0) + happinessIncrease);
         const newEnergy = Math.min(100, (gameStats.energy || 0) + energyIncrease);
@@ -744,7 +760,6 @@ export default function BagApp({ onBack }: BagAppProps) {
           energy: newEnergy 
         });
         
-        const happinessType = item.storeId === "sexshop" ? "prazer" : "doçura";
         await addTemporaryEffect(
           `Você se sente mais feliz e energizado(a) pela ${happinessType}!`, 
           30, 
