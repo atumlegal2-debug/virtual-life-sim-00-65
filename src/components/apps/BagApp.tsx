@@ -507,7 +507,11 @@ export default function BagApp({ onBack }: BagAppProps) {
 
   const handleUseItem = async (item: InventoryItem) => {
     try {
-      if (!currentUser) return;
+      console.log('🍎 Tentando usar item:', item.name, item);
+      if (!currentUser) {
+        console.log('❌ Usuário não encontrado');
+        return;
+      }
 
       // Get the user record from users table by username
       const { data: userRecord, error: userError } = await supabase
@@ -516,7 +520,12 @@ export default function BagApp({ onBack }: BagAppProps) {
         .eq('username', currentUser)
         .maybeSingle();
 
-      if (userError || !userRecord) return;
+      console.log('👤 User record:', userRecord, 'Error:', userError);
+
+      if (userError || !userRecord) {
+        console.log('❌ Erro ao buscar dados do usuário:', userError);
+        return;
+      }
 
       // (hooks já desestruturados no topo do componente)
 
@@ -664,19 +673,23 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
 
       // Itens de loja (não custom)
+      console.log('🍦 Processando item de loja:', item.name, 'storeId:', item.storeId);
       let dbUpdateStats: any = {};
       let gameContextStats: any = {};
       let effectMessage = item.effect?.message || `Você usou ${item.name}`;
 
       // Remédio: tenta curar a doença correspondente
       if (item.originalItem?.type === 'medicine') {
+        console.log('💊 Item é remédio:', item.name);
         try {
           await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
         } catch {}
       }
 
       // Aplicar efeitos básicos
+      console.log('⚡ Aplicando efeitos básicos. Item effect:', item.effect);
       if (item.effect) {
+        console.log('🎯 Item tem efeito, type:', item.effect.type, 'value:', (item.effect as any).value);
         switch (item.effect.type) {
           case 'health': {
             const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
@@ -793,17 +806,22 @@ export default function BagApp({ onBack }: BagAppProps) {
 
       // Aumentar fome para todos os itens da sorveteria baseado no preço
       if (item.storeId === "icecream") {
+        console.log('🍨 Item da sorveteria detectado:', item.name);
         const hungerIncrease = Math.floor((item.price || item.originalItem?.price || 0) / 2); // Preço dividido por 2 para determinar aumento da fome
+        console.log('🍽️ Aumento de fome calculado:', hungerIncrease, 'preço:', item.price || item.originalItem?.price);
         const newHunger = Math.min(100, (gameStats.hunger || 0) + hungerIncrease);
+        console.log('🥄 Nova fome:', newHunger, 'fome atual:', gameStats.hunger);
         
         // Atualizar no banco
-        await supabase
+        const hungerUpdateResult = await supabase
           .from('users')
           .update({ hunger_percentage: newHunger })
           .eq('id', userRecord.id);
+        console.log('💾 Resultado update banco fome:', hungerUpdateResult);
         
         // Atualizar no contexto
-        await updateStats({ hunger: newHunger });
+        const contextUpdate = await updateStats({ hunger: newHunger });
+        console.log('🎮 Resultado update contexto fome:', contextUpdate);
         
         const category = item.originalItem?.category;
         let foodType = "guloseima";
@@ -819,6 +837,8 @@ export default function BagApp({ onBack }: BagAppProps) {
         } else if (category?.includes("Sorvetes")) {
           foodType = "sorvete cremoso";
         }
+        
+        console.log('✨ Categoria do item:', category, 'Tipo da comida:', foodType);
         
         await addTemporaryEffect(
           `Que ${foodType} delicioso(a)! Sua fome diminuiu significativamente!`, 
