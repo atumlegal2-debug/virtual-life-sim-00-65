@@ -218,7 +218,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <Heart className="text-green-600 dark:text-green-400" size={18} />
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">Saúde</span>
                 </div>
-                <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700">
+                <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 border-green-400 dark:border-green-600 font-semibold">
                   {gameStats.health}%
                 </Badge>
               </div>
@@ -234,7 +234,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <Utensils className="text-orange-600 dark:text-orange-400" size={18} />
                   <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Fome</span>
                 </div>
-                <Badge variant="outline" className="text-xs bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700">
+                <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-400 dark:border-orange-600 font-semibold">
                   {gameStats.hunger}%
                 </Badge>
               </div>
@@ -250,7 +250,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <Smile className="text-yellow-600 dark:text-yellow-400" size={18} />
                   <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Felicidade</span>
                 </div>
-                <Badge variant="outline" className="text-xs bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
+                <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-yellow-700 dark:text-yellow-300 border-yellow-400 dark:border-yellow-600 font-semibold">
                   {gameStats.happiness || 100}%
                 </Badge>
               </div>
@@ -266,7 +266,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <Zap className="text-blue-600 dark:text-blue-400" size={18} />
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Energia</span>
                 </div>
-                <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700">
+                <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-600 font-semibold">
                   {gameStats.energy || 100}%
                 </Badge>
               </div>
@@ -415,6 +415,77 @@ export function LifeApp({ onBack }: LifeAppProps) {
             </CardContent>
           </Card>
         )}
+
+        {/* Instructions Card */}
+        <Card className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20 border-blue-200/50 dark:border-blue-800/30 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                <Activity className="text-white" size={16} />
+              </div>
+              Como Melhorar Seus Stats
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4">
+              {/* Health Instructions */}
+              <div className="p-4 bg-white dark:bg-blue-950/20 border border-green-200 dark:border-green-800/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="text-green-600 dark:text-green-400" size={16} />
+                  <span className="font-semibold text-green-700 dark:text-green-300">Saúde</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  • Coma alimentos saudáveis na loja<br/>
+                  • Faça exercícios no aplicativo de atividades<br/>
+                  • Evite álcool e drogas<br/>
+                  • Descanse adequadamente
+                </p>
+              </div>
+
+              {/* Hunger Instructions */}
+              <div className="p-4 bg-white dark:bg-blue-950/20 border border-orange-200 dark:border-orange-800/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Utensils className="text-orange-600 dark:text-orange-400" size={16} />
+                  <span className="font-semibold text-orange-700 dark:text-orange-300">Fome</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  • Compre e coma alimentos na loja<br/>
+                  • Mantenha uma dieta regular<br/>
+                  • Evite ficar muito tempo sem comer<br/>
+                  • Experimente diferentes tipos de comida
+                </p>
+              </div>
+
+              {/* Happiness Instructions */}
+              <div className="p-4 bg-white dark:bg-blue-950/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Smile className="text-yellow-600 dark:text-yellow-400" size={16} />
+                  <span className="font-semibold text-yellow-700 dark:text-yellow-300">Felicidade</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  • Interaja com amigos no app de amizades<br/>
+                  • Participe de relacionamentos<br/>
+                  • Compre itens especiais na loja<br/>
+                  • Complete objetivos diários
+                </p>
+              </div>
+
+              {/* Energy Instructions */}
+              <div className="p-4 bg-white dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="text-blue-600 dark:text-blue-400" size={16} />
+                  <span className="font-semibold text-blue-700 dark:text-blue-300">Energia</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  • Durma adequadamente (8h por noite)<br/>
+                  • Beba bebidas energéticas da loja<br/>
+                  • Evite atividades que drenem energia<br/>
+                  • Use itens especiais de energia
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Debug/Fix Button */}
         {localDiseases.length === 0 && gameStats.disease > 0 && (
