@@ -102,15 +102,28 @@ export function HomeScreen() {
   const userProposals = currentUser ? getProposalsForUser(currentUser) : [];
   const hasRelationshipNotifications = userProposals.length > 0;
 
-  // Check for pending motoboy orders
+  // Check for pending motoboy orders (only if logged into motoboy)
   const [motoboyOrders, setMotoboyOrders] = useState<any[]>([]);
-  const hasMotoboyNotifications = motoboyOrders.length > 0;
+  const [isMotoboyAuthenticated, setIsMotoboyAuthenticated] = useState(false);
+  const hasMotoboyNotifications = isMotoboyAuthenticated && motoboyOrders.length > 0;
 
-  // Load motoboy orders on component mount and when user changes
+  // Check motoboy authentication status and load orders
   useEffect(() => {
+    const checkMotoboyAuth = () => {
+      const savedAuth = localStorage.getItem('motoboy_auth');
+      const isAuthenticated = savedAuth === 'true';
+      setIsMotoboyAuthenticated(isAuthenticated);
+      
+      if (isAuthenticated) {
+        loadMotoboyOrders();
+      } else {
+        setMotoboyOrders([]);
+      }
+    };
+
     const loadMotoboyOrders = async () => {
       try {
-        // Buscar pedidos que ainda não foram entregues (waiting ou accepted)
+        // Buscar todos os pedidos pendentes (waiting, accepted)
         const { data, error } = await supabase
           .from('motoboy_orders')
           .select('id')
@@ -125,33 +138,46 @@ export function HomeScreen() {
       }
     };
 
-    loadMotoboyOrders();
+    checkMotoboyAuth();
 
-    // Set up realtime subscription for motoboy orders
-    const channel = supabase
-      .channel('motoboy-orders-notifications')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'motoboy_orders' }, 
-        () => {
-          loadMotoboyOrders();
-        }
-      )
-      .subscribe();
+    // Set up realtime subscription for motoboy orders (only if authenticated)
+    let channel: any = null;
+    if (isMotoboyAuthenticated) {
+      channel = supabase
+        .channel('motoboy-orders-notifications')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'motoboy_orders' }, 
+          () => {
+            loadMotoboyOrders();
+          }
+        )
+        .subscribe();
+    }
+
+    // Listen for motoboy auth changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'motoboy_auth') {
+        checkMotoboyAuth();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      window.removeEventListener('storage', handleStorageChange);
     };
-  }, [currentUser]);
+  }, [isMotoboyAuthenticated]);
 
   const handleAppClick = (appId: AppType) => {
     if (appId === "relationship" && hasRelationshipNotifications) {
       // Mark proposals as viewed when entering relationship app
       markProposalsAsViewed(currentUser || "");
     }
-    if (appId === "motoboy" && hasMotoboyNotifications) {
-      // Clear motoboy notifications when entering the app
-      setMotoboyOrders([]);
-    }
+    // Note: Motoboy notifications persist until all orders are delivered/rejected
+    // They don't get cleared when entering the app
     setCurrentApp(appId);
   };
 
