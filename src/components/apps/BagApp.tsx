@@ -815,18 +815,38 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
 
       // Remover 1 unidade do inventário
+      console.log('🗂️ INICIANDO REMOÇÃO DO ITEM DO INVENTÁRIO:', {
+        itemId: item.id,
+        quantity: item.quantity,
+        userId: userRecord.id
+      });
+      
       if (item.quantity <= 1) {
-        await supabase
+        console.log('🗑️ Removendo item completamente (quantidade <= 1)');
+        const { data: deleteData, error: deleteError } = await supabase
           .from('inventory')
           .delete()
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        
+        console.log('🗑️ Resultado da remoção completa:', { deleteData, deleteError });
+        
+        if (deleteError) {
+          console.error('❌ Erro ao remover item:', deleteError);
+        }
       } else {
-        await supabase
+        console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
+        const { data: updateData, error: updateError } = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        
+        console.log('📉 Resultado da diminuição:', { updateData, updateError });
+        
+        if (updateError) {
+          console.error('❌ Erro ao atualizar item:', updateError);
+        }
       }
 
       // Efeitos temporários com duração (feedback visual/sensação)
