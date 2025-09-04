@@ -1069,10 +1069,32 @@ export default function BagApp({ onBack }: BagAppProps) {
     setSendFriendshipItemModalOpen(true);
   };
 
-  // Group inventory by category
-  const foodItems = inventory.filter(item => item.itemType === "food");
-  const drinkItems = inventory.filter(item => item.itemType === "drink");
-  const objectItems = inventory.filter(item => item.itemType === "object");
+  // Group identical items together
+  const groupInventoryItems = (items: InventoryItem[]): InventoryItem[] => {
+    const grouped = new Map<string, InventoryItem>();
+    
+    items.forEach(item => {
+      // Create a unique key based on item properties that should match for grouping
+      const key = `${item.id}-${item.storeId}-${item.name}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
+      
+      if (grouped.has(key)) {
+        // Sum quantities for identical items
+        const existingItem = grouped.get(key)!;
+        existingItem.quantity += item.quantity;
+      } else {
+        // Add new item with its quantity
+        grouped.set(key, { ...item });
+      }
+    });
+    
+    return Array.from(grouped.values());
+  };
+
+  // Group inventory by category and merge identical items
+  const groupedInventory = groupInventoryItems(inventory);
+  const foodItems = groupedInventory.filter(item => item.itemType === "food");
+  const drinkItems = groupedInventory.filter(item => item.itemType === "drink");
+  const objectItems = groupedInventory.filter(item => item.itemType === "object");
 
   const renderItems = (items: InventoryItem[], emptyMessage: string) => {
     if (items.length === 0) {
@@ -1282,7 +1304,7 @@ export default function BagApp({ onBack }: BagAppProps) {
         <h1 className="text-xl font-bold text-foreground">Bolsa</h1>
         <div className="ml-auto">
           <Badge variant="outline">
-            {inventory.length} itens
+            {groupedInventory.length} itens
           </Badge>
         </div>
       </div>
