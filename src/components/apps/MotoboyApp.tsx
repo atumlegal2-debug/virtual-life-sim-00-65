@@ -737,7 +737,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                         clientGroup.orders.forEach(order => handleSendItems(order));
                       }}
                     >
-                      Enviar todos os {clientGroup.orders.length} pedidos para {clientGroup.customerData.displayName}
+                      Enviar
                     </Button>
                   </div>
                 ));
