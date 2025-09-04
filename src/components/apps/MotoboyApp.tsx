@@ -459,35 +459,83 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                 Nenhuma entrega disponível no momento
               </div>
             ) : (
-              orders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{order.store_id}</span>
-                    <span className="text-green-600 font-bold">
-                      {order.total_amount.toFixed(2)} CM
-                    </span>
+              <>
+                {orders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{order.store_id}</span>
+                      <span className="text-green-600 font-bold">
+                        {order.total_amount.toFixed(2)} CM
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
+                        `${item.quantity}x ${item.name}`
+                      ).join(', ') : 'Itens não disponíveis'}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock size={14} />
+                      <span>Pedido feito em: {new Date(order.created_at).toLocaleString()}</span>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleAcceptOrder(order.id)}
+                    >
+                      Aceitar Entrega
+                    </Button>
                   </div>
-                  <div className="text-sm">
-                    <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
-                      `${item.quantity}x ${item.name}`
-                    ).join(', ') : 'Itens não disponíveis'}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock size={14} />
-                    <span>Pedido feito em: {new Date(order.created_at).toLocaleString()}</span>
-                  </div>
+                ))}
+                {orders.length > 5 && (
                   <Button 
+                    variant="outline" 
                     size="sm" 
                     className="w-full"
-                    onClick={() => handleAcceptOrder(order.id)}
+                    onClick={() => {
+                      const allOrdersWindow = window.open('', '_blank');
+                      if (allOrdersWindow) {
+                        allOrdersWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>Todos os Pedidos - Motoboy</title>
+                              <style>
+                                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
+                                .order { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                                .store { font-weight: bold; color: #333; }
+                                .amount { color: #16a34a; font-weight: bold; }
+                                .items { color: #666; margin: 8px 0; }
+                                .time { color: #888; font-size: 0.9em; }
+                                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+                                h1 { color: #333; margin-bottom: 20px; }
+                              </style>
+                            </head>
+                            <body>
+                              <h1>Todos os Pedidos Disponíveis (${orders.length})</h1>
+                              ${orders.map(order => `
+                                <div class="order">
+                                  <div class="header">
+                                    <span class="store">${order.store_id}</span>
+                                    <span class="amount">${order.total_amount.toFixed(2)} CM</span>
+                                  </div>
+                                  <div><strong>Cliente:</strong> ${getDisplayName(order.customer_name || order.customer_username)}</div>
+                                  <div class="items"><strong>Itens:</strong> ${Array.isArray(order.items) ? order.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', ') : 'Itens não disponíveis'}</div>
+                                  <div class="time">Pedido feito em: ${new Date(order.created_at).toLocaleString()}</div>
+                                </div>
+                              `).join('')}
+                            </body>
+                          </html>
+                        `);
+                        allOrdersWindow.document.close();
+                      }
+                    }}
                   >
-                    Aceitar Entrega
+                    + Ver todos os {orders.length} pedidos
                   </Button>
-                </div>
-              ))
+                )}
+              </>
             )}
           </CardContent>
         </Card>
