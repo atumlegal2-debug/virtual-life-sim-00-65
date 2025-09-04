@@ -1183,8 +1183,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                 {pendingMotoboyOrders.map((order) => {
                   const createdAt = new Date(order.created_at).getTime();
                   const now = Date.now();
-                  const elapsedMinutes = Math.floor((now - createdAt) / (1000 * 60));
-                  const remainingSeconds = Math.max(0, (60 - elapsedMinutes) * 60 - Math.floor((now - createdAt) / 1000) % 60);
+                  const elapsedSeconds = Math.floor((now - createdAt) / 1000);
+                  const remainingSeconds = Math.max(0, 60 - elapsedSeconds);
                   const remainingMinutes = Math.floor(remainingSeconds / 60);
                   const displaySeconds = remainingSeconds % 60;
                   
