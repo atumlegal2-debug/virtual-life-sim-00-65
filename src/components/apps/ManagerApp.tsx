@@ -78,6 +78,18 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [patientHistory, setPatientHistory] = useState<any[]>([]);
   const { toast } = useToast();
 
+  // Timer for motoboy orders countdown
+  useEffect(() => {
+    if (currentView === "motoboy-orders" && motoboyOrders.length > 0) {
+      const interval = setInterval(() => {
+        // Force re-render to update countdown timers
+        setMotoboyOrders(prev => [...prev]);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentView, motoboyOrders.length]);
+
   // Load saved logins from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('managerSavedLogins');
@@ -1168,21 +1180,41 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pendingMotoboyOrders.map((order) => (
-                  <div key={order.id} className="bg-orange-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
-                        <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
-                        <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
-                        <p className="text-xs text-orange-400 mt-1">
-                          {new Date(order.created_at).toLocaleString('pt-BR')}
-                        </p>
+                {pendingMotoboyOrders.map((order) => {
+                  const createdAt = new Date(order.created_at).getTime();
+                  const now = Date.now();
+                  const elapsedMinutes = Math.floor((now - createdAt) / (1000 * 60));
+                  const remainingSeconds = Math.max(0, (60 - elapsedMinutes) * 60 - Math.floor((now - createdAt) / 1000) % 60);
+                  const remainingMinutes = Math.floor(remainingSeconds / 60);
+                  const displaySeconds = remainingSeconds % 60;
+                  
+                  return (
+                    <div key={order.id} className="bg-orange-700 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
+                          <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
+                          <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
+                          <p className="text-xs text-orange-400 mt-1">
+                            {new Date(order.created_at).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge variant="secondary" className="bg-orange-600 text-orange-100">
+                            Pendente
+                          </Badge>
+                          {remainingSeconds > 0 ? (
+                            <div className="flex items-center gap-1 text-white bg-orange-600 px-2 py-1 rounded text-xs">
+                              <Clock size={12} />
+                              <span>{remainingMinutes}:{displaySeconds.toString().padStart(2, '0')}</span>
+                            </div>
+                          ) : (
+                            <div className="text-red-300 text-xs font-bold">
+                              TEMPO EXPIRADO
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="secondary" className="bg-orange-600 text-orange-100">
-                        Pendente
-                      </Badge>
-                    </div>
                     
                     {/* Items */}
                     <div className="mb-3 p-2 bg-orange-600 rounded">
@@ -1215,7 +1247,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           )}
