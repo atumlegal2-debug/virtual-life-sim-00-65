@@ -546,19 +546,34 @@ export default function BagApp({ onBack }: BagAppProps) {
         });
 
         // Remove one item from inventory
-        if (item.quantity <= 1) {
-          await supabase
-            .from('inventory')
-            .delete()
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-        } else {
-          await supabase
-            .from('inventory')
-            .update({ quantity: item.quantity - 1 })
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-        }
+      // Remover ou diminuir quantidade no banco
+      console.log('📦 Removendo/diminuindo item no banco...', { quantity: item.quantity });
+      
+      if (item.quantity <= 1) {
+        console.log('🗑️ Removendo item completamente (quantidade <= 1)');
+        await supabase
+          .from('inventory')
+          .delete()
+          .eq('user_id', userRecord.id)
+          .eq('item_id', item.id);
+        
+        toast({
+          title: "Item consumido!",
+          description: `${item.name} foi removido da sua bolsa`
+        });
+      } else {
+        console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
+        await supabase
+          .from('inventory')
+          .update({ quantity: item.quantity - 1 })
+          .eq('user_id', userRecord.id)
+          .eq('item_id', item.id);
+        
+        toast({
+          title: "Item consumido!",
+          description: `${item.name} (${item.quantity - 1} restante${item.quantity - 1 !== 1 ? 's' : ''})`
+        });
+      }
 
         await loadAllData(true);
         return;
