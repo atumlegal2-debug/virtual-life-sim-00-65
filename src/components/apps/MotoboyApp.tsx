@@ -58,6 +58,34 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     return fallback;
   };
 
+  const groupOrdersByClient = (orders: MotoboyOrder[]) => {
+    const groups: { [key: string]: { orders: MotoboyOrder[], totalAmount: number, customerData: { username: string, displayName: string, profile: any } } } = {};
+    
+    orders.forEach(order => {
+      const username = order.customer_name || order.customer_username;
+      
+      if (!groups[username]) {
+        const userProfile = userProfiles[username];
+        const displayName = getDisplayName(username);
+        
+        groups[username] = {
+          orders: [],
+          totalAmount: 0,
+          customerData: {
+            username,
+            displayName,
+            profile: userProfile
+          }
+        };
+      }
+      
+      groups[username].orders.push(order);
+      groups[username].totalAmount += order.total_amount;
+    });
+    
+    return Object.values(groups);
+  };
+
   const groupOrdersByItems = (orders: MotoboyOrder[]) => {
     const groups: { [key: string]: { orders: MotoboyOrder[], totalAmount: number, customers: string[] } } = {};
     
@@ -659,67 +687,84 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {acceptedOrders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-3 space-y-2 bg-muted/20 dark:bg-muted/10">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{order.store_id}</span>
-                    <span className="text-green-600 font-bold">
-                      {order.total_amount.toFixed(2)} CM
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-background/50 rounded-lg p-3">
-                    {(() => {
-                      const username = order.customer_name || order.customer_username;
-                      const userProfile = userProfiles[username];
-                      const displayName = getDisplayName(username);
-                      
-                      return (
-                        <div className="flex items-center gap-3">
-                          <Avatar 
-                            className="w-10 h-10 cursor-pointer border-2 border-primary/20 hover:border-primary/60 transition-all hover:scale-105"
-                            onClick={() => handleUserClick(username)}
-                          >
-                            {userProfile?.avatar ? (
-                              <AvatarImage src={userProfile.avatar} alt={displayName} />
-                            ) : (
-                              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
-                                {displayName.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-base">
-                              <span 
-                                className="cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => handleUserClick(username)}
-                              >
-                                {displayName}
-                              </span>
-                            </div>
-                            <div className="text-sm text-muted-foreground">Cliente</div>
+              {(() => {
+                const groupedClientOrders = groupOrdersByClient(acceptedOrders);
+                return groupedClientOrders.map((clientGroup) => (
+                  <div key={clientGroup.customerData.username} className="border rounded-lg p-4 space-y-3 bg-muted/20 dark:bg-muted/10">
+                    {/* Cabeçalho com informações do cliente */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar 
+                          className="w-12 h-12 cursor-pointer border-2 border-primary/20 hover:border-primary/60 transition-all hover:scale-105"
+                          onClick={() => handleUserClick(clientGroup.customerData.username)}
+                        >
+                          {clientGroup.customerData.profile?.avatar ? (
+                            <AvatarImage src={clientGroup.customerData.profile.avatar} alt={clientGroup.customerData.displayName} />
+                          ) : (
+                            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
+                              {clientGroup.customerData.displayName.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            <span 
+                              className="cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleUserClick(clientGroup.customerData.username)}
+                            >
+                              {clientGroup.customerData.displayName}
+                            </span>
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {clientGroup.orders.length} {clientGroup.orders.length === 1 ? 'pedido' : 'pedidos'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-green-600">
+                          {clientGroup.totalAmount.toFixed(2)} CM
+                        </div>
+                        <div className="text-xs text-muted-foreground">Total</div>
+                      </div>
+                    </div>
+
+                    {/* Lista de pedidos do cliente */}
+                    <div className="space-y-2">
+                      {clientGroup.orders.map((order, index) => (
+                        <div key={order.id} className="bg-background/30 rounded-lg p-3 border border-border/50">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-sm">{order.store_id}</span>
+                            <span className="text-green-600 font-semibold text-sm">
+                              {order.total_amount.toFixed(2)} CM
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
+                              `${item.quantity}x ${item.name}`
+                            ).join(', ') : 'Itens não disponíveis'}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock size={12} />
+                            <span>Aceito em: {new Date(order.created_at).toLocaleString()}</span>
                           </div>
                         </div>
-                      );
-                    })()}
+                      ))}
+                    </div>
+
+                    {/* Botão para enviar todos os itens */}
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        // Enviar todos os pedidos do cliente
+                        clientGroup.orders.forEach(order => handleSendItems(order));
+                      }}
+                    >
+                      Enviar todos os {clientGroup.orders.length} pedidos para {clientGroup.customerData.displayName}
+                    </Button>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
-                      `${item.quantity}x ${item.name}`
-                    ).join(', ') : 'Itens não disponíveis'}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock size={14} />
-                    <span>Aceito em: {new Date(order.created_at).toLocaleString()}</span>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={() => handleSendItems(order)}
-                  >
-                    Enviar
-                  </Button>
-                </div>
-              ))}
+                ));
+              })()}
             </CardContent>
           </Card>
         )}
