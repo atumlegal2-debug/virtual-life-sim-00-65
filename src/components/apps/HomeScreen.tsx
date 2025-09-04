@@ -110,11 +110,12 @@ export function HomeScreen() {
   useEffect(() => {
     const loadMotoboyOrders = async () => {
       try {
+        // Buscar pedidos que ainda não foram entregues (waiting ou accepted)
         const { data, error } = await supabase
           .from('motoboy_orders')
           .select('id')
           .eq('manager_status', 'approved')
-          .eq('motoboy_status', 'waiting');
+          .in('motoboy_status', ['waiting', 'accepted']);
 
         if (!error) {
           setMotoboyOrders(data || []);
