@@ -585,53 +585,54 @@ export default function BagApp({ onBack }: BagAppProps) {
           description: `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`
         });
 
-      // Remove one item from inventory
-      // Remover ou diminuir quantidade no banco
-      console.log('📦 Removendo/diminuindo item no banco...', { 
-        quantity: item.quantity, 
-        itemId: item.id, 
-        userId: userRecord.id 
-      });
-      
-      if (item.quantity <= 1) {
-        console.log('🗑️ Removendo item completamente (quantidade <= 1)');
-        const { data: deleteData, error: deleteError } = await supabase
-          .from('inventory')
-          .delete()
-          .eq('user_id', userRecord.id)
-          .eq('item_id', item.id);
-        
-        console.log('🗑️ Resultado da remoção:', { deleteData, deleteError });
-        
-        if (deleteError) {
-          console.error('❌ Erro ao remover item:', deleteError);
-        }
-        
-        toast({
-          title: "Item consumido!",
-          description: `${item.name} foi removido da sua bolsa`
+        // Update local state immediately for instant UI feedback
+        setInventory(prev => {
+          if (item.quantity <= 1) {
+            // Remove item completely
+            return prev.filter(invItem => invItem.id !== item.id);
+          } else {
+            // Decrease quantity
+            return prev.map(invItem => 
+              invItem.id === item.id 
+                ? { ...invItem, quantity: invItem.quantity - 1 }
+                : invItem
+            );
+          }
         });
-      } else {
-        console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
-        const { data: updateData, error: updateError } = await supabase
-          .from('inventory')
-          .update({ quantity: item.quantity - 1 })
-          .eq('user_id', userRecord.id)
-          .eq('item_id', item.id);
-        
-        console.log('📉 Resultado da atualização:', { updateData, updateError });
-        
-        if (updateError) {
-          console.error('❌ Erro ao atualizar item:', updateError);
-        }
-        
-        toast({
-          title: "Item consumido!",
-          description: `${item.name} (${item.quantity - 1} restante${item.quantity - 1 !== 1 ? 's' : ''})`
-        });
-      }
 
-        // No need to reload all data as we've updated local state immediately
+        // Remove one item from inventory
+        if (item.quantity <= 1) {
+          const { error: deleteError } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('user_id', userRecord.id)
+            .eq('item_id', item.id);
+          
+          if (deleteError) {
+            console.error('❌ Erro ao remover item:', deleteError);
+            // Rollback local state on error
+            setInventory(prev => [...prev, item]);
+          }
+        } else {
+          const { error: updateError } = await supabase
+            .from('inventory')
+            .update({ quantity: item.quantity - 1 })
+            .eq('user_id', userRecord.id)
+            .eq('item_id', item.id);
+          
+          if (updateError) {
+            console.error('❌ Erro ao atualizar item:', updateError);
+            // Rollback local state on error
+            setInventory(prev => 
+              prev.map(invItem => 
+                invItem.id === item.id 
+                  ? { ...invItem, quantity: invItem.quantity + 1 }
+                  : invItem
+              )
+            );
+          }
+        }
+
         return;
       }
 
