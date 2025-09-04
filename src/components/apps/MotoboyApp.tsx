@@ -731,8 +731,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
                     {/* Botão para enviar todos os itens */}
                     <Button 
-                      size="sm" 
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      className="w-full bg-green-600 hover:bg-green-700 text-sm py-2 px-3 h-auto min-h-[2.5rem] whitespace-normal text-center"
                       onClick={() => {
                         // Enviar todos os pedidos do cliente
                         clientGroup.orders.forEach(order => handleSendItems(order));
