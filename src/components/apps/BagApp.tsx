@@ -567,23 +567,8 @@ export default function BagApp({ onBack }: BagAppProps) {
         return;
       }
 
-      // Update local state immediately for instant UI feedback
-      setInventory(prev => {
-        const updatedInventory = prev.map(invItem => {
-          if (invItem.id === item.id) {
-            if (invItem.quantity <= 1) {
-              return null; // Will be filtered out
-            } else {
-              return { ...invItem, quantity: invItem.quantity - 1 };
-            }
-          }
-          return invItem;
-        }).filter(Boolean) as InventoryItem[];
-        
-        return updatedInventory;
-      });
-
-      // Update database inventory
+      // Update database inventory FIRST to ensure synchronization
+      let inventoryUpdated = false;
       if (item.quantity <= 1) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
         const { error: deleteError } = await supabase
@@ -594,10 +579,14 @@ export default function BagApp({ onBack }: BagAppProps) {
         
         if (deleteError) {
           console.error('❌ Erro ao remover item:', deleteError);
-          // Rollback local state on error
-          setInventory(prev => [...prev, item]);
+          toast({
+            title: "Erro ao usar item",
+            description: "Não foi possível usar este item. Tente novamente.",
+            variant: "destructive"
+          });
           return;
         }
+        inventoryUpdated = true;
       } else {
         console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
         const { error: updateError } = await supabase
@@ -608,16 +597,36 @@ export default function BagApp({ onBack }: BagAppProps) {
         
         if (updateError) {
           console.error('❌ Erro ao atualizar item:', updateError);
-          // Rollback local state on error
-          setInventory(prev => 
-            prev.map(invItem => 
-              invItem.id === item.id 
-                ? { ...invItem, quantity: invItem.quantity + 1 }
-                : invItem
-            )
-          );
+          toast({
+            title: "Erro ao usar item",
+            description: "Não foi possível usar este item. Tente novamente.",
+            variant: "destructive"
+          });
           return;
         }
+        inventoryUpdated = true;
+      }
+
+      // Update local state immediately after successful DB update
+      if (inventoryUpdated) {
+        setInventory(prev => {
+          const updatedInventory = prev.map(invItem => {
+            if (invItem.id === item.id) {
+              if (item.quantity <= 1) {
+                return null; // Will be filtered out
+              } else {
+                return { ...invItem, quantity: invItem.quantity - 1 };
+              }
+            }
+            return invItem;
+          }).filter(Boolean) as InventoryItem[];
+          
+          return updatedInventory;
+        });
+
+        // Invalidate cache to force fresh load on next access
+        setCachedData(null);
+        sessionStorage.removeItem(`bagData_${currentUser}`);
       }
 
       // Now process item effects
