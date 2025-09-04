@@ -1,1 +1,4 @@
 project_id = "jquhgyqoepmysvoxxgji"
+
+[functions.auto-approve-orders]
+verify_jwt = false

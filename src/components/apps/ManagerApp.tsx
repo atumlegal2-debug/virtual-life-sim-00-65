@@ -487,6 +487,32 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           description: `Compra na ${storeName}: ${itemNames}`
         });
 
+      // Buscar avatar do usuário para o pedido do motoboy
+      const { data: userAvatar } = await supabase
+        .from('users')
+        .select('avatar')
+        .eq('id', order.user_id)
+        .single();
+
+      // Criar pedido para o motoboy com avatar do usuário
+      const motoboyOrderData = {
+        order_id: order.id,
+        customer_username: order.buyer_username || 'Usuário',
+        customer_name: order.buyer_username || 'Usuário', 
+        customer_avatar: userAvatar?.avatar || null,
+        store_id: order.store_id,
+        items: order.items,
+        total_amount: order.total_amount,
+        delivery_address: 'Endereço não informado',
+        manager_status: 'approved',
+        manager_notes: 'Pedido aprovado pelo gerente',
+        manager_processed_at: new Date().toISOString()
+      };
+
+      await supabase
+        .from('motoboy_orders')
+        .insert([motoboyOrderData]);
+
       setCurrentManager({ ...currentManager, balance: newManagerBalance });
       
       toast({
@@ -1288,13 +1314,29 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                 {pendingMotoboyOrders.map((order) => (
                   <div key={order.id} className="bg-orange-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
-                        <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
-                        <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
-                        <p className="text-xs text-orange-400 mt-1">
-                          {new Date(order.created_at).toLocaleString('pt-BR')}
-                        </p>
+                      <div className="flex items-start gap-3">
+                        {/* Customer Avatar */}
+                        {order.customer_avatar ? (
+                          <img
+                            src={order.customer_avatar}
+                            alt={`Avatar de ${order.customer_name}`}
+                            className="w-10 h-10 rounded-full object-cover border border-orange-500"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-orange-600 border border-orange-500 flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {order.customer_name?.charAt(0)?.toUpperCase() || "?"}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
+                          <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
+                          <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
+                          <p className="text-xs text-orange-400 mt-1">
+                            {new Date(order.created_at).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
                       </div>
                       <Badge variant="secondary" className="bg-orange-600 text-orange-100">
                         Pendente
