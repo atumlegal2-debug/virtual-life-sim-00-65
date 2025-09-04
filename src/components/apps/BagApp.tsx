@@ -507,8 +507,21 @@ export default function BagApp({ onBack }: BagAppProps) {
             },
             (payload) => {
               console.log('🔄 Real-time inventory change:', payload);
-              // Refresh inventory data when changes occur
-              loadAllData(true);
+              // Update inventory in real-time based on the change
+              if (payload.eventType === 'DELETE') {
+                setInventory(prev => prev.filter(item => 
+                  item.id !== payload.old.item_id
+                ));
+              } else if (payload.eventType === 'UPDATE') {
+                setInventory(prev => prev.map(item => 
+                  item.id === payload.new.item_id
+                    ? { ...item, quantity: payload.new.quantity }
+                    : item
+                ));
+              } else if (payload.eventType === 'INSERT') {
+                // For inserts, we need to process the new item and add it
+                loadAllData(true);
+              }
             }
           )
           .subscribe();
@@ -1125,11 +1138,9 @@ export default function BagApp({ onBack }: BagAppProps) {
               <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
             {item.name}
-            {item.quantity > 1 && (
-              <Badge variant="secondary" className="text-xs">
-                {item.quantity}x
-              </Badge>
-            )}
+            <Badge variant="secondary" className="text-xs ml-2">
+              {item.quantity}x
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
