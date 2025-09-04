@@ -60,10 +60,46 @@ const getHungerDiseaseFeeling = (currentUser: string | null): string => {
 };
 
 export function LifeApp({ onBack }: LifeAppProps) {
-  const { gameStats, currentUser, diseases, checkAndFixDiseaseLevel, cureHungerDisease, updateStats } = useGame();
+  const { 
+    gameStats, 
+    currentUser, 
+    diseases, 
+    checkAndFixDiseaseLevel, 
+    cureHungerDisease, 
+    updateStats
+  } = useGame();
   const [localEffects, setLocalEffects] = useState<any[]>([]);
   const [showHungerAlert, setShowHungerAlert] = useState(false);
   const [localDiseases, setLocalDiseases] = useState(diseases);
+  const [localGameStats, setLocalGameStats] = useState(gameStats);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get user ID when currentUser changes
+  useEffect(() => {
+    if (!currentUser) {
+      setUserId(null);
+      return;
+    }
+
+    const getUserId = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', currentUser)
+          .single();
+
+        if (profile) {
+          setUserId(profile.id);
+          console.log('LifeApp: User ID loaded for real-time:', profile.id);
+        }
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+      }
+    };
+
+    getUserId();
+  }, [currentUser]);
 
   // Sync diseases from GameContext
   useEffect(() => {
@@ -110,24 +146,28 @@ export function LifeApp({ onBack }: LifeAppProps) {
 
   // Listen for real-time updates on hospital treatment requests
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !userId) return;
+
+    console.log('Setting up real-time subscription for hospital treatments for user:', currentUser, 'with ID:', userId);
 
     const channel = supabase
-      .channel('hospital-treatment-updates')
+      .channel(`hospital-treatments-${currentUser}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'hospital_treatment_requests',
-          filter: `username=eq.${currentUser}`
+          filter: `user_id=eq.${userId}` // Use user_id filter instead of username
         },
         async (payload) => {
-          console.log('Hospital treatment update received:', payload);
+          console.log('🏥 Hospital treatment real-time update received:', payload);
           
           const treatment = payload.new;
           if (treatment.status === 'accepted') {
             let healthIncrease = 0;
+            
+            console.log('Treatment accepted:', treatment.treatment_type);
             
             // Determine health increase based on treatment type
             if (treatment.treatment_type === "Check-up Básico") {
@@ -142,27 +182,38 @@ export function LifeApp({ onBack }: LifeAppProps) {
               // If it's a hunger disease cure, handle disease removal
               if (treatment.treatment_type.includes('Desnutrição') && 
                   localDiseases.some(d => d.name === "Desnutrição")) {
-                console.log('Real-time hunger disease treatment approved, curing patient');
+                console.log('🍎 Real-time hunger disease treatment approved, curing patient');
                 await cureHungerDisease();
               }
             }
 
-            // Apply health increase
+            // Apply health increase immediately
             if (healthIncrease > 0) {
-              const newHealth = Math.min(100, gameStats.health + healthIncrease);
-              updateStats({ health: newHealth });
+              const currentHealth = gameStats.health;
+              const newHealth = Math.min(100, currentHealth + healthIncrease);
               
-              console.log(`Treatment ${treatment.treatment_type} applied: +${healthIncrease} health`);
+              console.log(`💚 Applying health increase: ${currentHealth} + ${healthIncrease} = ${newHealth}`);
+              
+              // Update stats immediately
+              await updateStats({ health: newHealth });
+              
+              // Force re-render by updating local state too
+              setLocalGameStats(prev => ({ ...prev, health: newHealth }));
+              
+              console.log(`✅ Treatment ${treatment.treatment_type} applied successfully: +${healthIncrease} health`);
             }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Hospital treatment subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up hospital treatment subscription');
       supabase.removeChannel(channel);
     };
-  }, [currentUser, localDiseases, cureHungerDisease, gameStats.health, updateStats]);
+  }, [currentUser, userId, localDiseases, cureHungerDisease, gameStats.health, updateStats]);
 
   // Listen for real-time alcoholism decreases
   useEffect(() => {

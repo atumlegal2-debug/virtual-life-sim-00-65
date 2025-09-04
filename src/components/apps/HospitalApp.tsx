@@ -53,51 +53,11 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
     }
   }, [currentUser]);
 
-  // Real-time subscription for treatment approvals
+  // Real-time subscription for treatment approvals - handled by LifeApp.tsx
   useEffect(() => {
-    if (!currentUser) return;
-
-    const setupRealtimeSubscription = async () => {
-      // Get user profile to get user_id
-      const { data: profile } = await supabase
-        .from('users')
-        .select('id')
-        .eq('username', currentUser)
-        .single();
-
-      if (!profile) return;
-
-      const channel = supabase
-        .channel('treatment-approvals')
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'hospital_treatment_requests',
-            filter: `user_id=eq.${profile.id}`
-          },
-          (payload) => {
-            const newRecord = payload.new as any;
-            if (newRecord.status === 'accepted') {
-              applyTreatmentEffect(newRecord);
-            }
-          }
-        )
-        .subscribe();
-
-      return channel;
-    };
-
-    const channelPromise = setupRealtimeSubscription();
-
-    return () => {
-      channelPromise.then(channel => {
-        if (channel) {
-          supabase.removeChannel(channel);
-        }
-      });
-    };
+    // The real-time health updates are now handled by LifeApp.tsx
+    // This ensures no duplication and proper centralized state management
+    console.log('HospitalApp: Real-time updates are handled by LifeApp.tsx');
   }, [currentUser]);
 
   const loadBirthRequests = async () => {
@@ -130,34 +90,6 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
       })) || []);
     } catch (error) {
       console.error('Error loading birth requests:', error);
-    }
-  };
-
-  const applyTreatmentEffect = (treatmentRecord: any) => {
-    let healthIncrease = 0;
-    
-    // Determine health increase based on treatment type
-    if (treatmentRecord.treatment_type === "Check-up Básico") {
-      healthIncrease = 10;
-    } else if (treatmentRecord.treatment_type === "Consulta Especializada") {
-      healthIncrease = 25;
-    } else if (treatmentRecord.treatment_type === "Cirurgia") {
-      healthIncrease = 50;
-    } else if (treatmentRecord.treatment_type.includes("Cura para")) {
-      // Disease treatment also increases health
-      healthIncrease = 15;
-    }
-
-    if (healthIncrease > 0) {
-      // Update health in GameContext
-      const newHealth = Math.min(100, gameStats.health + healthIncrease);
-      updateStats({ health: newHealth });
-      
-      toast({
-        title: "Tratamento Aplicado!",
-        description: `Sua saúde aumentou em ${healthIncrease} pontos!`,
-        duration: 5000,
-      });
     }
   };
 
