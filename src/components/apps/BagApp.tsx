@@ -475,7 +475,7 @@ export default function BagApp({ onBack }: BagAppProps) {
     return null;
   }, [itemLookupMap.lookupMap, itemLookupMap.nameToIdMap]);
 
-  // Load data on component mount with instant cache
+  // Load data on component mount with instant cache + real-time subscription
   useEffect(() => {
     if (currentUser) {
       // Try cache first, then load fresh data
@@ -489,6 +489,42 @@ export default function BagApp({ onBack }: BagAppProps) {
           setTimeout(() => loadAllData(true), 100);
         }
       }
+
+      // Set up real-time subscription for inventory changes
+      const setupRealtimeSubscription = async () => {
+        const userId = await getUserId(currentUser);
+        if (!userId) return;
+
+        const channel = supabase
+          .channel('inventory-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'inventory',
+              filter: `user_id=eq.${userId}`
+            },
+            (payload) => {
+              console.log('🔄 Real-time inventory change:', payload);
+              // Refresh inventory data when changes occur
+              loadAllData(true);
+            }
+          )
+          .subscribe();
+
+        return channel;
+      };
+
+      const channelPromise = setupRealtimeSubscription();
+
+      return () => {
+        channelPromise.then(channel => {
+          if (channel) {
+            supabase.removeChannel(channel);
+          }
+        });
+      };
     }
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
 
