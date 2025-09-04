@@ -350,10 +350,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">Saúde</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 border-green-400 dark:border-green-600 font-semibold">
-                  {gameStats.health}%
+                  {localGameStats.health}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.health} color="health" />
+              <StatBar label="" value={localGameStats.health} color="health" />
             </CardContent>
           </Card>
 
@@ -366,10 +366,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Fome</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-orange-700 dark:text-orange-300 border-orange-400 dark:border-orange-600 font-semibold">
-                  {gameStats.hunger}%
+                  {localGameStats.hunger}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.hunger} color="hunger" />
+              <StatBar label="" value={localGameStats.hunger} color="hunger" />
             </CardContent>
           </Card>
 
@@ -382,10 +382,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Felicidade</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-yellow-700 dark:text-yellow-300 border-yellow-400 dark:border-yellow-600 font-semibold">
-                  {gameStats.happiness || 100}%
+                  {localGameStats.happiness || 100}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.happiness || 100} color="happiness" />
+              <StatBar label="" value={localGameStats.happiness || 100} color="happiness" />
             </CardContent>
           </Card>
 
@@ -398,10 +398,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Energia</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-600 font-semibold">
-                  {gameStats.energy || 100}%
+                  {localGameStats.energy || 100}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.energy || 100} color="energy" />
+              <StatBar label="" value={localGameStats.energy || 100} color="energy" />
             </CardContent>
           </Card>
         </div>
@@ -412,11 +412,11 @@ export function LifeApp({ onBack }: LifeAppProps) {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-purple-800 dark:text-purple-200">Alcoolismo</span>
-                <Badge variant={gameStats.alcoholism > 50 ? "destructive" : "secondary"} className="text-xs">
-                  {gameStats.alcoholism || 0}%
+                <Badge variant={localGameStats.alcoholism > 50 ? "destructive" : "secondary"} className="text-xs">
+                  {localGameStats.alcoholism || 0}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.alcoholism || 0} color="primary" />
+              <StatBar label="" value={localGameStats.alcoholism || 0} color="primary" />
             </CardContent>
           </Card>
 
@@ -424,11 +424,11 @@ export function LifeApp({ onBack }: LifeAppProps) {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-red-800 dark:text-red-200">Doença</span>
-                <Badge variant={gameStats.disease > 0 ? "destructive" : "secondary"} className="text-xs">
-                  {gameStats.disease || 0}%
+                <Badge variant={localGameStats.disease > 0 ? "destructive" : "secondary"} className="text-xs">
+                  {localGameStats.disease || 0}%
                 </Badge>
               </div>
-              <StatBar label="" value={gameStats.disease || 0} color="health" />
+              <StatBar label="" value={localGameStats.disease || 0} color="health" />
             </CardContent>
           </Card>
         </div>
