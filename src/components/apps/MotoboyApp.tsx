@@ -53,6 +53,43 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     return fallback;
   };
 
+  const groupOrdersByItems = (orders: MotoboyOrder[]) => {
+    const groups: { [key: string]: { orders: MotoboyOrder[], totalAmount: number, customers: string[] } } = {};
+    
+    orders.forEach(order => {
+      // Criar chave baseada nos itens do pedido
+      const itemsKey = Array.isArray(order.items) 
+        ? order.items.map((item: any) => `${item.name}`).sort().join('|')
+        : 'no-items';
+      
+      if (!groups[itemsKey]) {
+        groups[itemsKey] = {
+          orders: [],
+          totalAmount: 0,
+          customers: []
+        };
+      }
+      
+      groups[itemsKey].orders.push(order);
+      groups[itemsKey].totalAmount += order.total_amount;
+      const customerName = getDisplayName(order.customer_name || order.customer_username);
+      if (!groups[itemsKey].customers.includes(customerName)) {
+        groups[itemsKey].customers.push(customerName);
+      }
+    });
+    
+    return Object.entries(groups).map(([itemsKey, group]) => ({
+      id: `group-${itemsKey}`,
+      itemsKey,
+      orders: group.orders,
+      totalAmount: group.totalAmount,
+      customers: group.customers,
+      items: group.orders[0]?.items || [],
+      store_id: group.orders[0]?.store_id || '',
+      created_at: group.orders[0]?.created_at || ''
+    }));
+  };
+
   const loadDisplayNameForUser = async (username: string) => {
     if (!username || displayNames[username]) return displayNames[username] || username;
     
@@ -461,47 +498,60 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                 Nenhuma entrega disponível no momento
               </div>
             ) : (
-              <>
-                {orders.slice(0, 5).map((order) => (
-                  <div key={order.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{order.store_id}</span>
-                      <span className="text-green-600 font-bold">
-                        {order.total_amount.toFixed(2)} CM
-                      </span>
-                    </div>
-                    <div className="text-sm">
-                      <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
-                        `${item.quantity}x ${item.name}`
-                      ).join(', ') : 'Itens não disponíveis'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock size={14} />
-                      <span>Pedido feito em: {new Date(order.created_at).toLocaleString()}</span>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => handleAcceptOrder(order.id)}
-                    >
-                      Aceitar Entrega
-                    </Button>
-                  </div>
-                ))}
-                {orders.length > 5 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => setShowAllOrdersModal(true)}
-                  >
-                    + Ver todos os {orders.length} pedidos
-                  </Button>
-                )}
-              </>
+              (() => {
+                const groupedOrders = groupOrdersByItems(orders);
+                return (
+                  <>
+                    {groupedOrders.slice(0, 5).map((group) => (
+                      <div key={group.id} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{group.store_id}</span>
+                          <span className="text-green-600 font-bold">
+                            {group.totalAmount.toFixed(2)} CM
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <strong>Clientes:</strong> {group.customers.join(', ')} 
+                          {group.orders.length > 1 && (
+                            <span className="text-blue-600 font-medium ml-1">
+                              ({group.orders.length} pedidos)
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <strong>Itens:</strong> {Array.isArray(group.items) ? group.items.map((item: any) => 
+                            `${item.quantity * group.orders.length}x ${item.name}`
+                          ).join(', ') : 'Itens não disponíveis'}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock size={14} />
+                          <span>Pedido feito em: {new Date(group.created_at).toLocaleString()}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            // Aceitar todos os pedidos do grupo
+                            group.orders.forEach(order => handleAcceptOrder(order.id));
+                          }}
+                        >
+                          Aceitar {group.orders.length > 1 ? `${group.orders.length} Entregas` : 'Entrega'}
+                        </Button>
+                      </div>
+                    ))}
+                    {groupedOrders.length > 5 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => setShowAllOrdersModal(true)}
+                      >
+                        + Ver todos os {groupedOrders.length} pedidos agrupados
+                      </Button>
+                    )}
+                  </>
+                );
+              })()
             )}
           </CardContent>
         </Card>
@@ -597,38 +647,47 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            {orders.map((order) => (
-              <div key={order.id} className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{order.store_id}</span>
-                  <span className="text-green-600 font-bold">
-                    {order.total_amount.toFixed(2)} CM
-                  </span>
+            {(() => {
+              const groupedOrders = groupOrdersByItems(orders);
+              return groupedOrders.map((group) => (
+                <div key={group.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{group.store_id}</span>
+                    <span className="text-green-600 font-bold">
+                      {group.totalAmount.toFixed(2)} CM
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <strong>Clientes:</strong> {group.customers.join(', ')} 
+                    {group.orders.length > 1 && (
+                      <span className="text-blue-600 font-medium ml-1">
+                        ({group.orders.length} pedidos)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <strong>Itens:</strong> {Array.isArray(group.items) ? group.items.map((item: any) => 
+                      `${item.quantity * group.orders.length}x ${item.name}`
+                    ).join(', ') : 'Itens não disponíveis'}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock size={14} />
+                    <span>Pedido feito em: {new Date(group.created_at).toLocaleString()}</span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      // Aceitar todos os pedidos do grupo
+                      group.orders.forEach(order => handleAcceptOrder(order.id));
+                      setShowAllOrdersModal(false);
+                    }}
+                  >
+                    Aceitar {group.orders.length > 1 ? `${group.orders.length} Entregas` : 'Entrega'}
+                  </Button>
                 </div>
-                <div className="text-sm">
-                  <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
-                    `${item.quantity}x ${item.name}`
-                  ).join(', ') : 'Itens não disponíveis'}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock size={14} />
-                  <span>Pedido feito em: {new Date(order.created_at).toLocaleString()}</span>
-                </div>
-                <Button 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    handleAcceptOrder(order.id);
-                    setShowAllOrdersModal(false);
-                  }}
-                >
-                  Aceitar Entrega
-                </Button>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>
