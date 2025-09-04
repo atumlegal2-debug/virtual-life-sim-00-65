@@ -728,28 +728,6 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                       </div>
                     </div>
 
-                    {/* Lista de pedidos do cliente */}
-                    <div className="space-y-2">
-                      {clientGroup.orders.map((order, index) => (
-                        <div key={order.id} className="bg-background/30 rounded-lg p-3 border border-border/50">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">{order.store_id}</span>
-                            <span className="text-green-600 font-semibold text-sm">
-                              {order.total_amount.toFixed(2)} CM
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mb-2">
-                            <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
-                              `${item.quantity}x ${item.name}`
-                            ).join(', ') : 'Itens não disponíveis'}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock size={12} />
-                            <span>Aceito em: {new Date(order.created_at).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
 
                     {/* Botão para enviar todos os itens */}
                     <Button 
