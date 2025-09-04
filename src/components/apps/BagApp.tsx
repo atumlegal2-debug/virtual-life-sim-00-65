@@ -507,18 +507,9 @@ export default function BagApp({ onBack }: BagAppProps) {
             },
             (payload) => {
               console.log('🔄 Real-time inventory change:', payload);
-              // Update inventory in real-time based on the change
-              if (payload.eventType === 'DELETE') {
-                setInventory(prev => prev.filter(item => 
-                  item.id !== payload.old.item_id
-                ));
-              } else if (payload.eventType === 'UPDATE') {
-                setInventory(prev => prev.map(item => 
-                  item.id === payload.new.item_id
-                    ? { ...item, quantity: payload.new.quantity }
-                    : item
-                ));
-              } else if (payload.eventType === 'INSERT') {
+              // Only handle INSERTs from real-time (items sent by others)
+              // UPDATEs and DELETEs are handled locally for instant feedback
+              if (payload.eventType === 'INSERT') {
                 // For inserts, we need to process the new item and add it
                 loadAllData(true);
               }
