@@ -280,6 +280,37 @@ export function LifeApp({ onBack }: LifeAppProps) {
     };
   }, [currentUser]);
 
+  // Realtime: sync user stats (health, hunger, etc.) when Users table updates
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`user-stats-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
+        (payload) => {
+          console.log('🩺 User stats update received:', payload);
+          const u: any = payload.new;
+          const freshStats = {
+            health: u.life_percentage ?? 100,
+            hunger: u.hunger_percentage ?? 100,
+            mood: u.mood?.toString() ?? "Sentindo-se bem",
+            alcoholism: u.alcoholism_percentage ?? 0,
+            happiness: u.happiness_percentage ?? 100,
+            energy: u.energy_percentage ?? 100,
+            disease: gameStats.disease || 0,
+          };
+          setLocalGameStats(freshStats);
+          updateStats(freshStats);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background via-background/80 to-muted/30">
       {/* Modern Header */}
