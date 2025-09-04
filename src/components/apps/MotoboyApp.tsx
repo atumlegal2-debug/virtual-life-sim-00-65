@@ -250,18 +250,28 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       if (waitingError) throw waitingError;
       if (acceptedError) throw acceptedError;
       
-      // Load display names for all customers
-      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
-      for (const order of allOrders) {
-        if (order.customer_name) {
-          await loadDisplayNameForUser(order.customer_name);
-        }
-      }
-      
+      // Set orders first to show them immediately
       setOrders(waitingOrders || []);
       setAcceptedOrders(acceptedOrdersData || []);
+      
+      // Load display names in background without blocking UI
+      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
+      const uniqueCustomers = new Set(allOrders.map(order => order.customer_name).filter(Boolean));
+      
+      // Load display names for unique customers only
+      Promise.all(
+        Array.from(uniqueCustomers).map(customer => loadDisplayNameForUser(customer))
+      ).catch(error => {
+        console.error('Error loading display names:', error);
+      });
+      
     } catch (error) {
       console.error('Error loading orders:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar pedidos",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
