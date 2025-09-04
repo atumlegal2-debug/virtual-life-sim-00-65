@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Truck, MapPin, Clock, Package, Lock, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileModal } from "@/components/modals/UserProfileModal";
 
 interface MotoboyAppProps {
   onBack: () => void;
@@ -35,6 +37,9 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [todayDeliveries, setTodayDeliveries] = useState(0);
   const [showAllOrdersModal, setShowAllOrdersModal] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileModalUser, setProfileModalUser] = useState<{ userId: string, username: string } | null>(null);
+  const [userProfiles, setUserProfiles] = useState<Record<string, { avatar?: string, nickname?: string, id: string }>>({});
   const { toast } = useToast();
 
   const getDisplayName = (username: string) => {
@@ -99,7 +104,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       
       const { data, error } = await supabase
         .from('users')
-        .select('username, nickname')
+        .select('id, username, nickname, avatar')
         .eq('username', username)
         .maybeSingle();
       
@@ -117,6 +122,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         const hasCodeSuffix = /\d{4}$/.test(username);
         displayName = data.nickname || (hasCodeSuffix ? username.slice(0, -4) : username);
         console.log('Nome final:', displayName, '(nickname:', data.nickname, ')');
+        
+        // Armazenar dados do perfil do usuário
+        setUserProfiles(prev => ({ 
+          ...prev, 
+          [username]: { 
+            id: data.id, 
+            avatar: data.avatar, 
+            nickname: data.nickname 
+          } 
+        }));
       }
       
       setDisplayNames(prev => ({ ...prev, [username]: displayName }));
@@ -126,6 +141,14 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       const fallbackName = username.length > 4 ? username.slice(0, -4) : username;
       setDisplayNames(prev => ({ ...prev, [username]: fallbackName }));
       return fallbackName;
+    }
+  };
+
+  const handleUserClick = (username: string) => {
+    const userProfile = userProfiles[username];
+    if (userProfile) {
+      setProfileModalUser({ userId: userProfile.id, username });
+      setProfileModalOpen(true);
     }
   };
 
@@ -510,14 +533,45 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                             {group.totalAmount.toFixed(2)} CM
                           </span>
                         </div>
-                        <div className="text-sm">
-                          <strong>Clientes:</strong> {group.customers.join(', ')} 
-                          {group.orders.length > 1 && (
-                            <span className="text-blue-600 font-medium ml-1">
-                              ({group.orders.length} pedidos)
-                            </span>
-                          )}
-                        </div>
+                         <div className="flex items-center gap-2 text-sm mb-2">
+                           <strong>Clientes:</strong>
+                           <div className="flex items-center gap-1 flex-wrap">
+                             {group.orders.map((order, index) => {
+                               const username = order.customer_name || order.customer_username;
+                               const userProfile = userProfiles[username];
+                               const displayName = getDisplayName(username);
+                               
+                               return (
+                                 <div key={index} className="flex items-center gap-1">
+                                   <Avatar 
+                                     className="w-6 h-6 cursor-pointer border border-primary/20 hover:border-primary/40 transition-colors"
+                                     onClick={() => handleUserClick(username)}
+                                   >
+                                     {userProfile?.avatar ? (
+                                       <AvatarImage src={userProfile.avatar} alt={displayName} />
+                                     ) : (
+                                       <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                                         {displayName.slice(0, 2).toUpperCase()}
+                                       </AvatarFallback>
+                                     )}
+                                   </Avatar>
+                                   <span 
+                                     className="cursor-pointer hover:text-primary transition-colors"
+                                     onClick={() => handleUserClick(username)}
+                                   >
+                                     {displayName}
+                                   </span>
+                                   {index < group.orders.length - 1 && <span className="text-muted-foreground">,</span>}
+                                 </div>
+                               );
+                             })}
+                           </div>
+                           {group.orders.length > 1 && (
+                             <span className="text-blue-600 font-medium ml-1">
+                               ({group.orders.length} pedidos)
+                             </span>
+                           )}
+                         </div>
                         <div className="text-sm text-muted-foreground">
                           <strong>Itens:</strong> {Array.isArray(group.items) ? group.items.map((item: any) => 
                             `${item.quantity * group.orders.length}x ${item.name}`
@@ -657,8 +711,39 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                       {group.totalAmount.toFixed(2)} CM
                     </span>
                   </div>
-                  <div className="text-sm">
-                    <strong>Clientes:</strong> {group.customers.join(', ')} 
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <strong>Clientes:</strong>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {group.orders.map((order, index) => {
+                        const username = order.customer_name || order.customer_username;
+                        const userProfile = userProfiles[username];
+                        const displayName = getDisplayName(username);
+                        
+                        return (
+                          <div key={index} className="flex items-center gap-1">
+                            <Avatar 
+                              className="w-6 h-6 cursor-pointer border border-primary/20 hover:border-primary/40 transition-colors"
+                              onClick={() => handleUserClick(username)}
+                            >
+                              {userProfile?.avatar ? (
+                                <AvatarImage src={userProfile.avatar} alt={displayName} />
+                              ) : (
+                                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                                  {displayName.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span 
+                              className="cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleUserClick(username)}
+                            >
+                              {displayName}
+                            </span>
+                            {index < group.orders.length - 1 && <span className="text-muted-foreground">,</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
                     {group.orders.length > 1 && (
                       <span className="text-blue-600 font-medium ml-1">
                         ({group.orders.length} pedidos)
@@ -691,6 +776,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* User Profile Modal */}
+      {profileModalUser && (
+        <UserProfileModal
+          isOpen={profileModalOpen}
+          onClose={() => setProfileModalOpen(false)}
+          userId={profileModalUser.userId}
+          username={profileModalUser.username}
+        />
+      )}
     </div>
   );
 }
