@@ -166,6 +166,15 @@ export function HomeScreen() {
       }
     };
 
+    // Listen for custom login event from motoboy app
+    const handleMotoboyLogin = () => {
+      setIsMotoboyAuthenticated(true);
+      // Carregar pedidos após login
+      setTimeout(() => {
+        checkMotoboyAuth();
+      }, 100);
+    };
+
     // Listen for custom logout event from motoboy app
     const handleMotoboyLogout = () => {
       setIsMotoboyAuthenticated(false);
@@ -173,6 +182,7 @@ export function HomeScreen() {
     };
 
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('motoboyLogin', handleMotoboyLogin);
     window.addEventListener('motoboyLogout', handleMotoboyLogout);
 
     return () => {
@@ -180,6 +190,7 @@ export function HomeScreen() {
         supabase.removeChannel(channel);
       }
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('motoboyLogin', handleMotoboyLogin);
       window.removeEventListener('motoboyLogout', handleMotoboyLogout);
     };
   }, [isMotoboyAuthenticated]);

@@ -258,6 +258,8 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       if (rememberLogin) {
         localStorage.setItem('motoboy_auth', 'true');
       }
+      // Disparar evento para notificar o login em tempo real
+      window.dispatchEvent(new CustomEvent('motoboyLogin'));
       loadOrders();
       toast({
         title: "Login realizado!",
