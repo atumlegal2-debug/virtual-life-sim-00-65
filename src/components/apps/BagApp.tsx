@@ -576,7 +576,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             for (const effect of item.effect.effects) {
               switch (effect.type) {
                 case "hunger":
-                  const newHunger = Math.min(100, userRecord.hunger_percentage + effect.value);
+                  const newHunger = Math.min(100, (userRecord.hunger_percentage || 100) + effect.value);
                   dbUpdateStats.hunger_percentage = newHunger;
                   gameContextStats.hunger = newHunger;
                   break;
@@ -608,7 +608,7 @@ export default function BagApp({ onBack }: BagAppProps) {
                 effectMessage = item.effect.message;
                 break;
               case "hunger":
-                const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
+                const newHunger = Math.min(100, (userRecord.hunger_percentage || 100) + item.effect.value);
                 dbUpdateStats.hunger_percentage = newHunger;
                 gameContextStats.hunger = newHunger;
                 effectMessage = item.effect.message;
@@ -700,9 +700,10 @@ export default function BagApp({ onBack }: BagAppProps) {
             break;
           }
           case 'hunger': {
-            const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + item.effect.value);
+            const newHunger = Math.min(100, (userRecord.hunger_percentage || 100) + item.effect.value);
             dbUpdateStats.hunger_percentage = newHunger;
             gameContextStats.hunger = newHunger;
+            console.log('🍽️ Atualizando fome:', { atual: userRecord.hunger_percentage, aumento: item.effect.value, nova: newHunger });
             break;
           }
           case 'mood': {
@@ -740,9 +741,10 @@ export default function BagApp({ onBack }: BagAppProps) {
               break;
             }
             case 'hunger': {
-              const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + effect.value);
+              const newHunger = Math.min(100, (userRecord.hunger_percentage || 100) + effect.value);
               dbUpdateStats.hunger_percentage = newHunger;
               gameContextStats.hunger = newHunger;
+              console.log('🍽️ Atualizando fome (múltiplos efeitos):', { atual: userRecord.hunger_percentage, aumento: effect.value, nova: newHunger });
               break;
             }
             case 'mood': {
@@ -771,31 +773,41 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
 
       // Persistir
+      console.log('💾 Atualizando banco:', dbUpdateStats);
       if (Object.keys(dbUpdateStats).length > 0) {
         const { error: updateError } = await supabase
           .from('users')
           .update(dbUpdateStats)
           .eq('id', userRecord.id);
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('❌ Erro ao atualizar banco:', updateError);
+          throw updateError;
+        }
+        console.log('✅ Banco atualizado com sucesso');
       }
 
+      console.log('🎮 Atualizando contexto:', gameContextStats);
       if (Object.keys(gameContextStats).length > 0) {
         await updateStats(gameContextStats);
+        console.log('✅ Contexto atualizado com sucesso');
       }
 
       // Remover 1 unidade do inventário
+      console.log('🗑️ Removendo item do inventário:', { quantity: item.quantity, itemId: item.id });
       if (item.quantity <= 1) {
-        await supabase
+        const deleteResult = await supabase
           .from('inventory')
           .delete()
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        console.log('🗑️ Item removido completamente:', deleteResult);
       } else {
-        await supabase
+        const updateResult = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        console.log('🗑️ Quantidade reduzida:', updateResult);
       }
 
       // Efeitos temporários com duração (feedback visual/sensação)
@@ -855,8 +867,9 @@ export default function BagApp({ onBack }: BagAppProps) {
         console.log('🍨 Item da sorveteria detectado:', item.name);
         const hungerIncrease = Math.floor((item.price || item.originalItem?.price || 0) / 2); // Preço dividido por 2 para determinar aumento da fome
         console.log('🍽️ Aumento de fome calculado:', hungerIncrease, 'preço:', item.price || item.originalItem?.price);
-        const newHunger = Math.min(100, (gameStats.hunger || 0) + hungerIncrease);
-        console.log('🥄 Nova fome:', newHunger, 'fome atual:', gameStats.hunger);
+        const currentHunger = userRecord.hunger_percentage || gameStats.hunger || 100;
+        const newHunger = Math.min(100, currentHunger + hungerIncrease);
+        console.log('🥄 Nova fome:', newHunger, 'fome atual:', currentHunger);
         
         // Atualizar no banco
         const hungerUpdateResult = await supabase
