@@ -60,123 +60,6 @@ interface TreatmentRequest {
   processed_at?: string;
 }
 
-// Componente OrderCard com contagem regressiva
-const OrderCard = ({ order, approveOrder, rejectOrder, formatMoney, toast }: { 
-  order: Order; 
-  approveOrder: (order: Order) => void;
-  rejectOrder: (orderId: string) => void;
-  formatMoney: (amount: number) => string;
-  toast: any;
-}) => {
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [isExpired, setIsExpired] = useState(false);
-
-  useEffect(() => {
-    const orderCreatedAt = new Date(order.created_at).getTime();
-    const now = Date.now();
-    const elapsed = Math.floor((now - orderCreatedAt) / 1000);
-    const remaining = Math.max(0, 60 - elapsed);
-    
-    setTimeLeft(remaining);
-    setIsExpired(remaining === 0);
-
-    if (remaining > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
-            setIsExpired(true);
-            clearInterval(timer);
-            // Auto-approve the order
-            autoApproveOrder(order.id);
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [order.created_at, order.id]);
-
-  const autoApproveOrder = async (orderId: string) => {
-    try {
-      // Call the auto-approve edge function
-      await supabase.functions.invoke('auto-approve-orders');
-      
-      toast({
-        title: "Pedido Aprovado Automaticamente! ⏰",
-        description: "O pedido foi aprovado após 1 minuto e enviado para o motoboy",
-      });
-    } catch (error) {
-      console.error('Error auto-approving order:', error);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <Card className={`bg-gradient-card border-border/50 ${isExpired ? 'opacity-50' : ''}`}>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-sm">
-              Pedido de {order.buyer_username}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {new Date(order.created_at).toLocaleString('pt-BR')}
-            </p>
-            <div className="flex items-center gap-2 mt-2">
-              <Clock size={14} className={timeLeft <= 10 ? "text-red-500" : "text-orange-500"} />
-              <span className={`text-xs font-mono ${timeLeft <= 10 ? "text-red-500 font-bold" : "text-orange-500"}`}>
-                {isExpired ? "APROVADO AUTO" : `Auto-aprovação em: ${formatTime(timeLeft)}`}
-              </span>
-            </div>
-          </div>
-          <Badge variant="secondary">
-            {formatMoney(order.total_amount)} CM
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-2">
-          {(Array.isArray(order.items) ? order.items : []).map((item: any, index: number) => (
-            <div key={index} className="flex justify-between text-sm">
-              <span>{item.name} x{item.quantity}</span>
-              <span>{formatMoney(item.price * item.quantity)} CM</span>
-            </div>
-          ))}
-        </div>
-        {!isExpired && (
-          <div className="flex gap-2">
-            <Button
-              onClick={() => approveOrder(order)}
-              className="flex-1"
-              size="sm"
-            >
-              <CheckCircle size={16} className="mr-2" />
-              Aprovar
-            </Button>
-            <Button
-              onClick={() => rejectOrder(order.id)}
-              variant="destructive"
-              className="flex-1"
-              size="sm"
-            >
-              <XCircle size={16} className="mr-2" />
-              Rejeitar
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
 export function ManagerApp({ onBack }: ManagerAppProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
@@ -486,32 +369,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           transaction_type: 'purchase',
           description: `Compra na ${storeName}: ${itemNames}`
         });
-
-      // Buscar avatar do usuário para o pedido do motoboy
-      const { data: userAvatar } = await supabase
-        .from('users')
-        .select('avatar')
-        .eq('id', order.user_id)
-        .single();
-
-      // Criar pedido para o motoboy com avatar do usuário
-      const motoboyOrderData = {
-        order_id: order.id,
-        customer_username: order.buyer_username || 'Usuário',
-        customer_name: order.buyer_username || 'Usuário', 
-        customer_avatar: userAvatar?.avatar || null,
-        store_id: order.store_id,
-        items: order.items,
-        total_amount: order.total_amount,
-        delivery_address: 'Endereço não informado',
-        manager_status: 'approved',
-        manager_notes: 'Pedido aprovado pelo gerente',
-        manager_processed_at: new Date().toISOString()
-      };
-
-      await supabase
-        .from('motoboy_orders')
-        .insert([motoboyOrderData]);
 
       setCurrentManager({ ...currentManager, balance: newManagerBalance });
       
@@ -1314,29 +1171,13 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                 {pendingMotoboyOrders.map((order) => (
                   <div key={order.id} className="bg-orange-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-start gap-3">
-                        {/* Customer Avatar */}
-                        {order.customer_avatar ? (
-                          <img
-                            src={order.customer_avatar}
-                            alt={`Avatar de ${order.customer_name}`}
-                            className="w-10 h-10 rounded-full object-cover border border-orange-500"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-orange-600 border border-orange-500 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">
-                              {order.customer_name?.charAt(0)?.toUpperCase() || "?"}
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
-                          <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
-                          <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
-                          <p className="text-xs text-orange-400 mt-1">
-                            {new Date(order.created_at).toLocaleString('pt-BR')}
-                          </p>
-                        </div>
+                      <div>
+                        <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
+                        <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
+                        <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
+                        <p className="text-xs text-orange-400 mt-1">
+                          {new Date(order.created_at).toLocaleString('pt-BR')}
+                        </p>
                       </div>
                       <Badge variant="secondary" className="bg-orange-600 text-orange-100">
                         Pendente
@@ -1538,7 +1379,54 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               </CardContent>
             </Card>
           ) : (
-            pendingOrders.map((order) => <OrderCard key={order.id} order={order} approveOrder={approveOrder} rejectOrder={rejectOrder} formatMoney={formatMoney} toast={toast} />)
+            pendingOrders.map((order) => (
+              <Card key={order.id} className="bg-gradient-card border-border/50">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-sm">
+                        Pedido de {order.buyer_username}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">
+                      {formatMoney(order.total_amount)} CM
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    {(Array.isArray(order.items) ? order.items : []).map((item: any, index: number) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{item.name} x{item.quantity}</span>
+                        <span>{formatMoney(item.price * item.quantity)} CM</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => approveOrder(order)}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <CheckCircle size={16} className="mr-2" />
+                      Aprovar
+                    </Button>
+                    <Button
+                      onClick={() => rejectOrder(order.id)}
+                      variant="destructive"
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <XCircle size={16} className="mr-2" />
+                      Rejeitar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
       </div>
