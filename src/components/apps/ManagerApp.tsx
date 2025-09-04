@@ -1218,7 +1218,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                     
                     {/* Items */}
                     <div className="mb-3 p-2 bg-orange-600 rounded">
-                      <p className="text-xs text-orange-200 mb-1">Itens:</p>
+                      <p className="text-xs text-orange-200 mb-1">1 minuto:</p>
                       {Array.isArray(order.items) && order.items.map((item: any, index: number) => (
                         <div key={index} className="flex justify-between text-xs text-white">
                           <span>{item.name} x{item.quantity}</span>
