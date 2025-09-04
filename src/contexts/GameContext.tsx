@@ -996,6 +996,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [userId, cureHungerDisease]);
 
+  // Realtime: sync user stats from DB updates
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`rt-user-stats-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
+        (payload) => {
+          const u: any = payload.new;
+          const freshStats = {
+            health: u.life_percentage ?? 100,
+            hunger: u.hunger_percentage ?? 100,
+            alcoholism: u.alcoholism_percentage ?? 0,
+            happiness: u.happiness_percentage ?? 100,
+            energy: u.energy_percentage ?? 100,
+            disease: u.disease_percentage ?? 0,
+          };
+          updateStats(freshStats);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   return (
     <GameContext.Provider value={{
       currentUser,
