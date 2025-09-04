@@ -588,12 +588,19 @@ export default function BagApp({ onBack }: BagAppProps) {
                                    item.quantity <= 1;
       
       if (shouldRemoveCompletely) {
-        console.log('🗑️ Removendo item completamente (quantidade <= 1)');
+        console.log('🗑️ Removendo item completamente');
+        console.log('🔍 Tentando deletar item com:', { 
+          user_id: userRecord.id, 
+          item_id: item.id,
+          item_name: item.name 
+        });
+        
+        // Try to delete using both item.id and item.name to handle inconsistencies
         const { error: deleteError } = await supabase
           .from('inventory')
           .delete()
           .eq('user_id', userRecord.id)
-          .eq('item_id', item.id);
+          .or(`item_id.eq.${item.id},item_id.eq.${item.name}`);
         
         if (deleteError) {
           console.error('❌ Erro ao remover item:', deleteError);
@@ -607,11 +614,18 @@ export default function BagApp({ onBack }: BagAppProps) {
         inventoryUpdated = true;
       } else {
         console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
+        console.log('🔍 Tentando atualizar item com:', { 
+          user_id: userRecord.id, 
+          item_id: item.id,
+          item_name: item.name 
+        });
+        
+        // Try to update using both item.id and item.name to handle inconsistencies
         const { error: updateError } = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('user_id', userRecord.id)
-          .eq('item_id', item.id);
+          .or(`item_id.eq.${item.id},item_id.eq.${item.name}`);
         
         if (updateError) {
           console.error('❌ Erro ao atualizar item:', updateError);
