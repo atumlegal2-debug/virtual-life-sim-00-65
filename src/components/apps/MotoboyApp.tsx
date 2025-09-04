@@ -559,34 +559,38 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                             <span>Clientes</span>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            {group.orders.map((order, index) => {
-                              const username = order.customer_name || order.customer_username;
-                              const userProfile = userProfiles[username];
-                              const displayName = getDisplayName(username);
+                            {(() => {
+                              // Criar array de clientes únicos
+                              const uniqueClients = Array.from(new Set(group.orders.map(order => order.customer_name || order.customer_username)))
+                                .map(username => {
+                                  const userProfile = userProfiles[username];
+                                  const displayName = getDisplayName(username);
+                                  return { username, userProfile, displayName };
+                                });
                               
-                              return (
+                              return uniqueClients.map((client, index) => (
                                 <div key={index} className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-2 hover:bg-background transition-colors">
                                   <Avatar 
                                     className="w-8 h-8 cursor-pointer border-2 border-primary/20 hover:border-primary/60 transition-all hover:scale-105"
-                                    onClick={() => handleUserClick(username)}
+                                    onClick={() => handleUserClick(client.username)}
                                   >
-                                    {userProfile?.avatar ? (
-                                      <AvatarImage src={userProfile.avatar} alt={displayName} />
+                                    {client.userProfile?.avatar ? (
+                                      <AvatarImage src={client.userProfile.avatar} alt={client.displayName} />
                                     ) : (
                                       <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
-                                        {displayName.slice(0, 2).toUpperCase()}
+                                        {client.displayName.slice(0, 2).toUpperCase()}
                                       </AvatarFallback>
                                     )}
                                   </Avatar>
                                   <span 
                                     className="cursor-pointer hover:text-primary transition-colors font-medium text-sm"
-                                    onClick={() => handleUserClick(username)}
+                                    onClick={() => handleUserClick(client.username)}
                                   >
-                                    {displayName}
+                                    {client.displayName}
                                   </span>
                                 </div>
-                              );
-                            })}
+                              ));
+                            })()}
                           </div>
                         </div>
 
@@ -743,45 +747,49 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                       {group.totalAmount.toFixed(2)} CM
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm mb-2">
-                    <strong>Clientes:</strong>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {group.orders.map((order, index) => {
-                        const username = order.customer_name || order.customer_username;
-                        const userProfile = userProfiles[username];
-                        const displayName = getDisplayName(username);
-                        
-                        return (
-                          <div key={index} className="flex items-center gap-1">
-                            <Avatar 
-                              className="w-6 h-6 cursor-pointer border border-primary/20 hover:border-primary/40 transition-colors"
-                              onClick={() => handleUserClick(username)}
-                            >
-                              {userProfile?.avatar ? (
-                                <AvatarImage src={userProfile.avatar} alt={displayName} />
-                              ) : (
-                                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
-                                  {displayName.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <span 
-                              className="cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => handleUserClick(username)}
-                            >
-                              {displayName}
-                            </span>
-                            {index < group.orders.length - 1 && <span className="text-muted-foreground">,</span>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {group.orders.length > 1 && (
-                      <span className="text-blue-600 font-medium ml-1">
-                        ({group.orders.length} pedidos)
-                      </span>
-                    )}
-                  </div>
+                   <div className="flex items-center gap-2 text-sm mb-2">
+                     <strong>Clientes:</strong>
+                     <div className="flex items-center gap-1 flex-wrap">
+                       {(() => {
+                         // Criar array de clientes únicos no modal também
+                         const uniqueClients = Array.from(new Set(group.orders.map(order => order.customer_name || order.customer_username)))
+                           .map(username => {
+                             const userProfile = userProfiles[username];
+                             const displayName = getDisplayName(username);
+                             return { username, userProfile, displayName };
+                           });
+                         
+                         return uniqueClients.map((client, index) => (
+                           <div key={index} className="flex items-center gap-1">
+                             <Avatar 
+                               className="w-6 h-6 cursor-pointer border border-primary/20 hover:border-primary/40 transition-colors"
+                               onClick={() => handleUserClick(client.username)}
+                             >
+                               {client.userProfile?.avatar ? (
+                                 <AvatarImage src={client.userProfile.avatar} alt={client.displayName} />
+                               ) : (
+                                 <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                                   {client.displayName.slice(0, 2).toUpperCase()}
+                                 </AvatarFallback>
+                               )}
+                             </Avatar>
+                             <span 
+                               className="cursor-pointer hover:text-primary transition-colors"
+                               onClick={() => handleUserClick(client.username)}
+                             >
+                               {client.displayName}
+                             </span>
+                             {index < uniqueClients.length - 1 && <span className="text-muted-foreground">,</span>}
+                           </div>
+                         ));
+                       })()}
+                     </div>
+                     {group.orders.length > 1 && (
+                       <span className="text-blue-600 font-medium ml-1">
+                         ({group.orders.length} pedidos)
+                       </span>
+                     )}
+                   </div>
                   <div className="text-sm text-muted-foreground">
                     <strong>Itens:</strong> {Array.isArray(group.items) ? group.items.map((item: any) => 
                       `${item.quantity * group.orders.length}x ${item.name}`
