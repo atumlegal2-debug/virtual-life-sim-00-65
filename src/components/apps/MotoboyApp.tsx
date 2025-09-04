@@ -200,9 +200,57 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    const interval = setInterval(loadOrders, 30000);
+    const interval = setInterval(() => {
+      // Silent refresh without loading state
+      loadOrdersSilently();
+    }, 30000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
+
+  const loadOrdersSilently = async () => {
+    try {
+      console.log('=== REFRESH SILENCIOSO PEDIDOS MOTOBOY ===');
+      
+      // Carregar pedidos disponíveis (waiting)
+      const { data: waitingOrders, error: waitingError } = await supabase
+        .from('motoboy_orders')
+        .select('*')
+        .eq('manager_status', 'approved')
+        .eq('motoboy_status', 'waiting')
+        .order('created_at', { ascending: false });
+
+      // Carregar pedidos aceitos (accepted)
+      const { data: acceptedOrdersData, error: acceptedError } = await supabase
+        .from('motoboy_orders')
+        .select('*')
+        .eq('manager_status', 'approved')
+        .eq('motoboy_status', 'accepted')
+        .order('created_at', { ascending: false });
+      
+      if (waitingError) throw waitingError;
+      if (acceptedError) throw acceptedError;
+      
+      // Update orders without showing loading
+      setOrders(waitingOrders || []);
+      setAcceptedOrders(acceptedOrdersData || []);
+      
+      // Load display names in background for new customers
+      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
+      const uniqueCustomers = new Set(allOrders.map(order => order.customer_name).filter(Boolean));
+      
+      Promise.all(
+        Array.from(uniqueCustomers)
+          .filter(customer => !displayNames[customer]) // Only load new ones
+          .map(customer => loadDisplayNameForUser(customer))
+      ).catch(error => {
+        console.error('Error loading display names silently:', error);
+      });
+      
+    } catch (error) {
+      console.error('Error in silent refresh:', error);
+      // Don't show toast on silent refresh errors
+    }
+  };
 
   const handleLogin = () => {
     if (password === "Motoboy1719") {
