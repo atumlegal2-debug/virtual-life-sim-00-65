@@ -578,9 +578,14 @@ export default function BagApp({ onBack }: BagAppProps) {
         'sopro_da_geada'
       ];
 
+      // Check if item is from pharmacy (all pharmacy items should be consumed completely)
+      const isPharmacyItem = item.storeId === 'farmacia' || item.storeId === 'pharmacy';
+
       // Update database inventory FIRST to ensure synchronization
       let inventoryUpdated = false;
-      const shouldRemoveCompletely = itemsToRemoveCompletely.includes(item.id.toLowerCase()) || item.quantity <= 1;
+      const shouldRemoveCompletely = itemsToRemoveCompletely.includes(item.id.toLowerCase()) || 
+                                   isPharmacyItem || 
+                                   item.quantity <= 1;
       
       if (shouldRemoveCompletely) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
