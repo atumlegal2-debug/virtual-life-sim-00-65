@@ -126,19 +126,34 @@ export function LifeApp({ onBack }: LifeAppProps) {
           console.log('Hospital treatment update received:', payload);
           
           const treatment = payload.new;
-          if (treatment.status === 'accepted' && 
-              (treatment.treatment_type.includes('Desnutrição') || 
-               treatment.request_message.includes('Desnutrição')) &&
-              localDiseases.some(d => d.name === "Desnutrição")) {
+          if (treatment.status === 'accepted') {
+            let healthIncrease = 0;
             
-            console.log('Real-time hunger disease treatment approved, curing patient');
-            await cureHungerDisease();
-            
-            // Mark this treatment as processed so we don't cure again
-            await supabase
-              .from('hospital_treatment_requests')
-              .update({ manager_notes: (treatment.manager_notes || '') + ' [CURED]' })
-              .eq('id', treatment.id);
+            // Determine health increase based on treatment type
+            if (treatment.treatment_type === "Check-up Básico") {
+              healthIncrease = 10;
+            } else if (treatment.treatment_type === "Consulta Especializada") {
+              healthIncrease = 25;
+            } else if (treatment.treatment_type === "Cirurgia") {
+              healthIncrease = 50;
+            } else if (treatment.treatment_type.includes("Cura para")) {
+              healthIncrease = 15;
+              
+              // If it's a hunger disease cure, handle disease removal
+              if (treatment.treatment_type.includes('Desnutrição') && 
+                  localDiseases.some(d => d.name === "Desnutrição")) {
+                console.log('Real-time hunger disease treatment approved, curing patient');
+                await cureHungerDisease();
+              }
+            }
+
+            // Apply health increase
+            if (healthIncrease > 0) {
+              const newHealth = Math.min(100, gameStats.health + healthIncrease);
+              updateStats({ health: newHealth });
+              
+              console.log(`Treatment ${treatment.treatment_type} applied: +${healthIncrease} health`);
+            }
           }
         }
       )
@@ -147,7 +162,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUser, localDiseases, cureHungerDisease]);
+  }, [currentUser, localDiseases, cureHungerDisease, gameStats.health, updateStats]);
 
   // Listen for real-time alcoholism decreases
   useEffect(() => {
