@@ -102,10 +102,54 @@ export function HomeScreen() {
   const userProposals = currentUser ? getProposalsForUser(currentUser) : [];
   const hasRelationshipNotifications = userProposals.length > 0;
 
+  // Check for pending motoboy orders
+  const [motoboyOrders, setMotoboyOrders] = useState<any[]>([]);
+  const hasMotoboyNotifications = motoboyOrders.length > 0;
+
+  // Load motoboy orders on component mount and when user changes
+  useEffect(() => {
+    const loadMotoboyOrders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('motoboy_orders')
+          .select('id')
+          .eq('manager_status', 'approved')
+          .eq('motoboy_status', 'waiting');
+
+        if (!error) {
+          setMotoboyOrders(data || []);
+        }
+      } catch (error) {
+        console.error('Error loading motoboy orders:', error);
+      }
+    };
+
+    loadMotoboyOrders();
+
+    // Set up realtime subscription for motoboy orders
+    const channel = supabase
+      .channel('motoboy-orders-notifications')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'motoboy_orders' }, 
+        () => {
+          loadMotoboyOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser]);
+
   const handleAppClick = (appId: AppType) => {
     if (appId === "relationship" && hasRelationshipNotifications) {
       // Mark proposals as viewed when entering relationship app
       markProposalsAsViewed(currentUser || "");
+    }
+    if (appId === "motoboy" && hasMotoboyNotifications) {
+      // Clear motoboy notifications when entering the app
+      setMotoboyOrders([]);
     }
     setCurrentApp(appId);
   };
@@ -142,7 +186,7 @@ export function HomeScreen() {
     { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
     { id: "meybaby" as const, icon: Baby, label: "My Baby" },
     { id: "fortune" as const, icon: Cookie, label: "Biscoito da Sorte" },
-    { id: "motoboy" as const, icon: Bike, label: "Motoboy" },
+    { id: "motoboy" as const, icon: Bike, label: "Motoboy", hasNotification: hasMotoboyNotifications },
   ];
 
   const renderApp = () => {
