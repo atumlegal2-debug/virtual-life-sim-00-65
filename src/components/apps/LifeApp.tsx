@@ -224,10 +224,9 @@ export function LifeApp({ onBack }: LifeAppProps) {
                       disease: gameStats.disease || 0 // Add missing disease property
                     };
                     
-                    // Update both local and GameContext states
+                    // Update local state only to avoid feedback loop; GameContext realtime will sync globally
                     setLocalGameStats(freshStats);
-                    await updateStats(freshStats);
-                    console.log('🔄 Forced complete stats refresh after treatment');
+                    console.log('🔄 Forced complete stats refresh after treatment (local only)');
                   }
                 } catch (error) {
                   console.error('Error refreshing stats:', error);
@@ -267,9 +266,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
           console.log('User alcoholism update received:', payload);
           const updatedUser = payload.new;
           if (updatedUser.alcoholism_percentage !== undefined) {
-            updateStats({
+            setLocalGameStats(prev => ({
+              ...prev,
               alcoholism: updatedUser.alcoholism_percentage
-            });
+            }));
           }
         }
       )
@@ -302,7 +302,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
             disease: gameStats.disease || 0,
           };
           setLocalGameStats(freshStats);
-          updateStats(freshStats);
+          // Avoid DB write here to prevent feedback loop
         }
       )
       .subscribe();

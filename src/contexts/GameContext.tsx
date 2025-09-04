@@ -1014,7 +1014,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             energy: u.energy_percentage ?? 100,
             disease: u.disease_percentage ?? 0,
           };
-          updateStats(freshStats);
+          setGameStats(prev => ({ ...prev, ...freshStats }));
         }
       )
       .subscribe();
