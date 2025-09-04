@@ -185,8 +185,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
               healthIncrease = 15;
               
               // If it's a hunger disease cure, handle disease removal
-              if (treatment.treatment_type.includes('Desnutrição') && 
-                  localDiseases.some(d => d.name === "Desnutrição")) {
+              if (treatment.treatment_type.includes('Desnutrição')) {
                 console.log('🍎 Real-time hunger disease treatment approved, curing patient');
                 await cureHungerDisease();
               }
@@ -248,7 +247,7 @@ export function LifeApp({ onBack }: LifeAppProps) {
       console.log('Cleaning up hospital treatment subscription');
       supabase.removeChannel(channel);
     };
-  }, [currentUser, userId, localDiseases, cureHungerDisease, gameStats.health, updateStats]);
+  }, [currentUser, userId]);
 
   // Listen for real-time alcoholism decreases
   useEffect(() => {
