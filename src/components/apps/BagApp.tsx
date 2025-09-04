@@ -1079,7 +1079,8 @@ export default function BagApp({ onBack }: BagAppProps) {
     
     items.forEach(item => {
       // Create a unique key based on item properties that should match for grouping (WITHOUT item.id)
-      const key = `${item.storeId}-${item.name}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
+      // Use toLowerCase for case-insensitive grouping
+      const key = `${item.storeId}-${item.name.toLowerCase()}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
       
       if (grouped.has(key)) {
         // Sum quantities for identical items and keep the first item's ID
