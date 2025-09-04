@@ -627,7 +627,7 @@ export default function BagApp({ onBack }: BagAppProps) {
         });
       }
 
-        await loadAllData(true);
+        // No need to reload all data as we've updated local state immediately
         return;
       }
 
@@ -721,21 +721,54 @@ export default function BagApp({ onBack }: BagAppProps) {
         });
 
         // Remove one item from inventory
+        // Update local state immediately for instant UI feedback
+        setInventory(prev => {
+          if (item.quantity <= 1) {
+            // Remove item completely
+            return prev.filter(invItem => invItem.id !== item.id);
+          } else {
+            // Decrease quantity
+            return prev.map(invItem => 
+              invItem.id === item.id 
+                ? { ...invItem, quantity: invItem.quantity - 1 }
+                : invItem
+            );
+          }
+        });
+        
         if (item.quantity <= 1) {
-          await supabase
+          const { error: deleteError } = await supabase
             .from('inventory')
             .delete()
             .eq('user_id', userRecord.id)
             .eq('item_id', item.id);
+          
+          if (deleteError) {
+            console.error('❌ Erro ao remover item custom:', deleteError);
+            // Rollback local state on error
+            setInventory(prev => [...prev, item]);
+          }
         } else {
-          await supabase
+          const { error: updateError } = await supabase
             .from('inventory')
             .update({ quantity: item.quantity - 1 })
             .eq('user_id', userRecord.id)
             .eq('item_id', item.id);
+          
+          if (updateError) {
+            console.error('❌ Erro ao atualizar item custom:', updateError);
+            // Rollback local state on error
+            setInventory(prev => 
+              prev.map(invItem => 
+                invItem.id === item.id 
+                  ? { ...invItem, quantity: invItem.quantity + 1 }
+                  : invItem
+              )
+            );
+          }
         }
 
-        await loadAllData(true);
+        // No need to reload all data as we've updated local state immediately
         return;
       }
 
@@ -857,6 +890,21 @@ export default function BagApp({ onBack }: BagAppProps) {
         userId: userRecord.id
       });
       
+      // Update local state immediately for instant UI feedback
+      setInventory(prev => {
+        if (item.quantity <= 1) {
+          // Remove item completely
+          return prev.filter(invItem => invItem.id !== item.id);
+        } else {
+          // Decrease quantity
+          return prev.map(invItem => 
+            invItem.id === item.id 
+              ? { ...invItem, quantity: invItem.quantity - 1 }
+              : invItem
+          );
+        }
+      });
+      
       if (item.quantity <= 1) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
         const { data: deleteData, error: deleteError } = await supabase
@@ -869,6 +917,8 @@ export default function BagApp({ onBack }: BagAppProps) {
         
         if (deleteError) {
           console.error('❌ Erro ao remover item:', deleteError);
+          // Rollback local state on error
+          setInventory(prev => [...prev, item]);
         }
       } else {
         console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
@@ -882,6 +932,14 @@ export default function BagApp({ onBack }: BagAppProps) {
         
         if (updateError) {
           console.error('❌ Erro ao atualizar item:', updateError);
+          // Rollback local state on error
+          setInventory(prev => 
+            prev.map(invItem => 
+              invItem.id === item.id 
+                ? { ...invItem, quantity: invItem.quantity + 1 }
+                : invItem
+            )
+          );
         }
       }
 
@@ -982,7 +1040,7 @@ export default function BagApp({ onBack }: BagAppProps) {
 
       toast({ title: "Item usado!", description: effectMessage });
 
-      await loadAllData(true);
+      // No need to reload all data as we've updated local state immediately
       return;
     } catch (error) {
       console.error('Error using item:', error);
