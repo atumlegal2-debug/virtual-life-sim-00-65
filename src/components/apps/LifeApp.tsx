@@ -106,6 +106,11 @@ export function LifeApp({ onBack }: LifeAppProps) {
     setLocalDiseases(diseases);
   }, [diseases]);
 
+  // Sync game stats from GameContext in real-time
+  useEffect(() => {
+    setLocalGameStats(gameStats);
+  }, [gameStats]);
+
   // Load temporary effects from localStorage
   useEffect(() => {
     const loadEffects = () => {
@@ -194,11 +199,41 @@ export function LifeApp({ onBack }: LifeAppProps) {
               
               console.log(`💚 Applying health increase: ${currentHealth} + ${healthIncrease} = ${newHealth}`);
               
-              // Update stats immediately
+              // Update stats immediately in GameContext
               await updateStats({ health: newHealth });
               
-              // Force re-render by updating local state too
+              // Force immediate UI update by setting local state
               setLocalGameStats(prev => ({ ...prev, health: newHealth }));
+              
+              // Force a complete state refresh to ensure all components update
+              setTimeout(async () => {
+                try {
+                  const { data: freshProfile } = await supabase
+                    .from('users')
+                    .select('life_percentage, hunger_percentage, mood, alcoholism_percentage, happiness_percentage, energy_percentage')
+                    .eq('id', userId)
+                    .single();
+                  
+                  if (freshProfile) {
+                    const freshStats = {
+                      health: freshProfile.life_percentage || 100,
+                      hunger: freshProfile.hunger_percentage || 100,
+                      mood: freshProfile.mood?.toString() || "Sentindo-se bem",
+                      alcoholism: freshProfile.alcoholism_percentage || 0,
+                      happiness: freshProfile.happiness_percentage || 100,
+                      energy: freshProfile.energy_percentage || 100,
+                      disease: gameStats.disease || 0 // Add missing disease property
+                    };
+                    
+                    // Update both local and GameContext states
+                    setLocalGameStats(freshStats);
+                    await updateStats(freshStats);
+                    console.log('🔄 Forced complete stats refresh after treatment');
+                  }
+                } catch (error) {
+                  console.error('Error refreshing stats:', error);
+                }
+              }, 1000);
               
               console.log(`✅ Treatment ${treatment.treatment_type} applied successfully: +${healthIncrease} health`);
             }
