@@ -567,9 +567,22 @@ export default function BagApp({ onBack }: BagAppProps) {
         return;
       }
 
+      // List of items that should be completely removed when consumed
+      const itemsToRemoveCompletely = [
+        'esfinge',
+        'oceanix', 
+        'vento_doce_das_montanhas',
+        'torta_galaxia_dos_sonhos',
+        'encanto_da_lua_azul',
+        'encanto_solar',
+        'sopro_da_geada'
+      ];
+
       // Update database inventory FIRST to ensure synchronization
       let inventoryUpdated = false;
-      if (item.quantity <= 1) {
+      const shouldRemoveCompletely = itemsToRemoveCompletely.includes(item.id.toLowerCase()) || item.quantity <= 1;
+      
+      if (shouldRemoveCompletely) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
         const { error: deleteError } = await supabase
           .from('inventory')
