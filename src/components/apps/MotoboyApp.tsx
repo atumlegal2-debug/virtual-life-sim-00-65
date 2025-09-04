@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Truck, MapPin, Clock, Package, Lock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Truck, MapPin, Clock, Package, Lock, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [loading, setLoading] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [todayDeliveries, setTodayDeliveries] = useState(0);
+  const [showAllOrdersModal, setShowAllOrdersModal] = useState(false);
   const { toast } = useToast();
 
   const getDisplayName = (username: string) => {
@@ -494,43 +496,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                     variant="outline" 
                     size="sm" 
                     className="w-full"
-                    onClick={() => {
-                      const allOrdersWindow = window.open('', '_blank');
-                      if (allOrdersWindow) {
-                        allOrdersWindow.document.write(`
-                          <html>
-                            <head>
-                              <title>Todos os Pedidos - Motoboy</title>
-                              <style>
-                                body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
-                                .order { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                                .store { font-weight: bold; color: #333; }
-                                .amount { color: #16a34a; font-weight: bold; }
-                                .items { color: #666; margin: 8px 0; }
-                                .time { color: #888; font-size: 0.9em; }
-                                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-                                h1 { color: #333; margin-bottom: 20px; }
-                              </style>
-                            </head>
-                            <body>
-                              <h1>Todos os Pedidos Disponíveis (${orders.length})</h1>
-                              ${orders.map(order => `
-                                <div class="order">
-                                  <div class="header">
-                                    <span class="store">${order.store_id}</span>
-                                    <span class="amount">${order.total_amount.toFixed(2)} CM</span>
-                                  </div>
-                                  <div><strong>Cliente:</strong> ${getDisplayName(order.customer_name || order.customer_username)}</div>
-                                  <div class="items"><strong>Itens:</strong> ${Array.isArray(order.items) ? order.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', ') : 'Itens não disponíveis'}</div>
-                                  <div class="time">Pedido feito em: ${new Date(order.created_at).toLocaleString()}</div>
-                                </div>
-                              `).join('')}
-                            </body>
-                          </html>
-                        `);
-                        allOrdersWindow.document.close();
-                      }
-                    }}
+                    onClick={() => setShowAllOrdersModal(true)}
                   >
                     + Ver todos os {orders.length} pedidos
                   </Button>
@@ -620,6 +586,52 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal para mostrar todos os pedidos */}
+      <Dialog open={showAllOrdersModal} onOpenChange={setShowAllOrdersModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="text-primary" size={20} />
+              Todos os Pedidos Disponíveis ({orders.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {orders.map((order) => (
+              <div key={order.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{order.store_id}</span>
+                  <span className="text-green-600 font-bold">
+                    {order.total_amount.toFixed(2)} CM
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
+                    `${item.quantity}x ${item.name}`
+                  ).join(', ') : 'Itens não disponíveis'}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock size={14} />
+                  <span>Pedido feito em: {new Date(order.created_at).toLocaleString()}</span>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    handleAcceptOrder(order.id);
+                    setShowAllOrdersModal(false);
+                  }}
+                >
+                  Aceitar Entrega
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
