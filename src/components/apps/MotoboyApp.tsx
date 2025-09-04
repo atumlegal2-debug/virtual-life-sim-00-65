@@ -660,15 +660,47 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               {acceptedOrders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-3 space-y-2 bg-blue-50 dark:bg-blue-950/20">
+                <div key={order.id} className="border rounded-lg p-3 space-y-2 bg-muted/20 dark:bg-muted/10">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{order.store_id}</span>
                     <span className="text-green-600 font-bold">
                       {order.total_amount.toFixed(2)} CM
                     </span>
                   </div>
-                  <div className="text-sm">
-                    <strong>Cliente:</strong> {getDisplayName(order.customer_name || order.customer_username)}
+                  <div className="flex items-center gap-3 bg-background/50 rounded-lg p-3">
+                    {(() => {
+                      const username = order.customer_name || order.customer_username;
+                      const userProfile = userProfiles[username];
+                      const displayName = getDisplayName(username);
+                      
+                      return (
+                        <div className="flex items-center gap-3">
+                          <Avatar 
+                            className="w-10 h-10 cursor-pointer border-2 border-primary/20 hover:border-primary/60 transition-all hover:scale-105"
+                            onClick={() => handleUserClick(username)}
+                          >
+                            {userProfile?.avatar ? (
+                              <AvatarImage src={userProfile.avatar} alt={displayName} />
+                            ) : (
+                              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
+                                {displayName.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-base">
+                              <span 
+                                className="cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => handleUserClick(username)}
+                              >
+                                {displayName}
+                              </span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">Cliente</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <strong>Itens:</strong> {Array.isArray(order.items) ? order.items.map((item: any) => 
