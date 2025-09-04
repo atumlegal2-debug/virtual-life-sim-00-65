@@ -567,373 +567,44 @@ export default function BagApp({ onBack }: BagAppProps) {
         return;
       }
 
-      // (hooks já desestruturados no topo do componente)
-
-      // Handle jewelry items that increase happiness
-      if (item.storeId === "jewelry" && !item.relationshipType) {
-        const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + 15);
-        
-        await supabase
-          .from('users')
-          .update({ happiness_percentage: newHappiness })
-          .eq('id', userRecord.id);
-
-        updateStats({ happiness: newHappiness });
-        
-        toast({
-          title: "✨ Item de Joalheria Usado",
-          description: `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`
-        });
-
-        // Update local state immediately for instant UI feedback
-        setInventory(prev => {
-          if (item.quantity <= 1) {
-            // Remove item completely
-            return prev.filter(invItem => invItem.id !== item.id);
-          } else {
-            // Decrease quantity
-            return prev.map(invItem => 
-              invItem.id === item.id 
-                ? { ...invItem, quantity: invItem.quantity - 1 }
-                : invItem
-            );
-          }
-        });
-
-        // Remove one item from inventory
-        if (item.quantity <= 1) {
-          const { error: deleteError } = await supabase
-            .from('inventory')
-            .delete()
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-          
-          if (deleteError) {
-            console.error('❌ Erro ao remover item:', deleteError);
-            // Rollback local state on error
-            setInventory(prev => [...prev, item]);
-          }
-        } else {
-          const { error: updateError } = await supabase
-            .from('inventory')
-            .update({ quantity: item.quantity - 1 })
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-          
-          if (updateError) {
-            console.error('❌ Erro ao atualizar item:', updateError);
-            // Rollback local state on error
-            setInventory(prev => 
-              prev.map(invItem => 
-                invItem.id === item.id 
-                  ? { ...invItem, quantity: invItem.quantity + 1 }
-                  : invItem
-              )
-            );
-          }
-        }
-
-        return;
-      }
-
-      // Handle custom items
-      if (item.storeId === "custom") {
-        let dbUpdateStats: any = {};
-        let gameContextStats: any = {};
-        let effectMessage = `Você usou ${item.name}`;
-
-        if (item.effect) {
-          if (item.effect.type === "multiple" && "effects" in item.effect) {
-            // Handle multiple effects for drinks
-            for (const effect of item.effect.effects) {
-              switch (effect.type) {
-                case "hunger":
-                  const newHunger = Math.min(100, userRecord.hunger_percentage + effect.value);
-                  dbUpdateStats.hunger_percentage = newHunger;
-                  gameContextStats.hunger = newHunger;
-                  break;
-                case "happiness":
-                  const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + effect.value);
-                  dbUpdateStats.happiness_percentage = newHappiness;
-                  gameContextStats.happiness = newHappiness;
-                  break;
-                case "energy":
-                  const { data: userData } = await supabase
-                    .from('users')
-                    .select('energy_percentage')
-                    .eq('id', userRecord.id)
-                    .single();
-                  const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + effect.value);
-                  dbUpdateStats.energy_percentage = newEnergy;
-                  gameContextStats.energy = newEnergy;
-                  break;
-              }
-            }
-            effectMessage = item.effect.message;
-          } else {
-            // Handle single effects
-            switch (item.effect.type) {
-              case "health":
-                const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
-                dbUpdateStats.life_percentage = newHealth;
-                gameContextStats.health = newHealth;
-                effectMessage = item.effect.message;
-                break;
-              case "hunger":
-                const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
-                dbUpdateStats.hunger_percentage = newHunger;
-                gameContextStats.hunger = newHunger;
-                effectMessage = item.effect.message;
-                break;
-              case "mood":
-                const newMood = Math.min(100, userRecord.mood + item.effect.value);
-                dbUpdateStats.mood = newMood;
-                gameContextStats.mood = newMood.toString();
-                effectMessage = item.effect.message;
-                break;
-              case "energy":
-                const { data: userData } = await supabase
-                  .from('users')
-                  .select('energy_percentage')
-                  .eq('id', userRecord.id)
-                  .single();
-                const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + item.effect.value);
-                dbUpdateStats.energy_percentage = newEnergy;
-                gameContextStats.energy = newEnergy;
-                effectMessage = item.effect.message;
-                break;
-            }
-          }
-        }
-
-        // Update user stats in database
-        if (Object.keys(dbUpdateStats).length > 0) {
-          const { error: updateError } = await supabase
-            .from('users')
-            .update(dbUpdateStats)
-            .eq('id', userRecord.id);
-          if (updateError) throw updateError;
-        }
-
-        // Update GameContext stats
-        if (Object.keys(gameContextStats).length > 0) {
-          await updateStats(gameContextStats);
-        }
-
-        toast({
-          title: "Item usado!",
-          description: effectMessage
-        });
-
-        // Remove one item from inventory
-        // Update local state immediately for instant UI feedback
-        setInventory(prev => {
-          if (item.quantity <= 1) {
-            // Remove item completely
-            return prev.filter(invItem => invItem.id !== item.id);
-          } else {
-            // Decrease quantity
-            return prev.map(invItem => 
-              invItem.id === item.id 
-                ? { ...invItem, quantity: invItem.quantity - 1 }
-                : invItem
-            );
-          }
-        });
-        
-        if (item.quantity <= 1) {
-          const { error: deleteError } = await supabase
-            .from('inventory')
-            .delete()
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-          
-          if (deleteError) {
-            console.error('❌ Erro ao remover item custom:', deleteError);
-            // Rollback local state on error
-            setInventory(prev => [...prev, item]);
-          }
-        } else {
-          const { error: updateError } = await supabase
-            .from('inventory')
-            .update({ quantity: item.quantity - 1 })
-            .eq('user_id', userRecord.id)
-            .eq('item_id', item.id);
-          
-          if (updateError) {
-            console.error('❌ Erro ao atualizar item custom:', updateError);
-            // Rollback local state on error
-            setInventory(prev => 
-              prev.map(invItem => 
-                invItem.id === item.id 
-                  ? { ...invItem, quantity: invItem.quantity + 1 }
-                  : invItem
-              )
-            );
-          }
-        }
-
-        // No need to reload all data as we've updated local state immediately
-        return;
-      }
-
-      // Itens de loja (não custom)
-      console.log('🍦 Processando item de loja:', item.name, 'storeId:', item.storeId);
-      let dbUpdateStats: any = {};
-      let gameContextStats: any = {};
-      let effectMessage = item.effect?.message || `Você usou ${item.name}`;
-
-      // Remédio: tenta curar a doença correspondente
-      if (item.originalItem?.type === 'medicine') {
-        console.log('💊 Item é remédio:', item.name);
-        try {
-          await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
-        } catch {}
-      }
-
-      // Aplicar efeitos básicos
-      console.log('⚡ Aplicando efeitos básicos. Item effect:', item.effect, 'Item effects:', item.originalItem?.effects);
-      
-      // Handle single effect
-      if (item.effect) {
-        console.log('🎯 Item tem efeito single, type:', item.effect.type, 'value:', (item.effect as any).value);
-        switch (item.effect.type) {
-          case 'health': {
-            const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
-            dbUpdateStats.life_percentage = newHealth;
-            gameContextStats.health = newHealth;
-            break;
-          }
-          case 'hunger': {
-            const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + item.effect.value);
-            dbUpdateStats.hunger_percentage = newHunger;
-            gameContextStats.hunger = newHunger;
-            break;
-          }
-          case 'mood': {
-            const newMood = Math.min(100, (userRecord.mood || 5) + item.effect.value);
-            dbUpdateStats.mood = newMood;
-            gameContextStats.mood = newMood.toString();
-            break;
-          }
-          case 'alcoholism': {
-            const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
-            dbUpdateStats.alcoholism_percentage = newAlcoholism;
-            gameContextStats.alcoholism = newAlcoholism;
-            break;
-          }
-          case 'energy': {
-            if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
-              await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, 'other');
-            }
-            break;
-          }
-        }
-        effectMessage = item.effect.message || effectMessage;
-      }
-      
-      // Handle multiple effects (for ice cream items)
-      if (item.originalItem?.effects && Array.isArray(item.originalItem.effects)) {
-        console.log('🎯 Item tem múltiplos efeitos:', item.originalItem.effects.length);
-        for (const effect of item.originalItem.effects) {
-          console.log('🎯 Aplicando efeito:', effect.type, 'value:', effect.value);
-          switch (effect.type) {
-            case 'health': {
-              const newHealth = Math.min(100, (userRecord.life_percentage || 100) + effect.value);
-              dbUpdateStats.life_percentage = newHealth;
-              gameContextStats.health = newHealth;
-              break;
-            }
-            case 'hunger': {
-              const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + effect.value);
-              dbUpdateStats.hunger_percentage = newHunger;
-              gameContextStats.hunger = newHunger;
-              break;
-            }
-            case 'mood': {
-              const newMood = Math.min(100, (userRecord.mood || 5) + effect.value);
-              dbUpdateStats.mood = newMood;
-              gameContextStats.mood = newMood.toString();
-              break;
-            }
-            case 'alcoholism': {
-              const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + effect.value);
-              dbUpdateStats.alcoholism_percentage = newAlcoholism;
-              gameContextStats.alcoholism = newAlcoholism;
-              break;
-            }
-            case 'energy': {
-              if (effect.duration && effect.message) {
-                await addTemporaryEffect(effect.message, effect.duration, 'other');
-              }
-              break;
-            }
-          }
-          if (effect.message) {
-            effectMessage = effect.message;
-          }
-        }
-      }
-
-      // Persistir
-      if (Object.keys(dbUpdateStats).length > 0) {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update(dbUpdateStats)
-          .eq('id', userRecord.id);
-        if (updateError) throw updateError;
-      }
-
-      if (Object.keys(gameContextStats).length > 0) {
-        await updateStats(gameContextStats);
-      }
-
-      // Remover 1 unidade do inventário
-      console.log('🗂️ INICIANDO REMOÇÃO DO ITEM DO INVENTÁRIO:', {
-        itemId: item.id,
-        quantity: item.quantity,
-        userId: userRecord.id
-      });
-      
       // Update local state immediately for instant UI feedback
       setInventory(prev => {
-        if (item.quantity <= 1) {
-          // Remove item completely
-          return prev.filter(invItem => invItem.id !== item.id);
-        } else {
-          // Decrease quantity
-          return prev.map(invItem => 
-            invItem.id === item.id 
-              ? { ...invItem, quantity: invItem.quantity - 1 }
-              : invItem
-          );
-        }
+        const updatedInventory = prev.map(invItem => {
+          if (invItem.id === item.id) {
+            if (invItem.quantity <= 1) {
+              return null; // Will be filtered out
+            } else {
+              return { ...invItem, quantity: invItem.quantity - 1 };
+            }
+          }
+          return invItem;
+        }).filter(Boolean) as InventoryItem[];
+        
+        return updatedInventory;
       });
-      
+
+      // Update database inventory
       if (item.quantity <= 1) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
-        const { data: deleteData, error: deleteError } = await supabase
+        const { error: deleteError } = await supabase
           .from('inventory')
           .delete()
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
         
-        console.log('🗑️ Resultado da remoção completa:', { deleteData, deleteError });
-        
         if (deleteError) {
           console.error('❌ Erro ao remover item:', deleteError);
           // Rollback local state on error
           setInventory(prev => [...prev, item]);
+          return;
         }
       } else {
         console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
-        
-        console.log('📉 Resultado da diminuição:', { updateData, updateError });
         
         if (updateError) {
           console.error('❌ Erro ao atualizar item:', updateError);
@@ -945,7 +616,192 @@ export default function BagApp({ onBack }: BagAppProps) {
                 : invItem
             )
           );
+          return;
         }
+      }
+
+      // Now process item effects
+      let dbUpdateStats: any = {};
+      let gameContextStats: any = {};
+      let effectMessage = item.effect?.message || `Você usou ${item.name}`;
+
+      // Handle jewelry items that increase happiness
+      if (item.storeId === "jewelry" && !item.relationshipType) {
+        const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + 15);
+        dbUpdateStats.happiness_percentage = newHappiness;
+        gameContextStats.happiness = newHappiness;
+        effectMessage = `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`;
+      }
+
+      // Handle custom items
+      if (item.storeId === "custom" && item.effect) {
+        if (item.effect.type === "multiple" && "effects" in item.effect) {
+          // Handle multiple effects for drinks
+          for (const effect of item.effect.effects) {
+            switch (effect.type) {
+              case "hunger":
+                const newHunger = Math.min(100, userRecord.hunger_percentage + effect.value);
+                dbUpdateStats.hunger_percentage = newHunger;
+                gameContextStats.hunger = newHunger;
+                break;
+              case "happiness":
+                const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + effect.value);
+                dbUpdateStats.happiness_percentage = newHappiness;
+                gameContextStats.happiness = newHappiness;
+                break;
+              case "energy":
+                const { data: userData } = await supabase
+                  .from('users')
+                  .select('energy_percentage')
+                  .eq('id', userRecord.id)
+                  .single();
+                const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + effect.value);
+                dbUpdateStats.energy_percentage = newEnergy;
+                gameContextStats.energy = newEnergy;
+                break;
+            }
+          }
+          effectMessage = item.effect.message;
+        } else {
+          // Handle single effects
+          switch (item.effect.type) {
+            case "health":
+              const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
+              dbUpdateStats.life_percentage = newHealth;
+              gameContextStats.health = newHealth;
+              effectMessage = item.effect.message;
+              break;
+            case "hunger":
+              const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
+              dbUpdateStats.hunger_percentage = newHunger;
+              gameContextStats.hunger = newHunger;
+              effectMessage = item.effect.message;
+              break;
+            case "mood":
+              const newMood = Math.min(100, userRecord.mood + item.effect.value);
+              dbUpdateStats.mood = newMood;
+              gameContextStats.mood = newMood.toString();
+              effectMessage = item.effect.message;
+              break;
+            case "energy":
+              const { data: userData } = await supabase
+                .from('users')
+                .select('energy_percentage')
+                .eq('id', userRecord.id)
+                .single();
+              const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + item.effect.value);
+              dbUpdateStats.energy_percentage = newEnergy;
+              gameContextStats.energy = newEnergy;
+              effectMessage = item.effect.message;
+              break;
+          }
+        }
+      }
+
+      // Handle store items (not custom)
+      if (item.storeId !== "custom") {
+        // Medicine: try to cure corresponding disease
+        if (item.originalItem?.type === 'medicine') {
+          console.log('💊 Item é remédio:', item.name);
+          try {
+            await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
+          } catch {}
+        }
+
+        // Handle single effect
+        if (item.effect) {
+          console.log('🎯 Item tem efeito single, type:', item.effect.type, 'value:', (item.effect as any).value);
+          switch (item.effect.type) {
+            case 'health': {
+              const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
+              dbUpdateStats.life_percentage = newHealth;
+              gameContextStats.health = newHealth;
+              break;
+            }
+            case 'hunger': {
+              const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + item.effect.value);
+              dbUpdateStats.hunger_percentage = newHunger;
+              gameContextStats.hunger = newHunger;
+              break;
+            }
+            case 'mood': {
+              const newMood = Math.min(100, (userRecord.mood || 5) + item.effect.value);
+              dbUpdateStats.mood = newMood;
+              gameContextStats.mood = newMood.toString();
+              break;
+            }
+            case 'alcoholism': {
+              const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
+              dbUpdateStats.alcoholism_percentage = newAlcoholism;
+              gameContextStats.alcoholism = newAlcoholism;
+              break;
+            }
+            case 'energy': {
+              if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
+                await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, 'other');
+              }
+              break;
+            }
+          }
+          effectMessage = item.effect.message || effectMessage;
+        }
+        
+        // Handle multiple effects (for ice cream items)
+        if (item.originalItem?.effects && Array.isArray(item.originalItem.effects)) {
+          console.log('🎯 Item tem múltiplos efeitos:', item.originalItem.effects.length);
+          for (const effect of item.originalItem.effects) {
+            console.log('🎯 Aplicando efeito:', effect.type, 'value:', effect.value);
+            switch (effect.type) {
+              case 'health': {
+                const newHealth = Math.min(100, (userRecord.life_percentage || 100) + effect.value);
+                dbUpdateStats.life_percentage = newHealth;
+                gameContextStats.health = newHealth;
+                break;
+              }
+              case 'hunger': {
+                const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + effect.value);
+                dbUpdateStats.hunger_percentage = newHunger;
+                gameContextStats.hunger = newHunger;
+                break;
+              }
+              case 'mood': {
+                const newMood = Math.min(100, (userRecord.mood || 5) + effect.value);
+                dbUpdateStats.mood = newMood;
+                gameContextStats.mood = newMood.toString();
+                break;
+              }
+              case 'alcoholism': {
+                const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + effect.value);
+                dbUpdateStats.alcoholism_percentage = newAlcoholism;
+                gameContextStats.alcoholism = newAlcoholism;
+                break;
+              }
+              case 'energy': {
+                if (effect.duration && effect.message) {
+                  await addTemporaryEffect(effect.message, effect.duration, 'other');
+                }
+                break;
+              }
+            }
+            if (effect.message) {
+              effectMessage = effect.message;
+            }
+          }
+        }
+      }
+
+      // Update user stats in database
+      if (Object.keys(dbUpdateStats).length > 0) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update(dbUpdateStats)
+          .eq('id', userRecord.id);
+        if (updateError) throw updateError;
+      }
+
+      // Update GameContext stats
+      if (Object.keys(gameContextStats).length > 0) {
+        await updateStats(gameContextStats);
       }
 
       // Efeitos temporários com duração (feedback visual/sensação)
@@ -1045,8 +901,6 @@ export default function BagApp({ onBack }: BagAppProps) {
 
       toast({ title: "Item usado!", description: effectMessage });
 
-      // No need to reload all data as we've updated local state immediately
-      return;
     } catch (error) {
       console.error('Error using item:', error);
       toast({
