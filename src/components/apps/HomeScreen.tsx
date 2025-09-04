@@ -117,6 +117,7 @@ export function HomeScreen() {
       if (isAuthenticated) {
         loadMotoboyOrders();
       } else {
+        // Limpar notificações quando não autenticado
         setMotoboyOrders([]);
       }
     };
@@ -148,26 +149,38 @@ export function HomeScreen() {
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'motoboy_orders' }, 
           () => {
-            loadMotoboyOrders();
+            // Só recarregar se ainda estiver autenticado
+            const currentAuth = localStorage.getItem('motoboy_auth');
+            if (currentAuth === 'true') {
+              loadMotoboyOrders();
+            }
           }
         )
         .subscribe();
     }
 
-    // Listen for motoboy auth changes
+    // Listen for motoboy auth changes (login/logout)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'motoboy_auth') {
         checkMotoboyAuth();
       }
     };
 
+    // Listen for custom logout event from motoboy app
+    const handleMotoboyLogout = () => {
+      setIsMotoboyAuthenticated(false);
+      setMotoboyOrders([]);
+    };
+
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('motoboyLogout', handleMotoboyLogout);
 
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
       }
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('motoboyLogout', handleMotoboyLogout);
     };
   }, [isMotoboyAuthenticated]);
 

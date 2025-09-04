@@ -593,6 +593,12 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           onClick={() => {
             localStorage.removeItem('motoboy_auth');
             setIsAuthenticated(false);
+            // Disparar evento para limpar notificações
+            window.dispatchEvent(new CustomEvent('motoboyLogout'));
+            toast({
+              title: "Logout realizado",
+              description: "Você foi desconectado do Motoboy"
+            });
           }}
           className="text-primary-foreground hover:bg-background/20"
         >
