@@ -1078,11 +1078,11 @@ export default function BagApp({ onBack }: BagAppProps) {
     const grouped = new Map<string, InventoryItem>();
     
     items.forEach(item => {
-      // Create a unique key based on item properties that should match for grouping
-      const key = `${item.id}-${item.storeId}-${item.name}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
+      // Create a unique key based on item properties that should match for grouping (WITHOUT item.id)
+      const key = `${item.storeId}-${item.name}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
       
       if (grouped.has(key)) {
-        // Sum quantities for identical items
+        // Sum quantities for identical items and keep the first item's ID
         const existingItem = grouped.get(key)!;
         existingItem.quantity += item.quantity;
       } else {
