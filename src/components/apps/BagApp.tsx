@@ -545,17 +545,27 @@ export default function BagApp({ onBack }: BagAppProps) {
           description: `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`
         });
 
-        // Remove one item from inventory
+      // Remove one item from inventory
       // Remover ou diminuir quantidade no banco
-      console.log('📦 Removendo/diminuindo item no banco...', { quantity: item.quantity });
+      console.log('📦 Removendo/diminuindo item no banco...', { 
+        quantity: item.quantity, 
+        itemId: item.id, 
+        userId: userRecord.id 
+      });
       
       if (item.quantity <= 1) {
         console.log('🗑️ Removendo item completamente (quantidade <= 1)');
-        await supabase
+        const { data: deleteData, error: deleteError } = await supabase
           .from('inventory')
           .delete()
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        
+        console.log('🗑️ Resultado da remoção:', { deleteData, deleteError });
+        
+        if (deleteError) {
+          console.error('❌ Erro ao remover item:', deleteError);
+        }
         
         toast({
           title: "Item consumido!",
@@ -563,11 +573,17 @@ export default function BagApp({ onBack }: BagAppProps) {
         });
       } else {
         console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
-        await supabase
+        const { data: updateData, error: updateError } = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('user_id', userRecord.id)
           .eq('item_id', item.id);
+        
+        console.log('📉 Resultado da atualização:', { updateData, updateError });
+        
+        if (updateError) {
+          console.error('❌ Erro ao atualizar item:', updateError);
+        }
         
         toast({
           title: "Item consumido!",
