@@ -353,6 +353,34 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     }
   };
 
+  const handleRejectOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('motoboy_orders')
+        .update({
+          motoboy_status: 'rejected',
+          motoboy_accepted_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Entrega rejeitada!",
+        description: "Você rejeitou a entrega"
+      });
+      
+      loadOrders();
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao rejeitar entrega",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSendItems = async (order: MotoboyOrder) => {
     try {
       console.log('=== ENVIANDO ITENS ===');
@@ -693,22 +721,35 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                           </p>
                         </div>
 
-                        {/* Horário e botão */}
+                        {/* Horário e botões */}
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock size={12} />
                             <span>{new Date(group.created_at).toLocaleString()}</span>
                           </div>
-                          <Button 
-                            size="sm" 
-                            className="px-6 hover:scale-105 transition-transform"
-                            onClick={() => {
-                              // Aceitar todos os pedidos do grupo
-                              group.orders.forEach(order => handleAcceptOrder(order.id));
-                            }}
-                          >
-                            Aceitar {group.orders.length > 1 ? `${group.orders.length} Entregas` : 'Entrega'}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              className="px-4 hover:scale-105 transition-transform"
+                              onClick={() => {
+                                // Rejeitar todos os pedidos do grupo
+                                group.orders.forEach(order => handleRejectOrder(order.id));
+                              }}
+                            >
+                              Rejeitar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="px-4 hover:scale-105 transition-transform"
+                              onClick={() => {
+                                // Aceitar todos os pedidos do grupo
+                                group.orders.forEach(order => handleAcceptOrder(order.id));
+                              }}
+                            >
+                              Aceitar
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -911,17 +952,31 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                     <Clock size={14} />
                     <span>Pedido feito em: {new Date(group.created_at).toLocaleString()}</span>
                   </div>
-                  <Button 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => {
-                      // Aceitar todos os pedidos do grupo
-                      group.orders.forEach(order => handleAcceptOrder(order.id));
-                      setShowAllOrdersModal(false);
-                    }}
-                  >
-                    Aceitar {group.orders.length > 1 ? `${group.orders.length} Entregas` : 'Entrega'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => {
+                        // Rejeitar todos os pedidos do grupo
+                        group.orders.forEach(order => handleRejectOrder(order.id));
+                        setShowAllOrdersModal(false);
+                      }}
+                    >
+                      Rejeitar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        // Aceitar todos os pedidos do grupo
+                        group.orders.forEach(order => handleAcceptOrder(order.id));
+                        setShowAllOrdersModal(false);
+                      }}
+                    >
+                      Aceitar
+                    </Button>
+                  </div>
                 </div>
               ));
             })()}
