@@ -21,6 +21,7 @@ interface BagAppProps {
 
 interface InventoryItem {
   id: string;
+  inventoryId: string; // ID da linha na tabela inventory
   name: string;
   description: string;
   itemType: "food" | "drink" | "object";
@@ -216,7 +217,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       const inventoryResult = await raceWithTimeout(
         supabase
           .from('inventory')
-          .select('item_id, quantity, sent_by_username, received_at, created_at')
+          .select('id, item_id, quantity, sent_by_username, received_at, created_at')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(100)
@@ -355,6 +356,7 @@ export default function BagApp({ onBack }: BagAppProps) {
         return {
           inventoryItem: {
             id: fallbackItem.id,
+            inventoryId: item.id,
             name: fallbackItem.name,
             description: fallbackItem.description,
             itemType: fallbackItem.itemType,
@@ -394,6 +396,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       return {
         inventoryItem: {
           id: customItem.id,
+          inventoryId: item.id,
           name: customItem.name,
           description: cleanDescription,
           itemType: customItem.itemType,
@@ -440,6 +443,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       
       const inventoryItem = {
         id: storeItem.id,
+        inventoryId: item.id,
         name: storeItem.name,
         description: storeItem.description,
         itemType,
@@ -596,11 +600,11 @@ export default function BagApp({ onBack }: BagAppProps) {
         });
         
         // Try to delete using both item.id and item.name to handle inconsistencies
+        // Delete only the specific inventory entry by ID to avoid deleting multiple entries
         const { error: deleteError } = await supabase
           .from('inventory')
           .delete()
-          .eq('user_id', userRecord.id)
-          .or(`item_id.eq.${item.id},item_id.eq.${item.name}`);
+          .eq('id', item.inventoryId);
         
         if (deleteError) {
           console.error('❌ Erro ao remover item:', deleteError);
@@ -620,12 +624,11 @@ export default function BagApp({ onBack }: BagAppProps) {
           item_name: item.name 
         });
         
-        // Try to update using both item.id and item.name to handle inconsistencies
+        // Update only the specific inventory entry by ID to avoid updating multiple entries
         const { error: updateError } = await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
-          .eq('user_id', userRecord.id)
-          .or(`item_id.eq.${item.id},item_id.eq.${item.name}`);
+          .eq('id', item.inventoryId);
         
         if (updateError) {
           console.error('❌ Erro ao atualizar item:', updateError);
