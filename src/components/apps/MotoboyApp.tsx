@@ -434,15 +434,27 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           }
 
           const currentQuantity = existingItems?.reduce((sum, inv) => sum + inv.quantity, 0) || 0;
-          if (currentQuantity + item.quantity > 10) {
-            console.log(`⚠️ Skipping ${item.name} - would exceed limit of 10 (current: ${currentQuantity}, adding: ${item.quantity})`);
+          const maxQuantityToAdd = Math.max(0, 10 - currentQuantity);
+          const finalQuantity = Math.min(item.quantity, maxQuantityToAdd);
+          
+          if (finalQuantity === 0) {
+            console.log(`⚠️ Skipping ${item.name} - user already has 10 items`);
             toast({
               title: "Limite de inventário atingido",
-              description: `${item.name}: limite de 10 itens atingido`,
+              description: `${item.name}: você já possui o máximo de 10 itens`,
               variant: "destructive",
               duration: 5000
             });
             continue;
+          }
+          
+          if (finalQuantity < item.quantity) {
+            console.log(`📦 Item ${item.name} quantity limited from ${item.quantity} to ${finalQuantity} (current: ${currentQuantity})`);
+            toast({
+              title: "Quantidade limitada",
+              description: `${item.name}: quantidade limitada para ${finalQuantity} (máximo 10 por item)`,
+              duration: 5000
+            });
           }
 
           const { error: inventoryError } = await supabase
@@ -450,7 +462,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             .insert({
               user_id: userData.id,
               item_id: item.name,
-              quantity: item.quantity,
+              quantity: finalQuantity,
               sent_by_username: 'Motoboy',
               received_at: new Date().toISOString()
             });

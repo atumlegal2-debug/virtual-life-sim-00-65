@@ -371,11 +371,10 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           }
 
           if (existingItem) {
-            // Check if total quantity would exceed limit
-            const newTotal = existingItem.quantity + item.quantity;
-            if (newTotal > 10) {
-              console.log(`⚠️ Item ${item.name} would exceed limit of 10 (current: ${existingItem.quantity}, adding: ${item.quantity})`);
-              throw new Error(`Limite de 10 itens atingido para ${item.name}. Atual: ${existingItem.quantity}, tentando adicionar: ${item.quantity}`);
+            // Check if total quantity would exceed limit and cap at 10
+            const newTotal = Math.min(10, existingItem.quantity + item.quantity);
+            if (newTotal > existingItem.quantity) {
+              console.log(`📈 Item ${item.name} quantity will be limited to 10 (current: ${existingItem.quantity}, final: ${newTotal})`);
             }
             
             // Update existing item quantity
@@ -399,10 +398,10 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             
             console.log(`✅ Item ${item.name} quantity updated successfully:`, data);
           } else {
-            // Check if new quantity would exceed limit
-            if (item.quantity > 10) {
-              console.log(`⚠️ Cannot add ${item.quantity} of ${item.name} - exceeds limit of 10`);
-              throw new Error(`Limite de 10 itens atingido para ${item.name}. Tentando adicionar: ${item.quantity}`);
+            // Limit new quantity to maximum of 10
+            const limitedQuantity = Math.min(10, item.quantity);
+            if (limitedQuantity < item.quantity) {
+              console.log(`📦 Item ${item.name} quantity limited from ${item.quantity} to ${limitedQuantity}`);
             }
             
             // Insert new item
@@ -412,7 +411,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               .insert({
                 user_id: order.user_id,
                 item_id: item.id,
-                quantity: item.quantity
+                quantity: limitedQuantity
               })
               .select();
 
