@@ -160,14 +160,16 @@ export const STORES = {
         name: "Fraldas Encantadas da Fada Madrinha",
         price: 35,
         description: "Mantém o bebê seco e protegido contra assaduras mágicas",
-        category: "Itens para Bebês & Cuidados Básicos"
+        category: "Itens para Bebês & Cuidados Básicos",
+        effect: { type: "mood", value: 8, duration: 60, message: "Proteção mágica da fada madrinha" }
       },
       {
         id: "chupeta_sono",
         name: "Chupeta do Sono Eterno",
         price: 30,
         description: "Garante noites tranquilas para pais cansados",
-        category: "Itens para Bebês & Cuidados Básicos"
+        category: "Itens para Bebês & Cuidados Básicos",
+        effect: { type: "energy", value: 15, duration: 120, message: "Sono tranquilo e reparador" }
       },
       // Itens de Diagnóstico & Utilidades
       {
@@ -175,7 +177,8 @@ export const STORES = {
         name: "Termômetro do Oráculo",
         price: 25,
         description: "Mede febre e prevê se a gripe vai durar mais do que o esperado",
-        category: "Itens de Diagnóstico & Utilidades"
+        category: "Itens de Diagnóstico & Utilidades",
+        effect: { type: "health", value: 5, message: "Sabedoria oracular sobre sua saúde" }
       },
       {
         id: "kit_primeiros_socorros",
@@ -216,7 +219,8 @@ export const STORES = {
         name: "Filtro Solar do Dragão Dourado",
         price: 65,
         description: "Proteção contra sol, vento e poeira mágica de batalhas",
-        category: "Proteção Solar & Encantamentos"
+        category: "Proteção Solar & Encantamentos",
+        effect: { type: "health", value: 10, duration: 180, message: "Proteção dourada do dragão" }
       },
       // Hidratação & Revitalização
       {
@@ -278,14 +282,16 @@ export const STORES = {
         name: "Máscara do Guardião Celestial",
         price: 65,
         description: "Protege contra vírus, poeira mágica e respingos de poções perigosas",
-        category: "Máscaras de Proteção Sobrenatural"
+        category: "Máscaras de Proteção Sobrenatural",
+        effect: { type: "health", value: 12, duration: 90, message: "Proteção celestial ativada" }
       },
       {
         id: "mascara_escudo",
         name: "Máscara do Escudo Etéreo",
         price: 70,
         description: "Cria uma barreira mágica invisível contra doenças e energia negativa",
-        category: "Máscaras de Proteção Sobrenatural"
+        category: "Máscaras de Proteção Sobrenatural",
+        effect: { type: "health", value: 15, duration: 100, message: "Escudo etéreo protegendo contra negatividade" }
       },
       {
         id: "mascara_nevoa",
@@ -301,7 +307,8 @@ export const STORES = {
         name: "Máscara do Caçador de Pestes",
         price: 72,
         description: "Inspirada nos antigos doutores da peste, afasta miasmas",
-        category: "Máscaras de Proteção Sobrenatural"
+        category: "Máscaras de Proteção Sobrenatural",
+        effect: { type: "health", value: 18, duration: 120, message: "Antiga sabedoria dos caçadores de pestes" }
       },
       {
         id: "mascara_luz",
@@ -327,28 +334,32 @@ export const STORES = {
         name: "Gel das Chamas Sagradas",
         price: 38,
         description: "Limpeza intensa com calor reconfortante, elimina até maldições persistentes",
-        category: "Géis de Proteção Mágica para as Mãos"
+        category: "Géis de Proteção Mágica para as Mãos",
+        effect: { type: "health", value: 8, duration: 45, message: "Chamas sagradas purificando" }
       },
       {
         id: "gel_gelido",
         name: "Gel Gélido da Neve Ancestral",
         price: 37,
         description: "Sensação refrescante e esterilização profunda",
-        category: "Géis de Proteção Mágica para as Mãos"
+        category: "Géis de Proteção Mágica para as Mãos",
+        effect: { type: "energy", value: 10, duration: 30, message: "Frescor ancestral da neve" }
       },
       {
         id: "gel_floral",
         name: "Gel da Essência Floral Encantada",
         price: 40,
         description: "Limpa e deixa perfume suave que acalma a alma",
-        category: "Géis de Proteção Mágica para as Mãos"
+        category: "Géis de Proteção Mágica para as Mãos",
+        effect: { type: "mood", value: 12, duration: 60, message: "Essência floral acalmando a alma" }
       },
       {
         id: "gel_necromante",
         name: "Gel da Mão do Necromante",
         price: 39,
         description: "Esteriliza com poder das ervas negras, protege contra contaminação",
-        category: "Géis de Proteção Mágica para as Mãos"
+        category: "Géis de Proteção Mágica para as Mãos",
+        effect: { type: "health", value: 10, duration: 50, message: "Proteção das ervas sombrias" }
       },
 
       // Remédios para doenças da roleta
