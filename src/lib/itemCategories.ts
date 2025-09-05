@@ -3,7 +3,7 @@ export function getItemType(storeId: string, itemId: string): "food" | "drink" |
   if (storeId === "bar") return "drink";
   
   // Restaurant items are food
-  if (storeId === "restaurant") return "food";
+  if (storeId === "restaurante") return "food";
   
   // Pizzeria items can be both food and drinks
   if (storeId === "pizzaria") {
