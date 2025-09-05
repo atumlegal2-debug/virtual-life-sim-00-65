@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart, History, Clock, Users } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Package, Send, Utensils, Wine, Pill, Heart, History, Clock, Users, ChevronDown } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffect
 import { SendRingModal } from "@/components/modals/SendRingModal";
 import { SendItemModal } from "@/components/modals/SendItemModal";
 import { SendFriendshipItemModal } from "@/components/modals/SendFriendshipItemModal";
+import { DivideItemModal } from "@/components/modals/DivideItemModal";
 import { StoreItem } from "@/data/stores";
 
 interface BagAppProps {
@@ -80,9 +82,11 @@ export default function BagApp({ onBack }: BagAppProps) {
   const [sendRingModalOpen, setSendRingModalOpen] = useState(false);
   const [sendItemModalOpen, setSendItemModalOpen] = useState(false);
   const [sendFriendshipItemModalOpen, setSendFriendshipItemModalOpen] = useState(false);
+  const [divideItemModalOpen, setDivideItemModalOpen] = useState(false);
   const [selectedRing, setSelectedRing] = useState<StoreItem | null>(null);
   const [selectedItemToSend, setSelectedItemToSend] = useState<InventoryItem | null>(null);
   const [selectedFriendshipItem, setSelectedFriendshipItem] = useState<InventoryItem | null>(null);
+  const [selectedItemToDivide, setSelectedItemToDivide] = useState<InventoryItem | null>(null);
 
   // Cache em memória para dados da bolsa
   const [cachedData, setCachedData] = useState<{
@@ -759,6 +763,167 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
   };
 
+  const handleDivideItem = (item: InventoryItem) => {
+    setSelectedItemToDivide(item);
+    setDivideItemModalOpen(true);
+  };
+
+  const handleDivideItemConfirm = async (friendId: string, friendUsername: string, shareAmount: number, remainingAmount: number) => {
+    if (!selectedItemToDivide || !currentUser) return;
+
+    try {
+      // Get current user data
+      const { data: currentUserData, error: currentUserError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', currentUser)
+        .single();
+
+      if (currentUserError || !currentUserData) {
+        toast({
+          title: "Erro",
+          description: "Usuário atual não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create a shared item with reduced effect for the friend
+      const sharedItem = {
+        ...selectedItemToDivide,
+        effect: selectedItemToDivide.effect ? {
+          ...selectedItemToDivide.effect,
+          ...(selectedItemToDivide.effect.type === "multiple" && "effects" in selectedItemToDivide.effect
+            ? {
+                effects: selectedItemToDivide.effect.effects.map(effect => ({
+                  ...effect,
+                  value: shareAmount
+                }))
+              }
+            : { value: shareAmount })
+        } : undefined
+      };
+
+      // Send shared portion to friend
+      const { data: existingItem } = await supabase
+        .from('inventory')
+        .select('quantity')
+        .eq('user_id', friendId)
+        .eq('item_id', selectedItemToDivide.id)
+        .single();
+
+      if (existingItem) {
+        // Update existing item quantity
+        const { error: updateError } = await supabase
+          .from('inventory')
+          .update({ 
+            quantity: existingItem.quantity + 1,
+            sent_by_username: `${currentUser} (dividido)`,
+            sent_by_user_id: currentUserData.id,
+            received_at: new Date().toISOString()
+          })
+          .eq('user_id', friendId)
+          .eq('item_id', selectedItemToDivide.id);
+
+        if (updateError?.message?.includes('Limite de 10 itens')) {
+          throw new Error(`${friendUsername} já atingiu o limite de 10 itens deste tipo`);
+        }
+        if (updateError) throw updateError;
+      } else {
+        // Add new item to friend's inventory
+        const { error: addError } = await supabase
+          .from('inventory')
+          .insert({
+            user_id: friendId,
+            item_id: selectedItemToDivide.id,
+            quantity: 1,
+            sent_by_username: `${currentUser} (dividido)`,
+            sent_by_user_id: currentUserData.id,
+            received_at: new Date().toISOString()
+          });
+
+        if (addError?.message?.includes('Limite de 10 itens')) {
+          throw new Error(`${friendUsername} já atingiu o limite de 10 itens deste tipo`);
+        }
+        if (addError) throw addError;
+
+        // If it's a custom item, store it in custom_items table too
+        if (selectedItemToDivide.storeId === "custom" && selectedItemToDivide.originalItem) {
+          await supabase
+            .from('custom_items')
+            .upsert({
+              id: selectedItemToDivide.id,
+              name: selectedItemToDivide.originalItem.name,
+              description: selectedItemToDivide.originalItem.description,
+              item_type: selectedItemToDivide.originalItem.itemType,
+              icon: selectedItemToDivide.originalItem.icon,
+              created_by_user_id: currentUserData.id
+            }, { onConflict: 'id' });
+        }
+      }
+
+      // Apply reduced effect to current user and consume item
+      if (selectedItemToDivide.effect) {
+        const effects = selectedItemToDivide.effect.type === "multiple" && "effects" in selectedItemToDivide.effect
+          ? selectedItemToDivide.effect.effects
+          : [selectedItemToDivide.effect];
+
+        for (const effect of effects) {
+          const reducedValue = remainingAmount;
+          
+          switch (effect.type) {
+            case "health":
+              await updateStats({ health: Math.min(100, (gameStats.health || 0) + reducedValue) });
+              break;
+            case "hunger":
+              await updateStats({ hunger: Math.min(100, (gameStats.hunger || 0) + reducedValue) });
+              break;
+            case "mood":
+              await updateStats({ happiness: Math.min(100, (gameStats.happiness || 0) + reducedValue) });
+              break;
+            case "energy":
+              await updateStats({ energy: Math.min(100, (gameStats.energy || 0) + reducedValue) });
+              break;
+            case "alcoholism":
+              if (isAlcoholic(selectedItemToDivide.storeId || '', selectedItemToDivide.id)) {
+                await updateStats({ alcoholism: Math.min(100, (gameStats.alcoholism || 0) + reducedValue) });
+              }
+              break;
+          }
+        }
+      }
+
+      // Remove/decrease item from current user's inventory
+      await supabase
+        .from('inventory')
+        .update({ quantity: selectedItemToDivide.quantity - 1 })
+        .eq('id', selectedItemToDivide.inventoryId);
+
+      if (selectedItemToDivide.quantity <= 1) {
+        await supabase
+          .from('inventory')
+          .delete()
+          .eq('id', selectedItemToDivide.inventoryId);
+      }
+
+      // Refresh inventory
+      loadAllData(true);
+      
+      toast({
+        title: "Item dividido! 🤝",
+        description: `Você dividiu ${selectedItemToDivide.name} com ${friendUsername.replace(/\d{4}$/, '')}`
+      });
+
+    } catch (error) {
+      console.error('Error dividing item:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível dividir o item",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Group items by category
   const foodItems = inventory.filter(item => item.itemType === "food");
   const drinkItems = inventory.filter(item => item.itemType === "drink");
@@ -832,13 +997,36 @@ export default function BagApp({ onBack }: BagAppProps) {
           
           <div className="flex gap-2">
             {item.canUse && (
-              <Button
-                size="sm"
-                onClick={() => handleUseItem(item)}
-                className="flex-1"
-              >
-                {item.itemType === "drink" ? "Beber" : item.itemType === "food" ? "Comer" : "Usar"}
-              </Button>
+              <>
+                {(item.itemType === "food" || item.itemType === "drink") ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" className="flex-1">
+                        {item.itemType === "drink" ? "Beber" : "Comer"}
+                        <ChevronDown size={14} className="ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[160px]">
+                      <DropdownMenuItem onClick={() => handleUseItem(item)}>
+                        <Utensils size={14} className="mr-2" />
+                        {item.itemType === "drink" ? "Beber tudo" : "Comer tudo"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDivideItem(item)}>
+                        <Users size={14} className="mr-2" />
+                        Dividir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => handleUseItem(item)}
+                    className="flex-1"
+                  >
+                    Usar
+                  </Button>
+                )}
+              </>
             )}
             
             {item.isRing ? (
@@ -1051,6 +1239,16 @@ export default function BagApp({ onBack }: BagAppProps) {
           loadAllData(true);
         }}
         item={selectedFriendshipItem}
+      />
+
+      <DivideItemModal
+        isOpen={divideItemModalOpen}
+        onClose={() => {
+          setDivideItemModalOpen(false);
+          setSelectedItemToDivide(null);
+        }}
+        item={selectedItemToDivide}
+        onDivide={handleDivideItemConfirm}
       />
     </div>
   );
