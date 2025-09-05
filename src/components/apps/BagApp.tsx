@@ -337,6 +337,34 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
   }, [currentUser, cachedUserId, showCachedDataFirst, cachedData]);
 
+  // Realtime: refresh inventory when it changes  
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel(`inventory-${currentUser}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public', 
+          table: 'inventory'
+        },
+        (payload) => {
+          console.log('📦 Inventory change detected:', payload);
+          // Force refresh inventory after any change to ensure consistency
+          setTimeout(() => {
+            loadAllData(true); // Force refresh
+          }, 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, loadAllData]);
+
   // Item processing ultra-otimizado usando Map
   const processInventoryItemOptimized = useCallback((item: any, allCustomItems: Map<string, any>) => {
     // Custom item processing - check if it starts with "custom_"

@@ -349,27 +349,34 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       // Adicionar itens ao inventário do usuário
       const items = Array.isArray(order.items) ? order.items : [];
       
+      console.log('📦 Adding items to inventory:', items);
+      
       for (const item of items) {
-        const { data: existingItem } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('user_id', order.user_id)
-          .eq('item_id', item.id)
-          .single();
-
-        if (existingItem) {
-          await supabase
+        console.log(`🔄 Processing item: ${item.name} (quantity: ${item.quantity})`);
+        
+        try {
+          // Use upsert to prevent race conditions and duplicates
+          const { data, error } = await supabase
             .from('inventory')
-            .update({ quantity: existingItem.quantity + item.quantity })
-            .eq('id', existingItem.id);
-        } else {
-          await supabase
-            .from('inventory')
-            .insert({
+            .upsert({
               user_id: order.user_id,
               item_id: item.id,
               quantity: item.quantity
-            });
+            }, {
+              onConflict: 'user_id,item_id',
+              ignoreDuplicates: false
+            })
+            .select();
+
+          if (error) {
+            console.error(`Error upserting item ${item.name}:`, error);
+            throw error;
+          }
+          
+          console.log(`✅ Item ${item.name} added/updated successfully:`, data);
+        } catch (itemError) {
+          console.error(`Failed to process item ${item.name}:`, itemError);
+          throw itemError;
         }
       }
 
