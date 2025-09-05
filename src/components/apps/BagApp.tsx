@@ -790,7 +790,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             ) : item.storeId === "icecream" ? (
               <span className="text-lg">{getIceCreamIcon(item)}</span>
             ) : (
-              <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
+              <span className="text-lg">{getCategoryIcon(item.itemType, item.name, item.storeId)}</span>
             )}
             {item.name}
             {item.quantity > 1 && (
@@ -909,7 +909,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             ) : item.storeId === "icecream" ? (
               <span className="text-lg">{getIceCreamIcon(item)}</span>
             ) : (
-              <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
+              <span className="text-lg">{getCategoryIcon(item.itemType, item.name, item.storeId)}</span>
             )}
             {item.name}
             {item.quantity > 1 && (

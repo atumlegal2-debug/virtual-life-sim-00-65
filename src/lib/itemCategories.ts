@@ -134,17 +134,12 @@ export function getDrinkEmoji(itemName: string): string {
   return '🥤';
 }
 
-export function getCategoryIcon(itemType: "food" | "drink" | "object", itemName?: string): string {
+export function getCategoryIcon(itemType: "food" | "drink" | "object", itemName?: string, storeId?: string): string {
   switch (itemType) {
     case "food": 
-      if (itemName) {
-        const name = itemName.toLowerCase();
-        if (name.includes('pizza') || name.includes('margherita') || name.includes('pepperoni') || 
-            name.includes('quattro') || name.includes('funghi') || name.includes('calabresa') ||
-            name.includes('portuguesa') || name.includes('napolitana') || name.includes('siciliana') ||
-            name.includes('açucarada') || name.includes('aurora') || name.includes('neblina')) {
-          return "🍕";
-        }
+      // All food items from pizzeria get pizza icon
+      if (storeId === "pizzaria") {
+        return "🍕";
       }
       return "🍽️";
     case "drink": return itemName ? getDrinkEmoji(itemName) : "🥤";
