@@ -420,18 +420,54 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
       // Adicionar itens à bolsa do usuário
       for (const item of order.items) {
-        const { error: inventoryError } = await supabase
-          .from('inventory')
-          .insert({
-            user_id: userData.id,
-            item_id: item.name,
-            quantity: item.quantity,
-            sent_by_username: 'Motoboy',
-            received_at: new Date().toISOString()
-          });
+        try {
+          // Check if user already has this item and would exceed limit
+          const { data: existingItems, error: checkError } = await supabase
+            .from('inventory')
+            .select('quantity')
+            .eq('user_id', userData.id)
+            .eq('item_id', item.name);
 
-        if (inventoryError) {
-          console.error('Error adding item to inventory:', inventoryError);
+          if (checkError) {
+            console.error('Error checking existing inventory:', checkError);
+            continue;
+          }
+
+          const currentQuantity = existingItems?.reduce((sum, inv) => sum + inv.quantity, 0) || 0;
+          if (currentQuantity + item.quantity > 10) {
+            console.log(`⚠️ Skipping ${item.name} - would exceed limit of 10 (current: ${currentQuantity}, adding: ${item.quantity})`);
+            toast({
+              title: "Limite de inventário atingido",
+              description: `${item.name}: limite de 10 itens atingido`,
+              variant: "destructive",
+              duration: 5000
+            });
+            continue;
+          }
+
+          const { error: inventoryError } = await supabase
+            .from('inventory')
+            .insert({
+              user_id: userData.id,
+              item_id: item.name,
+              quantity: item.quantity,
+              sent_by_username: 'Motoboy',
+              received_at: new Date().toISOString()
+            });
+
+          if (inventoryError) {
+            console.error('Error adding item to inventory:', inventoryError);
+            if (inventoryError.message?.includes('Limite de 10 itens')) {
+              toast({
+                title: "Limite de inventário atingido",
+                description: `${item.name}: limite de 10 itens atingido`,
+                variant: "destructive",
+                duration: 5000
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error processing item delivery:', error);
         }
       }
 

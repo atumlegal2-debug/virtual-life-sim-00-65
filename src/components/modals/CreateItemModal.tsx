@@ -176,7 +176,12 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
           quantity: 1
         });
 
-      if (inventoryError) throw inventoryError;
+      if (inventoryError) {
+        if (inventoryError.message?.includes('Limite de 10 itens')) {
+          throw new Error('Limite de 10 itens atingido para este tipo de item');
+        }
+        throw inventoryError;
+      }
 
       // Store custom item data in both Supabase and localStorage
       const customItemData = {

@@ -145,7 +145,7 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
 
       if (existingItem) {
         // Update existing item quantity and preserve sender info
-        await supabase
+        const { error: updateError } = await supabase
           .from('inventory')
           .update({ 
             quantity: existingItem.quantity + quantityToSend,
@@ -155,6 +155,11 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
           })
           .eq('user_id', toUser.id)
           .eq('item_id', item.id);
+
+        if (updateError?.message?.includes('Limite de 10 itens')) {
+          throw new Error(`${toUser.username} já atingiu o limite de 10 itens deste tipo`);
+        }
+        if (updateError) throw updateError;
       } else {
         // Add new item to recipient's inventory with sender info
         const { error: addError } = await supabase
@@ -170,6 +175,9 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
 
         if (addError) {
           console.error('Error adding item to recipient inventory:', addError);
+          if (addError.message?.includes('Limite de 10 itens')) {
+            throw new Error(`${toUser.username} já atingiu o limite de 10 itens deste tipo`);
+          }
           // If adding to recipient fails, restore item to sender
           if (item.quantity === quantityToSend) {
             await supabase

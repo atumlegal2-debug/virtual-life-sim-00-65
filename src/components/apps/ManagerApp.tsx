@@ -371,23 +371,40 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           }
 
           if (existingItem) {
+            // Check if total quantity would exceed limit
+            const newTotal = existingItem.quantity + item.quantity;
+            if (newTotal > 10) {
+              console.log(`⚠️ Item ${item.name} would exceed limit of 10 (current: ${existingItem.quantity}, adding: ${item.quantity})`);
+              throw new Error(`Limite de 10 itens atingido para ${item.name}. Atual: ${existingItem.quantity}, tentando adicionar: ${item.quantity}`);
+            }
+            
             // Update existing item quantity
-            console.log(`📈 Updating existing item ${item.name} from quantity ${existingItem.quantity} to ${existingItem.quantity + item.quantity}`);
+            console.log(`📈 Updating existing item ${item.name} from quantity ${existingItem.quantity} to ${newTotal}`);
             const { data, error } = await supabase
               .from('inventory')
               .update({
-                quantity: existingItem.quantity + item.quantity
+                quantity: newTotal
               })
               .eq('id', existingItem.id)
               .select();
 
             if (error) {
               console.error(`❌ Error updating item ${item.name}:`, error);
+              // Check if it's the limit error from trigger
+              if (error.message?.includes('Limite de 10 itens')) {
+                throw new Error(`Limite de 10 itens atingido para ${item.name}`);
+              }
               throw error;
             }
             
             console.log(`✅ Item ${item.name} quantity updated successfully:`, data);
           } else {
+            // Check if new quantity would exceed limit
+            if (item.quantity > 10) {
+              console.log(`⚠️ Cannot add ${item.quantity} of ${item.name} - exceeds limit of 10`);
+              throw new Error(`Limite de 10 itens atingido para ${item.name}. Tentando adicionar: ${item.quantity}`);
+            }
+            
             // Insert new item
             console.log(`📦 Inserting new item ${item.name} with ID ${item.id}`);
             const { data, error } = await supabase
@@ -402,6 +419,10 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             if (error) {
               console.error(`❌ Error inserting item ${item.name}:`, error);
               console.error('Insert data was:', { user_id: order.user_id, item_id: item.id, quantity: item.quantity });
+              // Check if it's the limit error from trigger
+              if (error.message?.includes('Limite de 10 itens')) {
+                throw new Error(`Limite de 10 itens atingido para ${item.name}`);
+              }
               throw error;
             }
             
@@ -409,7 +430,18 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           }
         } catch (itemError) {
           console.error(`💥 Failed to process item ${item.name}:`, itemError);
-          // Continue processing other items instead of throwing
+          // If it's a limit error, show a specific message
+          if (itemError.message?.includes('Limite de 10 itens')) {
+            toast({
+              title: "Limite de inventário atingido",
+              description: itemError.message,
+              variant: "destructive",
+              duration: 5000
+            });
+            // Continue processing other items
+            continue;
+          }
+          // For other errors, continue processing other items instead of throwing
           continue;
         }
       }
