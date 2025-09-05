@@ -4,19 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface StoreContextType {
-  cart: CartItem[];
+  carts: Record<string, CartItem[]>;
   orders: StoreOrder[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (itemId: string) => void;
-  increaseQuantity: (itemId: string) => void;
-  decreaseQuantity: (itemId: string) => void;
-  clearCart: () => void;
+  addToCart: (storeId: string, item: CartItem) => void;
+  removeFromCart: (storeId: string, itemId: string) => void;
+  increaseQuantity: (storeId: string, itemId: string) => void;
+  decreaseQuantity: (storeId: string, itemId: string) => void;
+  clearCart: (storeId: string) => void;
   submitOrder: (storeId: string, buyerId: string, buyerName: string) => Promise<void>;
   approveOrder: (orderId: string, buyerId: string, deductMoney: (amount: number) => void, addToBag: (items: CartItem[]) => void) => void;
   rejectOrder: (orderId: string) => void;
   getOrdersForStore: (storeId: string) => StoreOrder[];
-  getCartTotal: () => number;
+  getCartTotal: (storeId: string) => number;
   getManagerPassword: (storeId: string) => string;
+  getCartForStore: (storeId: string) => CartItem[];
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -35,15 +36,22 @@ const MANAGER_PASSWORDS: Record<string, string> = {
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [carts, setCarts] = useState<Record<string, CartItem[]>>({});
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const { toast } = useToast();
   const MAX_PER_ITEM = 10;
 
-  const addToCart = (item: CartItem) => {
-    setCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
+  const getCartForStore = (storeId: string): CartItem[] => {
+    return carts[storeId] || [];
+  };
+
+  const addToCart = (storeId: string, item: CartItem) => {
+    setCarts(prev => {
+      const currentCart = prev[storeId] || [];
+      const existingItem = currentCart.find(cartItem => cartItem.id === item.id);
       const incomingQty = Math.max(1, item.quantity || 1);
+
+      let newCart: CartItem[];
 
       if (existingItem) {
         const desired = existingItem.quantity + incomingQty;
@@ -55,32 +63,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             variant: "destructive"
           });
         }
-        return prev.map(cartItem =>
+        newCart = currentCart.map(cartItem =>
           cartItem.id === item.id
             ? { ...cartItem, quantity: clamped }
             : cartItem
         );
+      } else {
+        const clampedNew = Math.min(MAX_PER_ITEM, incomingQty);
+        if (incomingQty > MAX_PER_ITEM) {
+          toast({
+            title: "Limite atingido",
+            description: `Máximo de ${MAX_PER_ITEM} unidades por item. Ajustamos a quantidade.`,
+            variant: "destructive"
+          });
+        }
+        newCart = [...currentCart, { ...item, quantity: clampedNew }];
       }
 
-      const clampedNew = Math.min(MAX_PER_ITEM, incomingQty);
-      if (incomingQty > MAX_PER_ITEM) {
-        toast({
-          title: "Limite atingido",
-          description: `Máximo de ${MAX_PER_ITEM} unidades por item. Ajustamos a quantidade.`,
-          variant: "destructive"
-        });
-      }
-      return [...prev, { ...item, quantity: clampedNew }];
+      return { ...prev, [storeId]: newCart };
     });
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCart(prev => prev.filter(item => item.id !== itemId));
+  const removeFromCart = (storeId: string, itemId: string) => {
+    setCarts(prev => ({
+      ...prev,
+      [storeId]: (prev[storeId] || []).filter(item => item.id !== itemId)
+    }));
   };
 
-  const increaseQuantity = (itemId: string) => {
-    setCart(prev =>
-      prev.map(item => {
+  const increaseQuantity = (storeId: string, itemId: string) => {
+    setCarts(prev => ({
+      ...prev,
+      [storeId]: (prev[storeId] || []).map(item => {
         if (item.id !== itemId) return item;
         if (item.quantity >= MAX_PER_ITEM) {
           toast({
@@ -92,24 +106,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return { ...item, quantity: item.quantity + 1 };
       })
-    );
+    }));
   };
 
-  const decreaseQuantity = (itemId: string) => {
-    setCart(prev =>
-      prev.map(item =>
+  const decreaseQuantity = (storeId: string, itemId: string) => {
+    setCarts(prev => ({
+      ...prev,
+      [storeId]: (prev[storeId] || []).map(item =>
         item.id === itemId && item.quantity > 1
           ? { ...item, quantity: item.quantity - 1 }
           : item
       ).filter(item => item.quantity > 0)
-    );
+    }));
   };
 
-  const clearCart = () => {
-    setCart([]);
+  const clearCart = (storeId: string) => {
+    setCarts(prev => ({ ...prev, [storeId]: [] }));
   };
 
   const submitOrder = async (storeId: string, buyerId: string, buyerName: string) => {
+    const currentCart = getCartForStore(storeId);
+    
     try {
       console.log('=== INICIANDO SUBMISSÃO DE PEDIDO ===');
       
@@ -150,8 +167,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const orderData = {
         user_id: userData.id,
         store_id: actualStoreId,
-        items: JSON.parse(JSON.stringify(cart)) as any,
-        total_amount: getCartTotal(),
+        items: JSON.parse(JSON.stringify(currentCart)) as any,
+        total_amount: getCartTotal(storeId),
         status: 'pending'
       };
 
@@ -172,8 +189,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         buyerId: userData.id,
         buyerName,
         storeId: actualStoreId,
-        items: [...cart],
-        total: getCartTotal(),
+        items: [...currentCart],
+        total: getCartTotal(storeId),
         status: "pending",
         timestamp: new Date()
       };
@@ -181,7 +198,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.log('Pedido local criado:', newOrder);
       
       setOrders(prev => [...prev, newOrder]);
-      clearCart();
+      clearCart(storeId);
       
       console.log('=== PEDIDO SUBMETIDO COM SUCESSO ===');
     } catch (error) {
@@ -219,8 +236,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return orders.filter(order => order.storeId === storeId);
   };
 
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * Math.min(item.quantity, MAX_PER_ITEM)), 0);
+  const getCartTotal = (storeId: string) => {
+    const currentCart = getCartForStore(storeId);
+    return currentCart.reduce((total, item) => total + (item.price * Math.min(item.quantity, MAX_PER_ITEM)), 0);
   };
 
   const getManagerPassword = (storeId: string) => {
@@ -229,7 +247,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      cart,
+      carts,
       orders,
       addToCart,
       removeFromCart,
@@ -241,7 +259,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       rejectOrder,
       getOrdersForStore,
       getCartTotal,
-      getManagerPassword
+      getManagerPassword,
+      getCartForStore
     }}>
       {children}
     </StoreContext.Provider>

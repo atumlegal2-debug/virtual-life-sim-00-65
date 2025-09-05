@@ -88,11 +88,13 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState<"pickup" | "motoboy">("pickup");
   
-  const { cart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword } = useStore();
+  const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
   const { proposals, getProposalsForUser, acceptProposal, rejectProposal } = useRelationship();
   const { toast } = useToast();
-
+  
+  // Get cart for current store
+  const cart = getCartForStore(selectedStore);
   // Refresh wallet when component mounts and when entering stores
   useEffect(() => {
     if (currentUser) {
@@ -170,7 +172,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
       }
 
       const cartItem: CartItem = { ...item, quantity: 1 };
-      addToCart(cartItem);
+      addToCart(selectedStore, cartItem);
       toast({
         title: "Item adicionado",
         description: `${item.name} adicionado ao carrinho`
@@ -188,7 +190,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
     
-    const total = getCartTotal();
+    const total = getCartTotal(selectedStore);
     
     if (money < total) {
       toast({
@@ -241,7 +243,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
         }
 
         setShowCartCheckout(false);
-        clearCart();
+        clearCart(selectedStore);
         setDeliveryOption("pickup");
       } catch (error) {
         console.error('Error submitting order:', error);
@@ -652,7 +654,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => decreaseQuantity(item.id)}
+                          onClick={() => decreaseQuantity(selectedStore, item.id)}
                           className="h-6 w-6 p-0 hover:bg-muted"
                         >
                           <Minus size={12} />
@@ -707,7 +709,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                                 return;
                               }
 
-                              increaseQuantity(item.id);
+                              increaseQuantity(selectedStore, item.id);
                             } catch (error) {
                               console.error('Erro ao aumentar quantidade:', error);
                             }
@@ -723,7 +725,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(selectedStore, item.id)}
                         className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
                       >
                         ×
@@ -736,7 +738,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-bold text-lg">Total:</span>
-                  <span className="font-bold text-lg text-money">{getCartTotal()} CM</span>
+                  <span className="font-bold text-lg text-money">{getCartTotal(selectedStore)} CM</span>
                 </div>
                 {/* Delivery Option Selection */}
                 <div className="space-y-3 mb-4">
@@ -770,7 +772,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                 <div className="flex gap-3">
                   <Button 
                     variant="outline" 
-                    onClick={clearCart} 
+                    onClick={() => clearCart(selectedStore)} 
                     className="flex-1"
                     disabled={orderProcessing}
                   >
