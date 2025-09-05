@@ -352,7 +352,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       console.log('📦 Adding items to inventory:', items);
       
       for (const item of items) {
-        console.log(`🔄 Processing item: ${item.name} (quantity: ${item.quantity})`);
+        console.log(`🔄 Processing item: ${item.name} (ID: ${item.id}) (quantity: ${item.quantity})`);
         
         try {
           // First check if item already exists for this user
@@ -363,13 +363,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             .eq('item_id', item.id)
             .single();
 
+          console.log(`🔍 Checking existing item for ${item.name}:`, { existingItem, selectError });
+
           if (selectError && selectError.code !== 'PGRST116') {
-            console.error(`Error checking existing item ${item.name}:`, selectError);
+            console.error(`❌ Error checking existing item ${item.name}:`, selectError);
             throw selectError;
           }
 
           if (existingItem) {
             // Update existing item quantity
+            console.log(`📈 Updating existing item ${item.name} from quantity ${existingItem.quantity} to ${existingItem.quantity + item.quantity}`);
             const { data, error } = await supabase
               .from('inventory')
               .update({
@@ -379,13 +382,14 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               .select();
 
             if (error) {
-              console.error(`Error updating item ${item.name}:`, error);
+              console.error(`❌ Error updating item ${item.name}:`, error);
               throw error;
             }
             
             console.log(`✅ Item ${item.name} quantity updated successfully:`, data);
           } else {
             // Insert new item
+            console.log(`📦 Inserting new item ${item.name} with ID ${item.id}`);
             const { data, error } = await supabase
               .from('inventory')
               .insert({
@@ -396,15 +400,17 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               .select();
 
             if (error) {
-              console.error(`Error inserting item ${item.name}:`, error);
+              console.error(`❌ Error inserting item ${item.name}:`, error);
+              console.error('Insert data was:', { user_id: order.user_id, item_id: item.id, quantity: item.quantity });
               throw error;
             }
             
             console.log(`✅ Item ${item.name} added successfully:`, data);
           }
         } catch (itemError) {
-          console.error(`Failed to process item ${item.name}:`, itemError);
-          throw itemError;
+          console.error(`💥 Failed to process item ${item.name}:`, itemError);
+          // Continue processing other items instead of throwing
+          continue;
         }
       }
 
