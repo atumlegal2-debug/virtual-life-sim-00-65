@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useGame } from "@/contexts/GameContext";
+import { getCategoryIcon } from "@/lib/itemCategories";
 
 interface SendItemModalProps {
   isOpen: boolean;
@@ -278,14 +279,14 @@ export function SendItemModal({ isOpen, onClose, item, onItemSent }: SendItemMod
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   {/* Show custom item icon/image if available */}
-                  {item.storeId === "custom" && item.originalItem?.icon ? (
+                  {item.originalItem?.icon ? (
                     typeof item.originalItem.icon === 'string' && item.originalItem.icon.startsWith('data:') ? (
                       <img src={item.originalItem.icon} alt={item.name} className="w-8 h-8 rounded object-cover" />
                     ) : (
                       <span className="text-2xl">{item.originalItem.icon}</span>
                     )
                   ) : (
-                    <span className="text-2xl">📦</span>
+                    <span className="text-2xl">{getCategoryIcon(item.itemType, item.name, item.storeId)}</span>
                   )}
                   <div className="flex-1">
                     <h3 className="font-medium">{item.name}</h3>
