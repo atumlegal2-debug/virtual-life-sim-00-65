@@ -209,6 +209,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
         if (deliveryOption === "motoboy" && !isHospital) {
           // Create motoboy order - use the correct store ID from STORES data
           const storeData = STORES[selectedStore];
+          const sanitizedItems = cart.map(({ id, name, price, quantity }) => ({ id, name, price, quantity }));
           const { error } = await supabase
             .from('motoboy_orders')
             .insert({
@@ -216,7 +217,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
               store_id: storeData.id,
               customer_name: currentUser,
               customer_username: currentUser, // Salvar username completo para buscar nickname
-              items: cart as any,
+              items: sanitizedItems as any,
               total_amount: total,
               manager_status: 'pending',
               motoboy_status: 'waiting'

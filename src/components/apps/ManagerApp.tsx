@@ -298,17 +298,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
   const approveOrder = async (order: Order) => {
     try {
-      // Atualizar status do pedido
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          manager_approved: true,
-          approved_at: new Date().toISOString(),
-          status: 'approved'
-        })
-        .eq('id', order.id);
-
-      if (orderError) throw orderError;
 
       // Transferir dinheiro do usuário para o gerente
       const { data: userData, error: userError } = await supabase
@@ -324,6 +313,31 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           title: "Saldo insuficiente",
           description: "O usuário não possui saldo suficiente.",
           variant: "destructive",
+        });
+        return;
+      }
+
+      // Pré-validação: verificar capacidade de inventário para este pedido
+      const items = Array.isArray(order.items) ? order.items : [];
+      let totalAddable = 0;
+      for (const item of items) {
+        const { data: invRows, error: invError } = await supabase
+          .from('inventory')
+          .select('quantity')
+          .eq('user_id', order.user_id)
+          .eq('item_id', item.id);
+        if (invError) throw invError;
+        const currentQty = (invRows || []).reduce((sum, r) => sum + (r.quantity || 0), 0);
+        const canAdd = Math.max(0, 10 - currentQty);
+        totalAddable += Math.min(canAdd, item.quantity);
+      }
+
+      if (items.length > 0 && totalAddable === 0) {
+        toast({
+          title: "Limite de inventário atingido",
+          description: "O usuário já possui 10 unidades de todos os itens deste pedido.",
+          variant: "destructive",
+          duration: 5000
         });
         return;
       }
@@ -347,8 +361,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       if (updateManagerError) throw updateManagerError;
 
       // Adicionar itens ao inventário do usuário
-      const items = Array.isArray(order.items) ? order.items : [];
-      
       console.log('📦 Adding items to inventory:', items);
       
       for (const item of items) {
@@ -472,6 +484,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           transaction_type: 'purchase',
           description: `Compra na ${storeName}: ${itemNames}`
         });
+
+      // Atualizar status do pedido somente após concluir as operações
+      await supabase
+        .from('orders')
+        .update({
+          manager_approved: true,
+          approved_at: new Date().toISOString(),
+          status: 'approved'
+        })
+        .eq('id', order.id);
 
       setCurrentManager({ ...currentManager, balance: newManagerBalance });
       
