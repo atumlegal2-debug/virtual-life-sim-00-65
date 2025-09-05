@@ -101,6 +101,27 @@ export function LifeApp({ onBack }: LifeAppProps) {
     getUserId();
   }, [currentUser]);
 
+  // Listen for disease cure events
+  useEffect(() => {
+    const handleDiseaseCured = (event: CustomEvent) => {
+      console.log('🎯 Disease cure event received:', event.detail);
+      const { diseaseName, remainingDiseases } = event.detail;
+      
+      // Update local diseases immediately
+      setLocalDiseases(remainingDiseases);
+      
+      // Clear any disease-specific localStorage if it's hunger disease
+      if (diseaseName === 'Desnutrição' && currentUser) {
+        localStorage.removeItem(`${currentUser}_hunger_disease_feeling`);
+      }
+      
+      console.log('🔄 Local diseases updated after cure, remaining:', remainingDiseases.length);
+    };
+
+    window.addEventListener('diseaseCured', handleDiseaseCured as EventListener);
+    return () => window.removeEventListener('diseaseCured', handleDiseaseCured as EventListener);
+  }, [currentUser]);
+
   // Sync diseases from GameContext
   useEffect(() => {
     setLocalDiseases(diseases);
@@ -188,6 +209,28 @@ export function LifeApp({ onBack }: LifeAppProps) {
               if (treatment.treatment_type.includes('Desnutrição')) {
                 console.log('🍎 Real-time hunger disease treatment approved, curing patient');
                 await cureHungerDisease();
+                
+                // Force immediate UI update by removing disease from local state
+                setLocalDiseases(prev => prev.filter(d => d.name !== 'Desnutrição'));
+                
+                // Trigger a complete refresh after a short delay to ensure sync
+                setTimeout(async () => {
+                  if (currentUser) {
+                    const savedDiseases = localStorage.getItem(`${currentUser}_diseases`);
+                    if (savedDiseases) {
+                      try {
+                        const parsedDiseases = JSON.parse(savedDiseases);
+                        setLocalDiseases(parsedDiseases);
+                        console.log('🔄 Diseases refreshed after treatment:', parsedDiseases);
+                      } catch (error) {
+                        console.error('Error parsing refreshed diseases:', error);
+                      }
+                    } else {
+                      setLocalDiseases([]);
+                      console.log('🔄 No diseases found in localStorage, clearing local state');
+                    }
+                  }
+                }, 500);
               }
             }
 

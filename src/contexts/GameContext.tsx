@@ -910,9 +910,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Function to cure hunger-related disease when medical consultation is accepted
   const cureHungerDisease = async () => {
     const hungerDisease = diseases.find(d => d.name === "Desnutrição");
-    if (!hungerDisease) return;
+    if (!hungerDisease) {
+      console.log('No hunger disease found to cure');
+      return;
+    }
 
     console.log('Curing hunger disease through medical consultation');
+    
+    // Force immediate state update before calling cureDisease
+    const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+    setDiseases(updatedDiseases);
+    
+    // Update localStorage immediately
+    if (currentUser) {
+      localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+      console.log('📝 Diseases updated in localStorage:', updatedDiseases);
+    }
+    
     await cureDisease("Desnutrição");
     
     // Additional health boost since it's a medical treatment
@@ -923,7 +937,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       health: newHealth 
     });
 
-    console.log('Hunger disease cured and health restored');
+    // Dispatch custom event to notify all components about disease cure
+    window.dispatchEvent(new CustomEvent('diseaseCured', {
+      detail: { diseaseName: 'Desnutrição', remainingDiseases: updatedDiseases }
+    }));
+
+    console.log('✅ Hunger disease cured and health restored, diseases remaining:', updatedDiseases.length);
   };
 
   // Auto-save diseases to localStorage whenever they change
