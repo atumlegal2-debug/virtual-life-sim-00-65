@@ -37,18 +37,40 @@ const MANAGER_PASSWORDS: Record<string, string> = {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<StoreOrder[]>([]);
+  const { toast } = useToast();
+  const MAX_PER_ITEM = 10;
 
   const addToCart = (item: CartItem) => {
     setCart(prev => {
       const existingItem = prev.find(cartItem => cartItem.id === item.id);
+      const incomingQty = Math.max(1, item.quantity || 1);
+
       if (existingItem) {
+        const desired = existingItem.quantity + incomingQty;
+        const clamped = Math.min(MAX_PER_ITEM, desired);
+        if (desired > MAX_PER_ITEM) {
+          toast({
+            title: "Limite atingido",
+            description: `Máximo de ${MAX_PER_ITEM} unidades por item. Ajustamos a quantidade.`,
+            variant: "destructive"
+          });
+        }
         return prev.map(cartItem =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+            ? { ...cartItem, quantity: clamped }
             : cartItem
         );
       }
-      return [...prev, item];
+
+      const clampedNew = Math.min(MAX_PER_ITEM, incomingQty);
+      if (incomingQty > MAX_PER_ITEM) {
+        toast({
+          title: "Limite atingido",
+          description: `Máximo de ${MAX_PER_ITEM} unidades por item. Ajustamos a quantidade.`,
+          variant: "destructive"
+        });
+      }
+      return [...prev, { ...item, quantity: clampedNew }];
     });
   };
 
@@ -58,11 +80,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const increaseQuantity = (itemId: string) => {
     setCart(prev =>
-      prev.map(item =>
-        item.id === itemId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prev.map(item => {
+        if (item.id !== itemId) return item;
+        if (item.quantity >= MAX_PER_ITEM) {
+          toast({
+            title: "Limite atingido",
+            description: `Máximo de ${MAX_PER_ITEM} unidades por item.`,
+            variant: "destructive"
+          });
+          return item;
+        }
+        return { ...item, quantity: item.quantity + 1 };
+      })
     );
   };
 
@@ -191,7 +220,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + (item.price * Math.min(item.quantity, MAX_PER_ITEM)), 0);
   };
 
   const getManagerPassword = (storeId: string) => {
