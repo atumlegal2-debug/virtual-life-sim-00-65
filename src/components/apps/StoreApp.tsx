@@ -686,6 +686,17 @@ export function StoreApp({ onBack }: StoreAppProps) {
                               const currentInventoryCount = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
                               const cartItemCount = cart.find(cartItem => cartItem.id === item.id)?.quantity || 0;
                               
+                              // Limita quantidade no carrinho para máximo 10 unidades por item
+                              if (cartItemCount >= 10) {
+                                toast({
+                                  title: "Limite atingido",
+                                  description: `Você só pode ter até 10 unidades de ${item.name} no carrinho`,
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              
+                              // Verifica se já possui muitos itens no total (inventário + carrinho)
                               if (currentInventoryCount + cartItemCount >= 10) {
                                 toast({
                                   title: "Limite atingido",
