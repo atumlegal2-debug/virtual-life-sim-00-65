@@ -314,21 +314,28 @@ export function LoginForm() {
   // Tela de senha de administrador
   if (showUsersList && users.length === 0 && !isLoadingUsers) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-gradient-card border-border/50">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
+        <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <CardHeader className="text-center relative">
+            <div className="flex items-center justify-center gap-3 mb-6">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowUsersList(false)}
+                className="hover:bg-primary/10 transition-colors"
               >
                 <ArrowLeft size={20} />
               </Button>
-              <Users size={32} className="text-primary" />
+              <div className="p-3 bg-gradient-primary rounded-2xl shadow-app">
+                <Users size={28} className="text-white" />
+              </div>
             </div>
-            <CardTitle className="text-lg">Acesso Administrativo</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Acesso Administrativo
+            </CardTitle>
+            <CardDescription className="text-muted-foreground/80">
               Digite a senha para ver todos os usuários
             </CardDescription>
           </CardHeader>
@@ -364,22 +371,32 @@ export function LoginForm() {
   // Tela de lista de usuários
   if (showUsersList && users.length > 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-gradient-card border-border/50">
-          <CardHeader>
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
+        <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <CardHeader className="relative">
+            <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowUsersList(false)}
+                className="hover:bg-primary/10 transition-colors"
               >
                 <ArrowLeft size={20} />
               </Button>
-              <div>
-                <CardTitle className="text-lg">Usuários Registrados</CardTitle>
-                <CardDescription>
-                  Total: {users.length} usuários
-                </CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-primary rounded-xl">
+                  <Users size={20} className="text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                    Usuários Registrados
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground/80">
+                    Total: {users.length} usuários
+                  </CardDescription>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -428,13 +445,20 @@ export function LoginForm() {
   // Main screen - show saved profiles if any, otherwise show login form
   if (!showLoginForm && !showUsersList && savedProfiles.length > 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-gradient-card border-border/50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              RPG Real Life Virtual
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-primary-glow/10 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+        <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <CardHeader className="text-center relative pb-8">
+            <div className="mb-6 p-4 bg-gradient-primary rounded-3xl w-fit mx-auto shadow-app">
+              <div className="text-3xl font-bold text-white">RPG</div>
+            </div>
+            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              Real Life Virtual
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground/80 text-base">
               Escolha um perfil para entrar rapidamente
             </CardDescription>
           </CardHeader>
@@ -445,32 +469,32 @@ export function LoginForm() {
               {savedProfiles.map((profile) => (
                 <div
                   key={profile.username}
-                  className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/20 hover:border-primary/30 transition-colors"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-background/80 to-background/40 rounded-2xl border border-border/30 hover:border-primary/50 transition-all duration-300 hover:shadow-app backdrop-blur-sm group"
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
-                      <User size={20} className="text-white" />
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-app group-hover:scale-110 transition-transform duration-300">
+                      <User size={22} className="text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground">{profile.displayName}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-semibold text-foreground text-lg">{profile.displayName}</p>
+                      <p className="text-sm text-muted-foreground/70">
                         Último acesso: {new Date(profile.savedAt).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeSavedProfile(profile.username)}
-                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive rounded-xl transition-colors"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </Button>
                     <Button
                       onClick={() => handleQuickLogin(profile.username)}
                       disabled={isLoading}
-                      className="px-4"
+                      className="px-6 py-2 bg-gradient-primary hover:opacity-90 text-white font-medium rounded-xl shadow-app transition-all duration-300 hover:scale-105"
                     >
                       {isLoading ? "..." : "Entrar"}
                     </Button>
@@ -480,10 +504,10 @@ export function LoginForm() {
             </div>
 
             {/* Options */}
-            <div className="border-t border-border/50 pt-4 space-y-2">
+            <div className="border-t border-border/30 pt-6 space-y-3 relative">
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full h-12 border-border/50 hover:border-primary/50 bg-background/50 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
                 onClick={() => setShowLoginForm(true)}
               >
                 Usar Outro Usuário
@@ -491,10 +515,10 @@ export function LoginForm() {
               
               <Button 
                 variant="ghost" 
-                className="w-full"
+                className="w-full h-12 hover:bg-primary/10 rounded-xl font-medium transition-all duration-300"
                 onClick={() => setShowUsersList(true)}
               >
-                <Users size={16} className="mr-2" />
+                <Users size={18} className="mr-2" />
                 Ver Todos os Usuários
               </Button>
             </div>
@@ -505,34 +529,42 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gradient-card border-border/50">
-        <CardHeader className="text-center">
-          <div className="flex items-center gap-3 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
+      <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-primary-glow/10 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+      <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+        <CardHeader className="text-center relative">
+          <div className="flex items-center gap-4 mb-6">
             {(showLoginForm && savedProfiles.length > 0) && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowLoginForm(false)}
+                className="hover:bg-primary/10 transition-colors rounded-xl"
               >
                 <ArrowLeft size={20} />
               </Button>
             )}
             <div className="flex-1">
-              <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                RPG Real Life Virtual
+              <div className="mb-4 p-3 bg-gradient-primary rounded-2xl w-fit mx-auto shadow-app">
+                <div className="text-2xl font-bold text-white">RPG</div>
+              </div>
+              <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+                Real Life Virtual
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground/80">
                 {isRegistering ? "Crie sua conta para começar" : "Entre em sua conta"}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
+        <CardContent className="relative">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label htmlFor="username" className="text-sm font-semibold text-foreground">
                 Username
               </label>
               <div className="relative">
@@ -542,7 +574,7 @@ export function LoginForm() {
                   placeholder="Lucas1415"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-input border-border/50 focus:border-primary pr-10"
+                  className="bg-background/50 border-border/50 focus:border-primary h-12 rounded-xl backdrop-blur-sm transition-all duration-300 focus:shadow-app pr-12"
                   required
                 />
                 {username && (
@@ -550,24 +582,25 @@ export function LoginForm() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-transparent"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-primary/10 rounded-lg"
                     onClick={() => setUsername("")}
                   >
                     <span className="text-muted-foreground hover:text-foreground">✕</span>
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground/70">
                 Deve terminar com exatamente 4 dígitos
               </p>
             </div>
 
             {/* Remember Login Checkbox */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 bg-background/30 rounded-xl border border-border/20">
               <Checkbox
                 id="rememberLogin"
                 checked={rememberLogin}
                 onCheckedChange={(checked) => setRememberLogin(checked === true)}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <label
                 htmlFor="rememberLogin"
@@ -577,27 +610,31 @@ export function LoginForm() {
               </label>
             </div>
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-gradient-primary hover:opacity-90 text-white font-semibold rounded-xl shadow-app transition-all duration-300 hover:scale-105" 
+              disabled={isLoading}
+            >
               {isLoading ? "Carregando..." : (isRegistering ? "Criar Conta" : "Entrar")}
             </Button>
             
             <Button 
               type="button" 
               variant="ghost" 
-              className="w-full"
+              className="w-full h-12 hover:bg-primary/10 rounded-xl font-medium transition-all duration-300"
               onClick={() => setIsRegistering(!isRegistering)}
             >
               {isRegistering ? "Já tem uma conta? Faça login" : "Não tem conta? Registre-se"}
             </Button>
 
-            <div className="border-t border-border/50 pt-4">
+            <div className="border-t border-border/30 pt-6">
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full"
+                className="w-full h-12 border-border/50 hover:border-primary/50 bg-background/50 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
                 onClick={() => setShowUsersList(true)}
               >
-                <Users size={16} className="mr-2" />
+                <Users size={18} className="mr-2" />
                 Ver Todos os Usuários
               </Button>
             </div>
