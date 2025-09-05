@@ -127,13 +127,62 @@ export function StoreApp({ onBack }: StoreAppProps) {
     }
   };
 
-  const handleAddToCart = (item: StoreItem) => {
-    const cartItem: CartItem = { ...item, quantity: 1 };
-    addToCart(cartItem);
-    toast({
-      title: "Item adicionado",
-      description: `${item.name} adicionado ao carrinho`
-    });
+  const handleAddToCart = async (item: StoreItem) => {
+    // Check current inventory for this item
+    if (!currentUser) return;
+    
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', currentUser)
+        .single();
+
+      if (userError || !userData) {
+        toast({
+          title: "Erro",
+          description: "Usuário não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data: inventoryItems, error: inventoryError } = await supabase
+        .from('inventory')
+        .select('quantity')
+        .eq('user_id', userData.id)
+        .eq('item_id', item.id);
+
+      if (inventoryError) {
+        console.error('Erro ao verificar inventário:', inventoryError);
+      }
+
+      const currentInventoryCount = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      const cartItemCount = cart.find(cartItem => cartItem.id === item.id)?.quantity || 0;
+      
+      if (currentInventoryCount + cartItemCount >= 10) {
+        toast({
+          title: "Limite atingido",
+          description: `Você já possui/tem no carrinho o máximo de 10 unidades de ${item.name}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const cartItem: CartItem = { ...item, quantity: 1 };
+      addToCart(cartItem);
+      toast({
+        title: "Item adicionado",
+        description: `${item.name} adicionado ao carrinho`
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao verificar limite de inventário",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmitOrder = async () => {
@@ -611,7 +660,46 @@ export function StoreApp({ onBack }: StoreAppProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => increaseQuantity(item.id)}
+                          onClick={async () => {
+                            // Check inventory limit before increasing quantity
+                            if (!currentUser) return;
+                            
+                            try {
+                              const { data: userData, error: userError } = await supabase
+                                .from('users')
+                                .select('id')
+                                .eq('username', currentUser)
+                                .single();
+
+                              if (userError || !userData) return;
+
+                              const { data: inventoryItems, error: inventoryError } = await supabase
+                                .from('inventory')
+                                .select('quantity')
+                                .eq('user_id', userData.id)
+                                .eq('item_id', item.id);
+
+                              if (inventoryError) {
+                                console.error('Erro ao verificar inventário:', inventoryError);
+                              }
+
+                              const currentInventoryCount = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                              const cartItemCount = cart.find(cartItem => cartItem.id === item.id)?.quantity || 0;
+                              
+                              if (currentInventoryCount + cartItemCount >= 10) {
+                                toast({
+                                  title: "Limite atingido",
+                                  description: `Você já possui/tem no carrinho o máximo de 10 unidades de ${item.name}`,
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+
+                              increaseQuantity(item.id);
+                            } catch (error) {
+                              console.error('Erro ao aumentar quantidade:', error);
+                            }
+                          }}
                           className="h-6 w-6 p-0 hover:bg-muted"
                         >
                           <Plus size={12} />
