@@ -136,7 +136,9 @@ export function getDrinkEmoji(itemName: string): string {
 
 export function getCategoryIcon(itemType: "food" | "drink" | "object", itemName?: string): string {
   switch (itemType) {
-    case "food": return "🍽️";
+    case "food": 
+      if (itemName && itemName.toLowerCase().includes('pizza')) return "🍕";
+      return "🍽️";
     case "drink": return itemName ? getDrinkEmoji(itemName) : "🥤";
     case "object": return "📦";
     default: return "📦";
