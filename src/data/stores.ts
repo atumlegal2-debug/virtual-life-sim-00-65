@@ -1490,7 +1490,8 @@ export const STORES = {
         category: "Anéis",
         relationshipType: "friendship",
         icon: "💍",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 10, duration: 60, message: "Anel da amizade eterna aquece o coração" }
       },
 
       // Pulseiras
@@ -1501,7 +1502,8 @@ export const STORES = {
         description: "Pulseira delicada com flores que florescem eternamente",
         category: "Pulseiras",
         icon: "🌸",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 15, duration: 90, message: "Flores eternas perfumando sua alma" }
       },
       {
         id: "pulseira_laco_amizade",
@@ -1511,7 +1513,8 @@ export const STORES = {
         category: "Pulseiras",
         relationshipType: "friendship",
         icon: "🤝",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 12, duration: 120, message: "Laço de amizade conectando almas" }
       },
       {
         id: "pulseira_amor_dois",
@@ -1521,7 +1524,8 @@ export const STORES = {
         category: "Pulseiras",
         relationshipType: "dating",
         icon: "💝",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 20, duration: 150, message: "Amor compartilhado aquecendo o coração" }
       },
       {
         id: "pulseira_eclipse_eterno",
@@ -1531,7 +1535,8 @@ export const STORES = {
         category: "Pulseiras",
         relationshipType: "dating",
         icon: "🌒",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 18, duration: 180, message: "Eclipse eterno simbolizando união perfeita" }
       },
 
       // Brincos
@@ -1542,7 +1547,8 @@ export const STORES = {
         description: "Brincos únicos que carregam histórias antigas",
         category: "Brincos",
         icon: "💎",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 25, duration: 120, message: "Relíquias antigas sussurrando histórias" }
       },
       {
         id: "brincos_correntes_alternativas",
@@ -1551,7 +1557,8 @@ export const STORES = {
         description: "Brincos modernos com correntes elegantes",
         category: "Brincos",
         icon: "⛓️",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 15, duration: 90, message: "Correntes modernas balançando com elegância" }
       },
       {
         id: "brincos_natureza_brilhante",
@@ -1560,7 +1567,8 @@ export const STORES = {
         description: "Brincos que capturam a essência da natureza em cristais",
         category: "Brincos",
         icon: "🌿",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 18, duration: 100, message: "Essência da natureza brilhando nos cristais" }
       },
 
       // Colares
@@ -1572,7 +1580,8 @@ export const STORES = {
         category: "Colares",
         relationshipType: "dating",
         icon: "🔮",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 22, duration: 180, message: "Futuro partilhado iluminando o caminho" }
       },
       {
         id: "colar_estrela_diamantes",
@@ -1581,7 +1590,8 @@ export const STORES = {
         description: "Colar com uma estrela que brilha como diamantes",
         category: "Colares",
         icon: "⭐",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 30, duration: 150, message: "Estrela brilhando como diamantes no pescoço" }
       },
       {
         id: "colar_dois_amigos",
@@ -1591,7 +1601,8 @@ export const STORES = {
         category: "Colares",
         relationshipType: "friendship",
         icon: "🎭",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 16, duration: 120, message: "Aventuras de amizade aquecendo o coração" }
       },
 
       // Relógios Mágicos
@@ -1602,7 +1613,8 @@ export const STORES = {
         description: "Relógio que marca os momentos mais importantes da vida",
         category: "Relógios Mágicos",
         icon: "⏰",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 28, duration: 200, message: "Tic-tac do destino marcando momentos especiais" }
       },
       {
         id: "relogio_lacos_eternos",
@@ -1612,7 +1624,8 @@ export const STORES = {
         category: "Relógios Mágicos",
         relationshipType: "friendship",
         icon: "⏰",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 25, duration: 240, message: "Tempo eterno de amizade sem fim" }
       },
       {
         id: "relogio_coracoes_sincronizados",
@@ -1622,7 +1635,8 @@ export const STORES = {
         category: "Relógios Mágicos",
         relationshipType: "dating",
         icon: "💕",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 35, duration: 300, message: "Corações sincronizados batendo em harmonia" }
       },
 
       // Alfinetes
@@ -1633,7 +1647,8 @@ export const STORES = {
         description: "Alfinete sutil que adiciona um toque de classe",
         category: "Alfinetes",
         icon: "📍",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 8, duration: 60, message: "Elegância discreta refinando o visual" }
       },
       {
         id: "alfinete_presente_especial",
@@ -1642,7 +1657,8 @@ export const STORES = {
         description: "Alfinete único para ocasiões memoráveis",
         category: "Alfinetes",
         icon: "🎁",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 12, duration: 80, message: "Presente especial trazendo alegria" }
       },
       {
         id: "alfinete_brilhos_noite",
@@ -1651,7 +1667,8 @@ export const STORES = {
         description: "Alfinete que captura a magia das noites estreladas",
         category: "Alfinetes",
         icon: "✨",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 18, duration: 120, message: "Brilhos da noite cintilando mágicamente" }
       }
     ] as StoreItem[]
   },
@@ -1692,28 +1709,32 @@ export const STORES = {
         name: "Camisinha do Floco de Neve",
         price: 90,
         description: "Pacote com 3 unidades geladas",
-        category: "Preservativos e Lubrificantes Mágicos"
+        category: "Preservativos e Lubrificantes Mágicos",
+        effect: { type: "mood", value: 8, duration: 30, message: "Sensação gelada e prazerosa" }
       },
       {
         id: "camisinha_apertou",
         name: "Camisinha do Apertou, Virou",
         price: 50,
         description: "Para momentos especiais",
-        category: "Preservativos e Lubrificantes Mágicos"
+        category: "Preservativos e Lubrificantes Mágicos",
+        effect: { type: "mood", value: 6, duration: 25, message: "Ajuste perfeito aumentando prazer" }
       },
       {
         id: "lubrificante_mel",
         name: "Lubrificante de Mel",
         price: 80,
         description: "Lubrificante doce e mágico",
-        category: "Preservativos e Lubrificantes Mágicos"
+        category: "Preservativos e Lubrificantes Mágicos",
+        effect: { type: "mood", value: 10, duration: 45, message: "Doçura mágica aumentando intimidade" }
       },
       {
         id: "camisinha_sem_escapatoria",
         name: "Camisinha do Sem Escapatória",
         price: 150,
         description: "Proteção máxima garantida",
-        category: "Preservativos e Lubrificantes Mágicos"
+        category: "Preservativos e Lubrificantes Mágicos",
+        effect: { type: "mood", value: 12, duration: 60, message: "Proteção máxima com confiança absoluta" }
       },
       // Próteses e Vibradores Mágicos
       {
@@ -1721,42 +1742,48 @@ export const STORES = {
         name: "Pênis de Dragão",
         price: 300,
         description: "Prótese mágica poderosa",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 35, duration: 90, message: "Poder dracônico despertando paixões" }
       },
       {
         id: "vibrador_sereia",
         name: "Vibrador do Canto da Sereia",
         price: 200,
         description: "Vibrador encantado",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 28, duration: 75, message: "Canto encantado das sereias" }
       },
       {
         id: "algemas_presa",
         name: "Algemas do Presa Voluntária",
         price: 180,
         description: "Algemas mágicas especiais",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 22, duration: 60, message: "Rendição voluntária aumentando prazer" }
       },
       {
         id: "plug_formigas",
         name: "Plug anal das Formigas de Fogo",
         price: 60,
         description: "Sensação formigante especial",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 15, duration: 40, message: "Sensação formigante de fogo" }
       },
       {
         id: "penis_tempestade",
         name: "Pênis Tempestade",
         price: 150,
         description: "Prótese com poder da tempestade",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 25, duration: 70, message: "Poder da tempestade desencadeado" }
       },
       {
         id: "egg_cobras",
         name: "Egg das Cobras Mágicas",
         price: 50,
         description: "Kit com 3 tipos diferentes",
-        category: "Próteses e Vibradores Mágicos"
+        category: "Próteses e Vibradores Mágicos",
+        effect: { type: "mood", value: 18, duration: 50, message: "Variedade mágica das cobras" }
       },
       // Lingeries e Fantasias Eróticas
       {
@@ -1764,21 +1791,24 @@ export const STORES = {
         name: "Sutiã do Toque de Midas",
         price: 250,
         description: "Lingerie dourada especial",
-        category: "Lingeries e Fantasias Eróticas"
+        category: "Lingeries e Fantasias Eróticas",
+        effect: { type: "mood", value: 30, duration: 120, message: "Toque dourado de Midas irresistível" }
       },
       {
         id: "fantasia_sacerdotisa",
         name: "Fantasia de Sacerdotisa das Sombras",
         price: 400,
         description: "Fantasia erótica mística",
-        category: "Lingeries e Fantasias Eróticas"
+        category: "Lingeries e Fantasias Eróticas",
+        effect: { type: "mood", value: 40, duration: 180, message: "Mistério das sombras envolvendo" }
       },
       {
         id: "calcinha_desafio",
         name: "Calcinha do Desafio",
         price: 130,
         description: "Lingerie provocante especial",
-        category: "Lingeries e Fantasias Eróticas"
+        category: "Lingeries e Fantasias Eróticas",
+        effect: { type: "mood", value: 20, duration: 90, message: "Desafio provocante aceito" }
       },
       // Géis e Cremes dos Deuses
       {
@@ -1786,14 +1816,16 @@ export const STORES = {
         name: "Gel do Sopro Gelado",
         price: 70,
         description: "Gel refrescante mágico",
-        category: "Géis e Cremes dos Deuses"
+        category: "Géis e Cremes dos Deuses",
+        effect: { type: "mood", value: 15, duration: 45, message: "Sopro gelado refrescante" }
       },
       {
         id: "creme_crescimento",
         name: "Creme de Crescimento Instantâneo",
         price: 160,
         description: "Creme com poderes especiais",
-        category: "Géis e Cremes dos Deuses"
+        category: "Géis e Cremes dos Deuses",
+        effect: { type: "mood", value: 25, duration: 90, message: "Crescimento instantâneo mágico" }
       },
       // Acessórios BDSM e Fetiches
       {
@@ -1801,21 +1833,24 @@ export const STORES = {
         name: "Chicote do Aprendiz de Feiticeiro",
         price: 220,
         description: "Chicote mágico especial",
-        category: "Acessórios BDSM e Fetiches"
+        category: "Acessórios BDSM e Fetiches",
+        effect: { type: "mood", value: 30, duration: 120, message: "Magia do feiticeiro despertando" }
       },
       {
         id: "coleira_animal",
         name: "Coleira do Animal Interior",
         price: 190,
         description: "Coleira que desperta instintos",
-        category: "Acessórios BDSM e Fetiches"
+        category: "Acessórios BDSM e Fetiches",
+        effect: { type: "mood", value: 25, duration: 100, message: "Instintos animais despertados" }
       },
       {
         id: "vela_prazer",
         name: "Vela do Prazer e Dor",
         price: 110,
         description: "Vela sensorial mágica",
-        category: "Acessórios BDSM e Fetiches"
+        category: "Acessórios BDSM e Fetiches",
+        effect: { type: "mood", value: 20, duration: 80, message: "Prazer e dor em harmonia sensorial" }
       },
       // Cosméticos Mágicos
       {
@@ -1848,21 +1883,24 @@ export const STORES = {
         name: "Kit Dominação Dragônica",
         price: 600,
         description: "Kit completo de dominação",
-        category: "Pacotes Promocionais"
+        category: "Pacotes Promocionais",
+        effect: { type: "mood", value: 50, duration: 240, message: "Kit completo de dominação dracônica" }
       },
       {
         id: "kit_ilusoes",
         name: "Kit Noite das Ilusões",
         price: 450,
         description: "Kit para noites especiais",
-        category: "Pacotes Promocionais"
+        category: "Pacotes Promocionais",
+        effect: { type: "mood", value: 40, duration: 180, message: "Noite mágica de ilusões sensuais" }
       },
       {
         id: "kit_safadeza",
         name: "Kit Safadeza Básica",
         price: 300,
         description: "Kit iniciante completo",
-        category: "Pacotes Promocionais"
+        category: "Pacotes Promocionais",
+        effect: { type: "mood", value: 30, duration: 120, message: "Kit iniciante para aventuras sensuais" }
       },
       // Anéis de Amizade removido
       // Pulseiras de Amizade
@@ -1874,7 +1912,8 @@ export const STORES = {
         category: "Pulseiras (amizade)",
         relationshipType: "friendship",
         icon: "🤝",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 12, duration: 120, message: "Parceria verdadeira conectando almas" }
       },
       // Colares de Amizade removido
       // Relógios de Amizade
@@ -1886,7 +1925,8 @@ export const STORES = {
         category: "Relógios (amizade)",
         relationshipType: "friendship",
         icon: "⏰",
-        itemType: "object"
+        itemType: "object",
+        effect: { type: "mood", value: 25, duration: 240, message: "Tic-tac eterno da brotheragem" }
       }
     ] as StoreItem[]
   },
