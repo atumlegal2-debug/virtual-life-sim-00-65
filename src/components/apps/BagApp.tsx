@@ -559,6 +559,8 @@ export default function BagApp({ onBack }: BagAppProps) {
   }, [currentUser, loadAllData]);
 
   const handleUseItem = async (item: InventoryItem) => {
+    console.log('🍽️ handleUseItem called with item:', item);
+    
     if (!currentUser) {
       toast({
         title: "Erro",
@@ -571,7 +573,17 @@ export default function BagApp({ onBack }: BagAppProps) {
     try {
       let effectApplied = false;
       const userRecord = await getUserId(currentUser);
-      if (!userRecord) return;
+      console.log('👤 User record:', userRecord);
+      
+      if (!userRecord) {
+        console.log('❌ No user record found, aborting');
+        toast({
+          title: "Erro",
+          description: "Usuário não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Check if it's a medicine and if user has the corresponding disease
       const medicineToDisease: { [key: string]: string } = {
@@ -616,6 +628,7 @@ export default function BagApp({ onBack }: BagAppProps) {
           return;
         }
       } else if (item.effect) {
+        console.log('✨ Item has effect:', item.effect);
         // Non-medicine items with effects
         if (item.effect.type === "multiple" && "effects" in item.effect) {
           // Handle multiple effects
@@ -711,8 +724,18 @@ export default function BagApp({ onBack }: BagAppProps) {
               break;
           }
         }
+      } else {
+        console.log('❌ Item has no effect defined:', item);
+        toast({
+          title: "Item sem efeito",
+          description: "Este item não possui efeito definido",
+          variant: "destructive",
+        });
+        return;
       }
 
+      console.log('🎯 Effect applied:', effectApplied);
+      
       if (effectApplied) {
         // Remove item from inventory
         await supabase
