@@ -290,70 +290,88 @@ export function HomeScreen() {
   return (
     <PhoneContainer>
       <div className="flex flex-col h-full">
-        {/* User Profile Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => setShowProfileModal(true)}
-          >
-            <Avatar className="w-12 h-12 border-2 border-primary/20">
-              {userProfile?.avatar ? (
-                <AvatarImage src={userProfile.avatar} alt="Profile" />
-              ) : (
-                <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold">
-                  {currentUser?.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-foreground">
-                  {currentUser?.slice(0, -4)}
-                </h2>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-auto p-1 hover:bg-transparent">
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
-                        <span className="text-xs text-muted-foreground">
-                          {isOnline ? 'Online' : 'Offline'}
-                        </span>
-                        <ChevronDown size={12} className="text-muted-foreground" />
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-32">
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(true)}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      Online
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(false)}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-gray-400" />
-                      Offline
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+        {/* User Profile Header - Modern Glass Card */}
+        <div className="relative mb-8">
+          <div className="bg-gradient-to-r from-card/80 to-card/40 backdrop-blur-xl rounded-3xl p-5 border border-border/20 shadow-lg">
+            {/* Subtle glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary-glow/10 rounded-3xl opacity-50"></div>
+            
+            <div className="flex items-center justify-between relative z-10">
+              <div 
+                className="flex items-center gap-4 cursor-pointer group transition-all duration-300 hover:scale-[1.02] p-2 -m-2 rounded-2xl hover:bg-primary/5"
+                onClick={() => setShowProfileModal(true)}
+              >
+                <div className="relative">
+                  <Avatar className="w-16 h-16 border-3 border-primary/30 shadow-lg ring-2 ring-background/50 group-hover:border-primary/50 transition-all duration-300">
+                    {userProfile?.avatar ? (
+                      <AvatarImage src={userProfile.avatar} alt="Profile" className="object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-lg">
+                        {currentUser?.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  {/* Online indicator with glow */}
+                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-background shadow-sm ${isOnline ? 'bg-green-500 shadow-green-500/50' : 'bg-gray-400'} transition-all duration-300`}>
+                    {isOnline && <div className="w-full h-full rounded-full bg-green-400 animate-pulse"></div>}
+                  </div>
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="font-bold text-foreground text-xl group-hover:text-primary transition-colors duration-300">
+                      {currentUser?.slice(0, -4)}
+                    </h2>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-auto p-2 hover:bg-primary/10 rounded-xl transition-all duration-300 hover:scale-105"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                            <ChevronDown size={14} className="text-muted-foreground" />
+                          </div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-36 bg-card/95 backdrop-blur-sm border-border/30">
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(true)}
+                          className="flex items-center gap-3 hover:bg-primary/10 rounded-lg"
+                        >
+                          <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm" />
+                          <span className="font-medium">Online</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(false)}
+                          className="flex items-center gap-3 hover:bg-primary/10 rounded-lg"
+                        >
+                          <div className="w-3 h-3 rounded-full bg-gray-400 shadow-sm" />
+                          <span className="font-medium">Offline</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <p className="text-sm text-muted-foreground/80 font-medium">
+                    {userProfile?.relationship_status ? userProfile.relationship_status : "Nível 1"}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {userProfile?.relationship_status ? userProfile.relationship_status : "Nível 1"}
-              </p>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl p-3 transition-all duration-300 hover:scale-105"
+              >
+                <LogOut size={18} />
+              </Button>
             </div>
           </div>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <LogOut size={16} />
-          </Button>
         </div>
 
         {/* Status Bar */}
