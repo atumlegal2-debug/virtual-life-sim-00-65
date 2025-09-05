@@ -6,7 +6,7 @@ export function getItemType(storeId: string, itemId: string): "food" | "drink" |
   if (storeId === "restaurant") return "food";
   
   // Pizzeria items can be both food and drinks
-  if (storeId === "pizzeria") {
+  if (storeId === "pizzaria") {
     const drinkItems = [
       "refrigerante", "suco_natural", "agua_mineral", "agua_com_gas", 
       "cha_gelado", "limonada_siciliana", "smoothie_frutas", "cafe_expresso"
