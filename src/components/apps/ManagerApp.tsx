@@ -355,25 +355,53 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         console.log(`🔄 Processing item: ${item.name} (quantity: ${item.quantity})`);
         
         try {
-          // Use upsert to prevent race conditions and duplicates
-          const { data, error } = await supabase
+          // First check if item already exists for this user
+          const { data: existingItem, error: selectError } = await supabase
             .from('inventory')
-            .upsert({
-              user_id: order.user_id,
-              item_id: item.id,
-              quantity: item.quantity
-            }, {
-              onConflict: 'user_id,item_id',
-              ignoreDuplicates: false
-            })
-            .select();
+            .select('id, quantity')
+            .eq('user_id', order.user_id)
+            .eq('item_id', item.id)
+            .single();
 
-          if (error) {
-            console.error(`Error upserting item ${item.name}:`, error);
-            throw error;
+          if (selectError && selectError.code !== 'PGRST116') {
+            console.error(`Error checking existing item ${item.name}:`, selectError);
+            throw selectError;
           }
-          
-          console.log(`✅ Item ${item.name} added/updated successfully:`, data);
+
+          if (existingItem) {
+            // Update existing item quantity
+            const { data, error } = await supabase
+              .from('inventory')
+              .update({
+                quantity: existingItem.quantity + item.quantity
+              })
+              .eq('id', existingItem.id)
+              .select();
+
+            if (error) {
+              console.error(`Error updating item ${item.name}:`, error);
+              throw error;
+            }
+            
+            console.log(`✅ Item ${item.name} quantity updated successfully:`, data);
+          } else {
+            // Insert new item
+            const { data, error } = await supabase
+              .from('inventory')
+              .insert({
+                user_id: order.user_id,
+                item_id: item.id,
+                quantity: item.quantity
+              })
+              .select();
+
+            if (error) {
+              console.error(`Error inserting item ${item.name}:`, error);
+              throw error;
+            }
+            
+            console.log(`✅ Item ${item.name} added successfully:`, data);
+          }
         } catch (itemError) {
           console.error(`Failed to process item ${item.name}:`, itemError);
           throw itemError;
