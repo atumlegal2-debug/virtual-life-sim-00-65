@@ -110,7 +110,7 @@ export default function BagApp({ onBack }: BagAppProps) {
     
     Object.values(STORES).forEach(store => {
       store.items.forEach(item => {
-        lookupMap.set(item.id, { ...item, storeId: store.id });
+        lookupMap.set(item.id, { ...item, storeId: store.id } as StoreItem & { storeId: string });
         nameToIdMap.set(item.name.toLowerCase(), item.id);
       });
     });
@@ -281,30 +281,30 @@ export default function BagApp({ onBack }: BagAppProps) {
       inventoryId: item.id,
       name: storeItem.name,
       description: storeItem.description || '',
-      itemType: storeItem.itemType || getItemType(storeItem.name),
+      itemType: storeItem.itemType || getItemType(storeItem.name, storeItem.category || ''),
       quantity: item.quantity || 1,
-      storeId: storeItem.storeId || '',
-      canUse: storeItem.canUse !== false,
-      canSend: storeItem.canSend !== false,
-      isRing: storeItem.relationshipType === 'romantic' || storeItem.relationshipType === 'friendship',
+      storeId: (storeItem as any).storeId || '',
+      canUse: (storeItem as any).canUse !== false,
+      canSend: (storeItem as any).canSend !== false,
+      isRing: storeItem.relationshipType !== undefined,
       relationshipType: storeItem.relationshipType,
       originalItem: storeItem,
       price: storeItem.price || 0,
-      effect: storeItem.effect
+      effect: storeItem.effect ? { ...storeItem.effect, message: storeItem.effect.message || '' } : undefined
     };
 
     const historyItem: HistoryItem = {
       id: storeItem.id,
       name: storeItem.name,
       description: storeItem.description || '',
-      itemType: storeItem.itemType || getItemType(storeItem.name),
+      itemType: storeItem.itemType || getItemType(storeItem.name, storeItem.category || ''),
       quantity: item.quantity || 1,
       sent_by_username: item.sent_by_username,
       received_at: item.received_at,
-      storeId: storeItem.storeId || '',
+      storeId: (storeItem as any).storeId || '',
       isCustom: false,
       originalItem: storeItem,
-      effect: storeItem.effect
+      effect: storeItem.effect ? { ...storeItem.effect, message: storeItem.effect.message || '' } : undefined
     };
     
     return { inventoryItem, historyItem };
@@ -508,7 +508,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
       
       // Set up real-time subscription using channel that doesn't conflict
-      return supabase
+      const channel = supabase
         .channel(`bag-updates-${currentUser}`)
         .on('postgres_changes', 
           { 
@@ -535,6 +535,10 @@ export default function BagApp({ onBack }: BagAppProps) {
         .subscribe((status) => {
           console.log('Inventory realtime status:', status);
         });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
 
@@ -582,7 +586,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       if (medicineToDisease[item.name]) {
         console.log(`Attempting to use medicine: ${item.name}`);
         try {
-          const cured = await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
+          const cured = await (cureDiseaseWithMedicine?.(item.name, userRecord));
           
           if (cured) {
             effectApplied = true;
@@ -695,8 +699,8 @@ export default function BagApp({ onBack }: BagAppProps) {
               effectApplied = true;
               break;
             case "alcoholism":
-              if (isAlcoholic(item.name)) {
-                const alcoholLevel = getAlcoholLevel(item.name);
+              if (isAlcoholic(item.name, item.itemType || 'object')) {
+                const alcoholLevel = getAlcoholLevel(item.name, item.itemType || 'object');
                 await updateStats({ alcoholism: Math.min(100, (gameStats.alcoholism || 0) + alcoholLevel) });
                 effectApplied = true;
               }
@@ -1027,7 +1031,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       <SendRingModal
         isOpen={sendRingModalOpen}
         onClose={() => setSendRingModalOpen(false)}
-        ringData={selectedRing}
+        ring={selectedRing}
       />
       
       <SendItemModal
@@ -1042,12 +1046,11 @@ export default function BagApp({ onBack }: BagAppProps) {
 
       <SendFriendshipItemModal
         isOpen={sendFriendshipItemModalOpen}
-        onClose={() => setSendFriendshipItemModalOpen(false)}
-        item={selectedFriendshipItem}
-        onItemSent={() => {
+        onClose={() => {
           setSendFriendshipItemModalOpen(false);
           loadAllData(true);
         }}
+        item={selectedFriendshipItem}
       />
     </div>
   );
