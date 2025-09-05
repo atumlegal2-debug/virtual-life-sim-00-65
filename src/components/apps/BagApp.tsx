@@ -10,7 +10,6 @@ import { STORES } from "@/data/stores";
 import { useGame } from "@/contexts/GameContext";
 import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffectName, isAlcoholic, getAlcoholLevel } from "@/lib/itemCategories";
 import { SendRingModal } from "@/components/modals/SendRingModal";
-
 import { SendItemModal } from "@/components/modals/SendItemModal";
 import { SendFriendshipItemModal } from "@/components/modals/SendFriendshipItemModal";
 import { StoreItem } from "@/data/stores";
@@ -98,55 +97,66 @@ export default function BagApp({ onBack }: BagAppProps) {
 
   // Function to hide the 4-digit code from usernames for display
   const getDisplayName = (username: string) => {
-    return username.replace(/\d{4}$/, '');
+    if (!username) return 'Usuário desconhecido';
+    // Só remover os últimos 4 caracteres se forem dígitos
+    const hasCodeSuffix = /\d{4}$/.test(username);
+    return hasCodeSuffix ? username.slice(0, -4) : username;
   };
 
-  // Create item lookup map for better performance (memoized)
+  // Otimizar lookup de itens das lojas usando Map
   const itemLookupMap = useMemo(() => {
-    const lookupMap = new Map();
-    const nameToIdMap = new Map(); // Novo mapa para busca por nome
+    const lookupMap = new Map<string, StoreItem>();
+    const nameToIdMap = new Map<string, string>();
     
-    for (const [storeId, store] of Object.entries(STORES)) {
-      for (const item of store.items) {
-        lookupMap.set(item.id, { item, storeId });
-        // Adiciona mapeamento nome -> ID para itens do motoboy
-        nameToIdMap.set(item.name, { item, storeId });
-      }
-    }
+    Object.values(STORES).forEach(store => {
+      store.items.forEach(item => {
+        lookupMap.set(item.id, { ...item, storeId: store.id });
+        nameToIdMap.set(item.name.toLowerCase(), item.id);
+      });
+    });
+    
     return { lookupMap, nameToIdMap };
   }, []);
 
-  // Function to get specific ice cream icons based on category
-  const getIceCreamIcon = (item: InventoryItem | HistoryItem): string => {
-    // Check if item has an explicit icon first
-    if (item.originalItem?.icon) {
-      return item.originalItem.icon;
+  const getIceCreamIcon = (item: { name: string }) => {
+    switch (item.name.toLowerCase()) {
+      case 'sorvete de chocolate':
+        return '🍫';
+      case 'sorvete de morango':
+        return '🍓';
+      case 'sorvete de baunilha':
+        return '🍦';
+      case 'picolé de limão':
+        return '🍋';
+      case 'açaí na tigela':
+        return '🍯';
+      case 'milkshake de chocolate':
+        return '🥤';
+      case 'casquinha mista':
+        return '🍦';
+      case 'sundae de caramelo':
+        return '🍨';
+      case 'frozen yogurt':
+        return '🍦';
+      case 'gelato italiano':
+        return '🍨';
+      case 'aurora açucarada':
+        return '✨';
+      case 'neblina doce':
+        return '☁️';
+      default:
+        return '🍦';
     }
-    
-    const category = item.originalItem?.category;
-    if (category === "Sorvetes de Rolo" || category === "Sorvetes Especiais") {
-      return "🍨";
-    } else if (category === "Açaí") {
-      return "🫐";
-    } else if (category === "Crepes") {
-      return "🥞";
-    } else if (category === "Milk-Shakes") {
-      return "🥤";
-    } else if (category === "Smoothies") {
-      return "🥤";
-    } else if (category === "Sobremesas") {
-      return "🍰";
-    }
-    return "🍦"; // Default ice cream icon
   };
 
-  // Cache user ID to avoid repeated lookups
-  const getUserId = async (username: string): Promise<string | null> => {
+  const getUserId = async (username: string) => {
     const cacheKey = `userId_${username}`;
-    const cached = sessionStorage.getItem(cacheKey);
     
-    if (cached && cachedUserId) {
-      return cachedUserId;
+    // Check cache first
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      setCachedUserId(cached);
+      return cached;
     }
 
     try {
@@ -177,6 +187,128 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
     return false;
   }, [cachedData]);
+
+  // Item processing ultra-otimizado usando Map
+  const processInventoryItemOptimized = useCallback((item: any, allCustomItems: Map<string, any>) => {
+    // Custom item processing - check if it starts with "custom_"
+    if (item.item_id.startsWith('custom_') || allCustomItems.has(item.item_id)) {
+      const customItem = allCustomItems.get(item.item_id);
+      
+      if (!customItem) {
+        // Fallback simples e rápido
+        const fallbackItem = {
+          id: item.item_id,
+          name: `Item Personalizado`,
+          description: 'Item criado por usuário',
+          itemType: 'object' as const,
+          icon: '📦'
+        };
+        
+        const inventoryItem: InventoryItem = {
+          id: item.item_id,
+          inventoryId: item.id,
+          name: fallbackItem.name,
+          description: fallbackItem.description,
+          itemType: fallbackItem.itemType,
+          quantity: item.quantity || 1,
+          storeId: 'custom',
+          canUse: false,
+          canSend: true,
+          isRing: false,
+          originalItem: fallbackItem as any,
+          price: 0,
+          effect: null
+        };
+
+        const historyItem: HistoryItem = {
+          id: item.item_id,
+          name: fallbackItem.name,
+          description: fallbackItem.description,
+          itemType: fallbackItem.itemType,
+          quantity: item.quantity || 1,
+          sent_by_username: item.sent_by_username,
+          received_at: item.received_at,
+          storeId: 'custom',
+          isCustom: true,
+          originalItem: fallbackItem as any
+        };
+
+        return { inventoryItem, historyItem };
+      }
+      
+      // Normal custom item processing
+      const inventoryItem: InventoryItem = {
+        id: customItem.id,
+        inventoryId: item.id,
+        name: customItem.name,
+        description: customItem.description || '',
+        itemType: customItem.itemType || 'object',
+        quantity: item.quantity || 1,
+        storeId: 'custom',
+        canUse: customItem.canUse !== false,
+        canSend: customItem.canSend !== false,
+        isRing: false,
+        originalItem: customItem,
+        price: customItem.price || 0,
+        effect: customItem.effect || null
+      };
+
+      const historyItem: HistoryItem = {
+        id: customItem.id,
+        name: customItem.name,
+        description: customItem.description || '',
+        itemType: customItem.itemType || 'object',
+        quantity: item.quantity || 1,
+        sent_by_username: item.sent_by_username,
+        received_at: item.received_at,
+        storeId: 'custom',
+        isCustom: true,
+        originalItem: customItem
+      };
+
+      return { inventoryItem, historyItem };
+    }
+
+    // Standard item processing using optimized lookup
+    const storeItem = itemLookupMap.lookupMap.get(item.item_id);
+    if (!storeItem) {
+      console.warn(`Item ${item.item_id} not found in lookup map`);
+      return null;
+    }
+
+    const inventoryItem: InventoryItem = {
+      id: storeItem.id,
+      inventoryId: item.id,
+      name: storeItem.name,
+      description: storeItem.description || '',
+      itemType: storeItem.itemType || getItemType(storeItem.name),
+      quantity: item.quantity || 1,
+      storeId: storeItem.storeId || '',
+      canUse: storeItem.canUse !== false,
+      canSend: storeItem.canSend !== false,
+      isRing: storeItem.relationshipType === 'romantic' || storeItem.relationshipType === 'friendship',
+      relationshipType: storeItem.relationshipType,
+      originalItem: storeItem,
+      price: storeItem.price || 0,
+      effect: storeItem.effect
+    };
+
+    const historyItem: HistoryItem = {
+      id: storeItem.id,
+      name: storeItem.name,
+      description: storeItem.description || '',
+      itemType: storeItem.itemType || getItemType(storeItem.name),
+      quantity: item.quantity || 1,
+      sent_by_username: item.sent_by_username,
+      received_at: item.received_at,
+      storeId: storeItem.storeId || '',
+      isCustom: false,
+      originalItem: storeItem,
+      effect: storeItem.effect
+    };
+    
+    return { inventoryItem, historyItem };
+  }, [itemLookupMap.lookupMap, itemLookupMap.nameToIdMap]);
 
   // Carregamento ultra-otimizado
   const loadAllData = useCallback(async (forceRefresh = false) => {
@@ -245,11 +377,6 @@ export default function BagApp({ onBack }: BagAppProps) {
           )
         : { data: [] as any[] };
       const customItemsFromDB = customItemsDB as any;
-
-      if (inventoryError) {
-        console.error('Inventory error:', inventoryError);
-        throw inventoryError;
-      }
 
       // Load custom items from localStorage com fallback
       let customItems = {};
@@ -335,7 +462,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
       setIsLoading(false);
     }
-  }, [currentUser, cachedUserId, showCachedDataFirst, cachedData]);
+  }, [currentUser, cachedUserId, showCachedDataFirst, cachedData, processInventoryItemOptimized]);
 
   // Realtime: refresh inventory when it changes  
   useEffect(() => {
@@ -365,148 +492,6 @@ export default function BagApp({ onBack }: BagAppProps) {
     };
   }, [currentUser, loadAllData]);
 
-  // Item processing ultra-otimizado usando Map
-  const processInventoryItemOptimized = useCallback((item: any, allCustomItems: Map<string, any>) => {
-    // Custom item processing - check if it starts with "custom_"
-    if (item.item_id.startsWith('custom_') || allCustomItems.has(item.item_id)) {
-      const customItem = allCustomItems.get(item.item_id);
-      
-      if (!customItem) {
-        // Fallback simples e rápido
-        const fallbackItem = {
-          id: item.item_id,
-          name: `Item Personalizado`,
-          description: 'Item criado por usuário',
-          itemType: 'object' as const,
-          icon: '📦'
-        };
-        
-        return {
-          inventoryItem: {
-            id: fallbackItem.id,
-            inventoryId: item.id,
-            name: fallbackItem.name,
-            description: fallbackItem.description,
-            itemType: fallbackItem.itemType,
-            quantity: item.quantity,
-            storeId: "custom",
-            canUse: true,
-            canSend: true,
-            isRing: false,
-            originalItem: fallbackItem,
-            effect: { type: "mood" as const, value: 1, message: `Você usou ${fallbackItem.name}!` }
-          },
-          historyItem: {
-            id: fallbackItem.id,
-            name: fallbackItem.name,
-            description: fallbackItem.description,
-            itemType: fallbackItem.itemType,
-            quantity: item.quantity,
-            sent_by_username: item.sent_by_username || null,
-            received_at: item.received_at || item.created_at,
-            storeId: "custom",
-            isCustom: true,
-            originalItem: fallbackItem
-          }
-        };
-      }
-      
-      // Pre-computed effects for custom items
-      const effectMap = {
-        food: { type: "hunger", value: 25, message: `Você comeu ${customItem.name} e se sente satisfeito!` },
-        drink: { type: "energy", value: 20, message: `Você bebeu ${customItem.name} e se sente energizado!` },
-        object: { type: "mood", value: 15, message: `Você usou ${customItem.name} e se sente muito melhor!` }
-      };
-
-      const effect = effectMap[customItem.itemType as keyof typeof effectMap] || null;
-      const cleanDescription = (customItem.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2');
-      
-      return {
-        inventoryItem: {
-          id: customItem.id,
-          inventoryId: item.id,
-          name: customItem.name,
-          description: cleanDescription,
-          itemType: customItem.itemType,
-          quantity: item.quantity,
-          storeId: "custom",
-          canUse: true,
-          canSend: true,
-          isRing: false,
-          originalItem: customItem,
-          effect
-        },
-        historyItem: {
-          id: customItem.id,
-          name: customItem.name,
-          description: cleanDescription,
-          itemType: customItem.itemType,
-          quantity: item.quantity,
-          sent_by_username: item.sent_by_username || null,
-          received_at: item.received_at || item.created_at,
-          storeId: "custom",
-          isCustom: true,
-          originalItem: customItem
-        }
-      };
-    }
-    
-    // Store item processing with cached lookup
-    const itemData = itemLookupMap.lookupMap.get(item.item_id) || itemLookupMap.nameToIdMap.get(item.item_id);
-    if (itemData) {
-      const { item: storeItem, storeId } = itemData;
-      const itemType = getItemType(storeId, storeItem.id);
-      const canUse = !!storeItem.effect || !!storeItem.effects || (storeItem as any).type === "medicine" || storeId === "sexshop" || (storeId === "jewelry" && !(storeItem as any).relationshipType);
-      const isRing = storeId === "jewelry" && !!(storeItem as any).relationshipType;
-      
-      const effect = storeItem.effect ? {
-        type: storeItem.effect.type,
-        value: storeItem.effect.value,
-        message: storeItem.effect.message || `Efeito de ${storeItem.name}`
-      } : storeId === "jewelry" && !(storeItem as any).relationshipType ? {
-        type: "mood" as const,
-        value: 15,
-        message: `Você usou ${storeItem.name} e se sente mais feliz!`
-      } : undefined;
-      
-      const inventoryItem = {
-        id: storeItem.id,
-        inventoryId: item.id,
-        name: storeItem.name,
-        description: storeItem.description,
-        itemType,
-        quantity: item.quantity,
-        storeId,
-        price: storeItem.price,
-        canUse: canUse && !isRing,
-        canSend: !isRing && !(storeId === "jewelry" && (storeItem as any).relationshipType === "friendship"),
-        isRing,
-        relationshipType: (storeItem as any).relationshipType,
-        originalItem: storeItem,
-        effect
-      };
-
-      const historyItem = {
-        id: storeItem.id,
-        name: storeItem.name,
-        description: storeItem.description,
-        itemType,
-        quantity: item.quantity,
-        sent_by_username: item.sent_by_username || null,
-        received_at: item.received_at || item.created_at,
-        storeId,
-        isCustom: false,
-        originalItem: storeItem,
-        effect
-      };
-
-      
-      return { inventoryItem, historyItem };
-    }
-
-    return null;
-  }, [itemLookupMap.lookupMap, itemLookupMap.nameToIdMap]);
-
   // Load data on component mount with instant cache + real-time subscription
   useEffect(() => {
     if (currentUser) {
@@ -518,49 +503,38 @@ export default function BagApp({ onBack }: BagAppProps) {
         // Load fresh data in background se o cache for antigo
         const cacheAge = cachedData ? Date.now() - cachedData.timestamp : Infinity;
         if (cacheAge > 10000) { // Refresh em background se cache > 10s
-          setTimeout(() => loadAllData(true), 100);
+          setTimeout(() => loadAllData(), 100);
         }
       }
-
-      // Set up real-time subscription for inventory changes
-      const setupRealtimeSubscription = async () => {
-        const userId = await getUserId(currentUser);
-        if (!userId) return;
-
-        const channel = supabase
-          .channel('inventory-changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'inventory',
-              filter: `user_id=eq.${userId}`
-            },
-            (payload) => {
-              console.log('🔄 Real-time inventory change:', payload);
-              // Only handle INSERTs from real-time (items sent by others)
-              // UPDATEs and DELETEs are handled locally for instant feedback
-              if (payload.eventType === 'INSERT') {
-                // For inserts, we need to process the new item and add it
-                loadAllData(true);
-              }
-            }
-          )
-          .subscribe();
-
-        return channel;
-      };
-
-      const channelPromise = setupRealtimeSubscription();
-
-      return () => {
-        channelPromise.then(channel => {
-          if (channel) {
-            supabase.removeChannel(channel);
+      
+      // Set up real-time subscription using channel that doesn't conflict
+      return supabase
+        .channel(`bag-updates-${currentUser}`)
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'inventory'
+          }, 
+          () => {
+            console.log('New inventory item received, refreshing...');
+            setTimeout(() => loadAllData(true), 200); // Small delay to ensure DB consistency
           }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'inventory'
+          }, 
+          () => {
+            console.log('Inventory item updated, refreshing...');
+            setTimeout(() => loadAllData(true), 200);
+          }
+        )
+        .subscribe((status) => {
+          console.log('Inventory realtime status:', status);
         });
-      };
     }
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
 
@@ -576,409 +550,190 @@ export default function BagApp({ onBack }: BagAppProps) {
     return () => clearInterval(interval);
   }, [currentUser, loadAllData]);
 
-
   const handleUseItem = async (item: InventoryItem) => {
+    if (!currentUser) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para usar itens",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      console.log('🍎 Tentando usar item:', item.name, item);
-      if (!currentUser) {
-        console.log('❌ Usuário não encontrado');
-        return;
-      }
+      let effectApplied = false;
+      const userRecord = await getUserId(currentUser);
+      if (!userRecord) return;
 
-      // Get the user record from users table by username
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('id, hunger_percentage, life_percentage, mood, alcoholism_percentage, happiness_percentage')
-        .eq('username', currentUser)
-        .maybeSingle();
+      // Check if it's a medicine and if user has the corresponding disease
+      const medicineToDisease: { [key: string]: string } = {
+        'Protetor Solar "Luz de Sombra"': 'Queimadura Solar Arcana',
+        'Elixir Refrescante de Gelo': 'Gripe do Vento Gelado', 
+        'Máscara da Luz Divina': 'Febre da Lua Cheia',
+        'Essência do Calmante Sereno': 'Enjoo do Portal',
+        'Gel Purificador do Clérigo': 'Virose do Pó de Fada',
+        'Pomada do Sábio Curador': 'Dor Fantasma de Batalha',
+        'Máscara da Névoa Purificadora': 'Irritação de Poeira Mágica',
+        'Pomada da Fênix': 'Pele de Pedra',
+        'Néctar das Sereias': 'Febre de Dragão'
+      };
 
-      console.log('👤 User record:', userRecord, 'Error:', userError);
-
-      if (userError || !userRecord) {
-        console.log('❌ Erro ao buscar dados do usuário:', userError);
-        return;
-      }
-
-      // List of items that should be completely removed when consumed
-      const itemsToRemoveCompletely = [
-        'esfinge',
-        'oceanix', 
-        'vento_doce_das_montanhas',
-        'torta_galaxia_dos_sonhos',
-        'encanto_da_lua_azul',
-        'encanto_solar',
-        'sopro_da_geada'
-      ];
-
-      // Check if item is from pharmacy (all pharmacy items should be consumed completely)
-      const isPharmacyItem = item.storeId === 'farmacia' || item.storeId === 'pharmacy';
-
-      // Update database inventory FIRST to ensure synchronization
-      let inventoryUpdated = false;
-      const shouldRemoveCompletely = itemsToRemoveCompletely.includes(item.id.toLowerCase()) || 
-                                   isPharmacyItem || 
-                                   item.quantity <= 1;
-      
-      if (shouldRemoveCompletely) {
-        console.log('🗑️ Removendo item completamente');
-        console.log('🔍 Tentando deletar item com:', { 
-          user_id: userRecord.id, 
-          item_id: item.id,
-          item_name: item.name 
-        });
-        
-        // Try to delete using both item.id and item.name to handle inconsistencies
-        // Delete only the specific inventory entry by ID to avoid deleting multiple entries
-        const { error: deleteError } = await supabase
-          .from('inventory')
-          .delete()
-          .eq('id', item.inventoryId);
-        
-        if (deleteError) {
-          console.error('❌ Erro ao remover item:', deleteError);
+      // Medicine: try to cure corresponding disease
+      if (medicineToDisease[item.name]) {
+        console.log(`Attempting to use medicine: ${item.name}`);
+        try {
+          const cured = await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
+          
+          if (cured) {
+            effectApplied = true;
+            toast({
+              title: "Medicina aplicada!",
+              description: `${item.name} curou sua doença!`,
+            });
+          } else {
+            toast({
+              title: "Medicina ineficaz",
+              description: "Você não possui a doença correspondente a este remédio.",
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('Error using medicine:', error);
           toast({
-            title: "Erro ao usar item",
-            description: "Não foi possível usar este item. Tente novamente.",
-            variant: "destructive"
+            title: "Erro ao usar remédio",
+            description: "Tente novamente",
+            variant: "destructive",
           });
           return;
         }
-        inventoryUpdated = true;
-      } else {
-        console.log('📉 Diminuindo quantidade de', item.quantity, 'para', item.quantity - 1);
-        console.log('🔍 Tentando atualizar item com:', { 
-          user_id: userRecord.id, 
-          item_id: item.id,
-          item_name: item.name 
-        });
-        
-        // Update only the specific inventory entry by ID to avoid updating multiple entries
-        const { error: updateError } = await supabase
+      } else if (item.effect) {
+        // Non-medicine items with effects
+        if (item.effect.type === "multiple" && "effects" in item.effect) {
+          // Handle multiple effects
+          let healthChange = 0;
+          let hungerChange = 0;
+          let moodChange = 0;
+          let happinessChange = 0;
+          let energyChange = 0;
+          let alcoholismChange = 0;
+
+          item.effect.effects.forEach(effect => {
+            switch (effect.type) {
+              case "health":
+                healthChange += effect.value;
+                break;
+              case "hunger":
+                hungerChange += effect.value;
+                break;
+              case "mood":
+                moodChange += effect.value;
+                break;
+              case "happiness":
+                happinessChange += effect.value;
+                break;
+              case "energy":
+                energyChange += effect.value;
+                break;
+              case "alcoholism":
+                alcoholismChange += effect.value;
+                break;
+            }
+          });
+
+          // Apply all changes at once
+          const updates: any = {};
+          if (healthChange !== 0) {
+            updates.health = Math.min(100, Math.max(0, (gameStats.health || 100) + healthChange));
+          }
+          if (hungerChange !== 0) {
+            updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger || 100) + hungerChange));
+          }
+          if (happinessChange !== 0) {
+            updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + happinessChange));
+          }
+          if (energyChange !== 0) {
+            updates.energy = Math.min(100, Math.max(0, (gameStats.energy || 100) + energyChange));
+          }
+          if (alcoholismChange !== 0) {
+            updates.alcoholism = Math.min(100, Math.max(0, (gameStats.alcoholism || 0) + alcoholismChange));
+          }
+
+          if (Object.keys(updates).length > 0) {
+            await updateStats(updates);
+            effectApplied = true;
+          }
+
+          if (moodChange !== 0) {
+            // Set mood message for drinks
+            await addTemporaryEffect(item.effect.message, 60, item.itemType === "drink" ? "bar" : "other");
+          }
+        } else {
+          // Handle single effect
+          const effect = item.effect as { type: string; value: number; message: string };
+          
+          switch (effect.type) {
+            case "health":
+              await updateStats({ health: Math.min(100, (gameStats.health || 100) + effect.value) });
+              effectApplied = true;
+              break;
+            case "hunger":
+              const hungerIncrease = item.price ? Math.min(effect.value, Math.floor(item.price / 10)) : effect.value;
+              await updateStats({ hunger: Math.min(100, (gameStats.hunger || 100) + hungerIncrease) });
+              effectApplied = true;
+              break;
+            case "mood":
+              await addTemporaryEffect(effect.message, 60, item.itemType === "drink" ? "bar" : item.storeId === "icecream" ? "icecream" : "pizzeria");
+              effectApplied = true;
+              break;
+            case "happiness":
+              await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + effect.value) });
+              effectApplied = true;
+              break;
+            case "energy":
+              await updateStats({ energy: Math.min(100, (gameStats.energy || 100) + effect.value) });
+              effectApplied = true;
+              break;
+            case "alcoholism":
+              if (isAlcoholic(item.name)) {
+                const alcoholLevel = getAlcoholLevel(item.name);
+                await updateStats({ alcoholism: Math.min(100, (gameStats.alcoholism || 0) + alcoholLevel) });
+                effectApplied = true;
+              }
+              break;
+          }
+        }
+      }
+
+      if (effectApplied) {
+        // Remove item from inventory
+        await supabase
           .from('inventory')
           .update({ quantity: item.quantity - 1 })
           .eq('id', item.inventoryId);
-        
-        if (updateError) {
-          console.error('❌ Erro ao atualizar item:', updateError);
-          toast({
-            title: "Erro ao usar item",
-            description: "Não foi possível usar este item. Tente novamente.",
-            variant: "destructive"
-          });
-          return;
-        }
-        inventoryUpdated = true;
-      }
 
-      // Update local state immediately after successful DB update
-      if (inventoryUpdated) {
-        setInventory(prev => {
-          const updatedInventory = prev.map(invItem => {
-            if (invItem.id === item.id) {
-              if (item.quantity <= 1) {
-                return null; // Will be filtered out
-              } else {
-                return { ...invItem, quantity: invItem.quantity - 1 };
-              }
-            }
-            return invItem;
-          }).filter(Boolean) as InventoryItem[];
-          
-          return updatedInventory;
+        // If quantity becomes 0, delete the row
+        if (item.quantity <= 1) {
+          await supabase
+            .from('inventory')
+            .delete()
+            .eq('id', item.inventoryId);
+        }
+
+        // Refresh inventory
+        loadAllData(true);
+        
+        toast({
+          title: "Item usado!",
+          description: `Você usou ${item.name}`,
         });
-
-        // Invalidate cache to force fresh load on next access
-        setCachedData(null);
-        sessionStorage.removeItem(`bagData_${currentUser}`);
       }
-
-      // Now process item effects
-      let dbUpdateStats: any = {};
-      let gameContextStats: any = {};
-      let effectMessage = item.effect?.message || `Você usou ${item.name}`;
-
-      // Handle jewelry items that increase happiness
-      if (item.storeId === "jewelry" && !item.relationshipType) {
-        const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + 15);
-        dbUpdateStats.happiness_percentage = newHappiness;
-        gameContextStats.happiness = newHappiness;
-        effectMessage = `Você usou ${item.name} e se sente mais feliz! (+15 felicidade)`;
-      }
-
-      // Handle custom items
-      if (item.storeId === "custom" && item.effect) {
-        if (item.effect.type === "multiple" && "effects" in item.effect) {
-          // Handle multiple effects for drinks
-          for (const effect of item.effect.effects) {
-            switch (effect.type) {
-              case "hunger":
-                const newHunger = Math.min(100, userRecord.hunger_percentage + effect.value);
-                dbUpdateStats.hunger_percentage = newHunger;
-                gameContextStats.hunger = newHunger;
-                break;
-              case "happiness":
-                const newHappiness = Math.min(100, (userRecord.happiness_percentage || 100) + effect.value);
-                dbUpdateStats.happiness_percentage = newHappiness;
-                gameContextStats.happiness = newHappiness;
-                break;
-              case "energy":
-                const { data: userData } = await supabase
-                  .from('users')
-                  .select('energy_percentage')
-                  .eq('id', userRecord.id)
-                  .single();
-                const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + effect.value);
-                dbUpdateStats.energy_percentage = newEnergy;
-                gameContextStats.energy = newEnergy;
-                break;
-            }
-          }
-          effectMessage = item.effect.message;
-        } else {
-          // Handle single effects
-          switch (item.effect.type) {
-            case "health":
-              const newHealth = Math.min(100, userRecord.life_percentage + item.effect.value);
-              dbUpdateStats.life_percentage = newHealth;
-              gameContextStats.health = newHealth;
-              effectMessage = item.effect.message;
-              break;
-            case "hunger":
-              const newHunger = Math.min(100, userRecord.hunger_percentage + item.effect.value);
-              dbUpdateStats.hunger_percentage = newHunger;
-              gameContextStats.hunger = newHunger;
-              effectMessage = item.effect.message;
-              break;
-            case "mood":
-              const newMood = Math.min(100, userRecord.mood + item.effect.value);
-              dbUpdateStats.mood = newMood;
-              gameContextStats.mood = newMood.toString();
-              effectMessage = item.effect.message;
-              break;
-            case "energy":
-              const { data: userData } = await supabase
-                .from('users')
-                .select('energy_percentage')
-                .eq('id', userRecord.id)
-                .single();
-              const newEnergy = Math.min(100, (userData?.energy_percentage || 100) + item.effect.value);
-              dbUpdateStats.energy_percentage = newEnergy;
-              gameContextStats.energy = newEnergy;
-              effectMessage = item.effect.message;
-              break;
-          }
-        }
-      }
-
-      // Handle store items (not custom)
-      if (item.storeId !== "custom") {
-        // Medicine: try to cure corresponding disease
-        if (item.originalItem?.type === 'medicine') {
-          console.log('💊 Item é remédio:', item.name);
-          try {
-            await (cureDiseaseWithMedicine?.(item.name, userRecord.id));
-          } catch {}
-        }
-
-        // Handle single effect
-        if (item.effect) {
-          console.log('🎯 Item tem efeito single, type:', item.effect.type, 'value:', (item.effect as any).value);
-          switch (item.effect.type) {
-            case 'health': {
-              const newHealth = Math.min(100, (userRecord.life_percentage || 100) + item.effect.value);
-              dbUpdateStats.life_percentage = newHealth;
-              gameContextStats.health = newHealth;
-              break;
-            }
-            case 'hunger': {
-              const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + item.effect.value);
-              dbUpdateStats.hunger_percentage = newHunger;
-              gameContextStats.hunger = newHunger;
-              break;
-            }
-            case 'mood': {
-              const newMood = Math.min(100, (userRecord.mood || 5) + item.effect.value);
-              dbUpdateStats.mood = newMood;
-              gameContextStats.mood = newMood.toString();
-              break;
-            }
-            case 'alcoholism': {
-              const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + item.effect.value);
-              dbUpdateStats.alcoholism_percentage = newAlcoholism;
-              gameContextStats.alcoholism = newAlcoholism;
-              break;
-            }
-            case 'energy': {
-              if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
-                await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, 'other');
-              }
-              break;
-            }
-          }
-          effectMessage = item.effect.message || effectMessage;
-        }
-        
-        // Handle multiple effects (for ice cream items)
-        if (item.originalItem?.effects && Array.isArray(item.originalItem.effects)) {
-          console.log('🎯 Item tem múltiplos efeitos:', item.originalItem.effects.length);
-          for (const effect of item.originalItem.effects) {
-            console.log('🎯 Aplicando efeito:', effect.type, 'value:', effect.value);
-            switch (effect.type) {
-              case 'health': {
-                const newHealth = Math.min(100, (userRecord.life_percentage || 100) + effect.value);
-                dbUpdateStats.life_percentage = newHealth;
-                gameContextStats.health = newHealth;
-                break;
-              }
-              case 'hunger': {
-                const newHunger = Math.min(100, (userRecord.hunger_percentage || 0) + effect.value);
-                dbUpdateStats.hunger_percentage = newHunger;
-                gameContextStats.hunger = newHunger;
-                break;
-              }
-              case 'mood': {
-                const newMood = Math.min(100, (userRecord.mood || 5) + effect.value);
-                dbUpdateStats.mood = newMood;
-                gameContextStats.mood = newMood.toString();
-                break;
-              }
-              case 'alcoholism': {
-                const newAlcoholism = Math.min(100, (userRecord.alcoholism_percentage || 0) + effect.value);
-                dbUpdateStats.alcoholism_percentage = newAlcoholism;
-                gameContextStats.alcoholism = newAlcoholism;
-                break;
-              }
-              case 'energy': {
-                if (effect.duration && effect.message) {
-                  await addTemporaryEffect(effect.message, effect.duration, 'other');
-                }
-                break;
-              }
-            }
-            if (effect.message) {
-              effectMessage = effect.message;
-            }
-          }
-        }
-      }
-
-      // Update user stats in database
-      if (Object.keys(dbUpdateStats).length > 0) {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update(dbUpdateStats)
-          .eq('id', userRecord.id);
-        if (updateError) throw updateError;
-      }
-
-      // Update GameContext stats
-      if (Object.keys(gameContextStats).length > 0) {
-        await updateStats(gameContextStats);
-      }
-
-      // Efeitos temporários com duração (feedback visual/sensação)
-      if (item.originalItem?.effect?.duration && item.originalItem?.effect?.message) {
-        const tempType = item.itemType === 'drink' ? 'bar' : item.itemType === 'food' ? 'icecream' : 'other';
-        await addTemporaryEffect(item.originalItem.effect.message, item.originalItem.effect.duration, tempType as any);
-      }
-
-      // Aumentar felicidade e energia para produtos da sorveteria, bebidas e sexshop
-      const shouldIncreaseHappinessEnergy = 
-        item.storeId === "sexshop" || 
-        item.storeId === "icecream" || 
-        item.itemType === "drink";
-        
-      if (shouldIncreaseHappinessEnergy) {
-        let happinessIncrease = 10;
-        let energyIncrease = 8;
-        let happinessType = "doçura";
-        
-        if (item.storeId === "sexshop") {
-          happinessIncrease = 15;
-          energyIncrease = 12;
-          happinessType = "prazer";
-        } else if (item.itemType === "drink") {
-          happinessIncrease = 12;
-          energyIncrease = 15;
-          happinessType = "refrescância";
-        }
-        
-        const newHappiness = Math.min(100, (gameStats.happiness || 0) + happinessIncrease);
-        const newEnergy = Math.min(100, (gameStats.energy || 0) + energyIncrease);
-        
-        // Atualizar no banco
-        await supabase
-          .from('users')
-          .update({ 
-            happiness_percentage: newHappiness,
-            energy_percentage: newEnergy
-          })
-          .eq('id', userRecord.id);
-          
-        // Atualizar no contexto
-        await updateStats({ 
-          happiness: newHappiness, 
-          energy: newEnergy 
-        });
-        
-        await addTemporaryEffect(
-          `Você se sente mais feliz e energizado(a) pela ${happinessType}!`, 
-          30, 
-          'other'
-        );
-      }
-
-      // Aumentar fome para todos os itens da sorveteria baseado no preço
-      if (item.storeId === "icecream") {
-        console.log('🍨 Item da sorveteria detectado:', item.name);
-        const hungerIncrease = Math.floor((item.price || item.originalItem?.price || 0) / 2); // Preço dividido por 2 para determinar aumento da fome
-        console.log('🍽️ Aumento de fome calculado:', hungerIncrease, 'preço:', item.price || item.originalItem?.price);
-        const newHunger = Math.min(100, (gameStats.hunger || 0) + hungerIncrease);
-        console.log('🥄 Nova fome:', newHunger, 'fome atual:', gameStats.hunger);
-        
-        // Atualizar no banco
-        const hungerUpdateResult = await supabase
-          .from('users')
-          .update({ hunger_percentage: newHunger })
-          .eq('id', userRecord.id);
-        console.log('💾 Resultado update banco fome:', hungerUpdateResult);
-        
-        // Atualizar no contexto
-        const contextUpdate = await updateStats({ hunger: newHunger });
-        console.log('🎮 Resultado update contexto fome:', contextUpdate);
-        
-        const category = item.originalItem?.category;
-        let foodType = "guloseima";
-        
-        if (category === "Smoothies" || category === "Milk-Shakes") {
-          foodType = "bebida refrescante";
-        } else if (category === "Açaí") {
-          foodType = "açaí nutritivo";
-        } else if (category === "Crepes") {
-          foodType = "crepe delicioso";
-        } else if (category === "Sobremesas") {
-          foodType = "sobremesa divina";
-        } else if (category?.includes("Sorvetes")) {
-          foodType = "sorvete cremoso";
-        }
-        
-        console.log('✨ Categoria do item:', category, 'Tipo da comida:', foodType);
-        
-        await addTemporaryEffect(
-          `Que ${foodType} delicioso(a)! Sua fome diminuiu significativamente!`, 
-          20, 
-          'icecream'
-        );
-      }
-
-      toast({ title: "Item usado!", description: effectMessage });
-
     } catch (error) {
       console.error('Error using item:', error);
       toast({
         title: "Erro",
         description: "Não foi possível usar o item",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -988,6 +743,11 @@ export default function BagApp({ onBack }: BagAppProps) {
     setSendItemModalOpen(true);
   };
 
+  const handleSendFriendshipItem = (item: InventoryItem) => {
+    setSelectedFriendshipItem(item);
+    setSendFriendshipItemModalOpen(true);
+  };
+
   const handleRomanticProposal = (item: InventoryItem) => {
     if (item.originalItem) {
       setSelectedRing(item.originalItem);
@@ -995,57 +755,29 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
   };
 
-  const handleSendFriendshipItem = (item: InventoryItem) => {
-    setSelectedFriendshipItem(item);
-    setSendFriendshipItemModalOpen(true);
-  };
+  // Group items by category
+  const foodItems = inventory.filter(item => item.itemType === "food");
+  const drinkItems = inventory.filter(item => item.itemType === "drink");
+  const objectItems = inventory.filter(item => item.itemType === "object");
 
-  // Group identical items together
-  const groupInventoryItems = (items: InventoryItem[]): InventoryItem[] => {
-    const grouped = new Map<string, InventoryItem>();
-    
-    items.forEach(item => {
-      // Create a unique key based on item properties that should match for grouping (WITHOUT item.id)
-      // Use toLowerCase for case-insensitive grouping
-      const key = `${item.storeId}-${item.name.toLowerCase()}-${JSON.stringify(item.effect)}-${item.relationshipType || ''}-${item.isRing || false}`;
-      
-      if (grouped.has(key)) {
-        // Sum quantities for identical items and keep the first item's ID
-        const existingItem = grouped.get(key)!;
-        existingItem.quantity += item.quantity;
-      } else {
-        // Add new item with its quantity
-        grouped.set(key, { ...item });
-      }
-    });
-    
-    return Array.from(grouped.values());
-  };
-
-  // Group inventory by category and merge identical items
-  const groupedInventory = groupInventoryItems(inventory);
-  const foodItems = groupedInventory.filter(item => item.itemType === "food");
-  const drinkItems = groupedInventory.filter(item => item.itemType === "drink");
-  const objectItems = groupedInventory.filter(item => item.itemType === "object");
-
-  const renderItems = (items: InventoryItem[], emptyMessage: string) => {
+  const renderItems = (items: InventoryItem[]) => {
     if (items.length === 0) {
       return (
         <Card className="bg-gradient-card border-border/50">
           <CardContent className="pt-6 text-center">
             <Package size={48} className="mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">{emptyMessage}</p>
+            <p className="text-muted-foreground">Nenhum item nesta categoria</p>
           </CardContent>
         </Card>
       );
     }
 
-    return items.map(item => (
-      <Card key={`${item.id}-${item.storeId}`} className="bg-gradient-card border-border/50">
+    return items.map((item, index) => (
+      <Card key={`${item.id}-${index}`} className="bg-gradient-card border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             {/* Show custom item icon/image if available */}
-            {item.storeId === "custom" && item.originalItem?.icon ? (
+            {item.originalItem?.icon ? (
               typeof item.originalItem.icon === 'string' && item.originalItem.icon.startsWith('data:') ? (
                 <img src={item.originalItem.icon} alt={item.name} className="w-6 h-6 rounded object-cover" width={24} height={24} loading="lazy" decoding="async" />
               ) : (
@@ -1057,9 +789,11 @@ export default function BagApp({ onBack }: BagAppProps) {
               <span className="text-lg">{getCategoryIcon(item.itemType, item.name)}</span>
             )}
             {item.name}
-            <Badge variant="secondary" className="text-xs ml-2">
-              {item.quantity}x
-            </Badge>
+            {item.quantity > 1 && (
+              <Badge variant="secondary" className="text-xs">
+                {item.quantity}x
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1067,14 +801,10 @@ export default function BagApp({ onBack }: BagAppProps) {
             {(item.description || "").replace(/(criado por\s+)(\S*?)(\d{4})(\b)/i, '$1$2')}
           </p>
           
-          {/* Special ring info */}
-          {item.isRing && item.relationshipType && (
-            <div className="mb-3 p-2 bg-love/10 rounded border border-love/20">
+          {item.isRing && (
+            <div className="mb-3 p-2 bg-love/10 border border-love/20 rounded">
               <p className="text-xs text-love font-medium">
-                💍 Anel de {item.relationshipType === 'dating' ? 'Namoro' : item.relationshipType === 'engagement' ? 'Noivado' : item.relationshipType === 'friendship' ? 'Amizade' : 'Casamento'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {item.relationshipType === 'friendship' 
+                ❤️ {item.relationshipType === 'friendship' 
                   ? 'Use este anel para criar uma amizade épica especial'
                   : 'Use este anel para fazer uma proposta romântica especial'}
               </p>
@@ -1227,107 +957,97 @@ export default function BagApp({ onBack }: BagAppProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft size={20} />
-        </Button>
-        <h1 className="text-xl font-bold text-foreground">Bolsa</h1>
-        <div className="ml-auto">
-          <Badge variant="outline">
-            {groupedInventory.length} itens
-          </Badge>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft size={20} />
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+              <Package className="text-primary-foreground" size={20} />
+            </div>
+            <h1 className="text-lg font-bold text-foreground">Minha Bolsa</h1>
+          </div>
         </div>
       </div>
 
-      {/* Categorized Inventory */}
-      <div className="flex-1">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full">
+      {/* Loading state */}
+      {isLoading && inventory.length === 0 && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Package size={48} className="mx-auto mb-4 text-muted-foreground animate-pulse" />
+            <p className="text-muted-foreground">Carregando itens...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      {(!isLoading || inventory.length > 0) && (
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="food" className="flex items-center gap-2">
-              <Utensils size={16} />
-              <span className="hidden sm:inline">Comidas</span>
-              <Badge variant="secondary" className="text-xs">
-                {foodItems.length}
-              </Badge>
+            <TabsTrigger value="food" className="flex items-center gap-1 text-xs">
+              <Utensils size={14} />
+              Comidas ({foodItems.length})
             </TabsTrigger>
-            <TabsTrigger value="drink" className="flex items-center gap-2">
-              <Wine size={16} />
-              <span className="hidden sm:inline">Bebidas</span>
-              <Badge variant="secondary" className="text-xs">
-                {drinkItems.length}
-              </Badge>
+            <TabsTrigger value="drink" className="flex items-center gap-1 text-xs">
+              <Wine size={14} />
+              Bebidas ({drinkItems.length})
             </TabsTrigger>
-            <TabsTrigger value="object" className="flex items-center gap-2">
-              <Pill size={16} />
-              <span className="hidden sm:inline">Objetos</span>
-              <Badge variant="secondary" className="text-xs">
-                {objectItems.length}
-              </Badge>
+            <TabsTrigger value="object" className="flex items-center gap-1 text-xs">
+              <Package size={14} />
+              Objetos ({objectItems.length})
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History size={16} />
-              <span className="hidden sm:inline">Histórico</span>
-              <Badge variant="secondary" className="text-xs">
-                {historyItems.length}
-              </Badge>
+            <TabsTrigger value="history" className="flex items-center gap-1 text-xs">
+              <History size={14} />
+              Recebidos ({historyItems.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="food" className="space-y-3 h-full overflow-y-auto">
-            {renderItems(foodItems, "Nenhuma comida na bolsa")}
-          </TabsContent>
+          <div className="flex-1 overflow-y-auto">
+            <TabsContent value="food" className="space-y-3 mt-0">
+              {renderItems(foodItems)}
+            </TabsContent>
 
-          <TabsContent value="drink" className="space-y-3 h-full overflow-y-auto">
-            {renderItems(drinkItems, "Nenhuma bebida na bolsa")}
-          </TabsContent>
+            <TabsContent value="drink" className="space-y-3 mt-0">
+              {renderItems(drinkItems)}
+            </TabsContent>
 
-          <TabsContent value="object" className="space-y-3 h-full overflow-y-auto">
-            {renderItems(objectItems, "Nenhum objeto na bolsa")}
-          </TabsContent>
+            <TabsContent value="object" className="space-y-3 mt-0">
+              {renderItems(objectItems)}
+            </TabsContent>
 
-          <TabsContent value="history" className="space-y-3 h-full overflow-y-auto">
-            {renderHistory()}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Tips */}
-      <Card className="bg-gradient-card border-border/50 mt-4">
-        <CardContent className="pt-4">
-          <div className="text-center space-y-1">
-            <p className="text-xs text-muted-foreground">
-              💡 <strong>Dica:</strong> Use itens para melhorar suas estatísticas
-            </p>
-            <p className="text-xs text-muted-foreground">
-              📤 Envie itens para amigos para fortalecer relacionamentos
-            </p>
+            <TabsContent value="history" className="space-y-3 mt-0">
+              {renderHistory()}
+            </TabsContent>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Send Ring Modal */}
+        </Tabs>
+      )}
+
+      {/* Modals */}
       <SendRingModal
         isOpen={sendRingModalOpen}
         onClose={() => setSendRingModalOpen(false)}
-        ring={selectedRing}
+        ringData={selectedRing}
       />
       
-      
-      {/* Send Item Modal */}
       <SendItemModal
         isOpen={sendItemModalOpen}
         onClose={() => setSendItemModalOpen(false)}
         item={selectedItemToSend}
         onItemSent={() => {
-          loadAllData(true); // Force refresh após enviar item
+          setSendItemModalOpen(false);
+          loadAllData(true);
         }}
       />
-      
-      {/* Send Friendship Item Modal */}
+
       <SendFriendshipItemModal
         isOpen={sendFriendshipItemModalOpen}
         onClose={() => setSendFriendshipItemModalOpen(false)}
         item={selectedFriendshipItem}
+        onItemSent={() => {
+          setSendFriendshipItemModalOpen(false);
+          loadAllData(true);
+        }}
       />
     </div>
   );
