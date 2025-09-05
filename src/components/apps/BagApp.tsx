@@ -216,7 +216,7 @@ export default function BagApp({ onBack }: BagAppProps) {
           itemType: fallbackItem.itemType,
           quantity: item.quantity || 1,
           storeId: 'custom',
-          canUse: false,
+          canUse: true, // Fallback items também podem ser usados
           canSend: true,
           isRing: false,
           originalItem: fallbackItem as any,
@@ -249,7 +249,7 @@ export default function BagApp({ onBack }: BagAppProps) {
         itemType: customItem.itemType || 'object',
         quantity: item.quantity || 1,
         storeId: 'custom',
-        canUse: customItem.canUse !== false,
+        canUse: true, // Todos os itens customizados podem ser usados
         canSend: customItem.canSend !== false,
         isRing: false,
         originalItem: customItem,
@@ -288,7 +288,7 @@ export default function BagApp({ onBack }: BagAppProps) {
       itemType: storeItem.itemType || getItemType((storeItem as any).storeId || '', storeItem.id),
       quantity: item.quantity || 1,
       storeId: (storeItem as any).storeId || '',
-      canUse: (storeItem as any).canUse !== false,
+      canUse: true, // Todos os itens podem ser usados
       canSend: (storeItem as any).canSend !== false,
       isRing: storeItem.relationshipType !== undefined,
       relationshipType: storeItem.relationshipType,
@@ -720,12 +720,12 @@ export default function BagApp({ onBack }: BagAppProps) {
           }
         }
       } else {
+        // Itens sem efeito ainda podem ser consumidos
+        effectApplied = true;
         toast({
-          title: "Item sem efeito",
-          description: "Este item não possui efeito definido",
-          variant: "destructive",
+          title: "Item consumido!",
+          description: `Você usou ${item.name}`,
         });
-        return;
       }
       
       if (effectApplied) {
