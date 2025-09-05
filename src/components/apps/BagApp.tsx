@@ -494,52 +494,52 @@ export default function BagApp({ onBack }: BagAppProps) {
 
   // Load data on component mount with instant cache + real-time subscription
   useEffect(() => {
-    if (currentUser) {
-      // Try cache first, then load fresh data
-      const hasCache = showCachedDataFirst();
-      if (!hasCache) {
-        loadAllData();
-      } else {
-        // Load fresh data in background se o cache for antigo
-        const cacheAge = cachedData ? Date.now() - cachedData.timestamp : Infinity;
-        if (cacheAge > 10000) { // Refresh em background se cache > 10s
-          setTimeout(() => loadAllData(), 100);
-        }
-      }
-      
-      // Set up real-time subscription using channel that doesn't conflict
-      const channel = supabase
-        .channel(`bag-updates-${currentUser}`)
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'inventory'
-          }, 
-          () => {
-            console.log('New inventory item received, refreshing...');
-            setTimeout(() => loadAllData(true), 200); // Small delay to ensure DB consistency
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'inventory'
-          }, 
-          () => {
-            console.log('Inventory item updated, refreshing...');
-            setTimeout(() => loadAllData(true), 200);
-          }
-        )
-        .subscribe((status) => {
-          console.log('Inventory realtime status:', status);
-        });
+    if (!currentUser) return;
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    // Try cache first, then load fresh data
+    const hasCache = showCachedDataFirst();
+    if (!hasCache) {
+      loadAllData();
+    } else {
+      // Load fresh data in background se o cache for antigo
+      const cacheAge = cachedData ? Date.now() - cachedData.timestamp : Infinity;
+      if (cacheAge > 10000) { // Refresh em background se cache > 10s
+        setTimeout(() => loadAllData(), 100);
+      }
     }
+    
+    // Set up real-time subscription using channel that doesn't conflict
+    const channel = supabase
+      .channel(`bag-updates-${currentUser}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'inventory'
+        }, 
+        () => {
+          console.log('New inventory item received, refreshing...');
+          setTimeout(() => loadAllData(true), 200); // Small delay to ensure DB consistency
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'inventory'
+        }, 
+        () => {
+          console.log('Inventory item updated, refreshing...');
+          setTimeout(() => loadAllData(true), 200);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Inventory realtime status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
 
   // Auto-refresh quando receber novos itens (polling a cada 30s quando app está aberto)
