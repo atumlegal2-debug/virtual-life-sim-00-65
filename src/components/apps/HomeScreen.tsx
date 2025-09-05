@@ -363,15 +363,16 @@ export function HomeScreen() {
           </p>
         </div>
 
-        {/* App Grid */}
-        <div className="grid grid-cols-3 gap-4 flex-1">
-          {apps.map((app) => (
+        {/* App Grid - Modern iOS style layout */}
+        <div className="grid grid-cols-3 gap-6 flex-1 px-2">
+          {apps.map((app, index) => (
             <AppIcon
               key={app.id}
               icon={app.icon}
               label={app.label}
               onClick={() => handleAppClick(app.id)}
-              className="justify-self-center"
+              className="justify-self-center animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
               hasNotification={app.hasNotification}
             />
           ))}
