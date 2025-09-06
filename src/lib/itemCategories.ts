@@ -148,22 +148,24 @@ export function getCategoryIcon(itemType: "food" | "drink" | "object", itemName?
   }
 }
 
-export function getEffectIcon(effectType: "health" | "hunger" | "mood" | "alcoholism" | "energy"): string {
+export function getEffectIcon(effectType: "health" | "hunger" | "mood" | "alcoholism" | "energy" | "happiness"): string {
   switch (effectType) {
     case "health": return "💊";
     case "hunger": return "🍽️";
     case "mood": return "😊";
+    case "happiness": return "😊";
     case "energy": return "⚡";
     case "alcoholism": return "🍷";
     default: return "📦";
   }
 }
 
-export function getEffectName(effectType: "health" | "hunger" | "mood" | "alcoholism" | "energy"): string {
+export function getEffectName(effectType: "health" | "hunger" | "mood" | "alcoholism" | "energy" | "happiness"): string {
   switch (effectType) {
     case "health": return "Vida";
     case "hunger": return "Fome";
     case "mood": return "Humor";
+    case "happiness": return "Felicidade";
     case "energy": return "Energia";
     case "alcoholism": return "Alcoolismo";
     default: return "Efeito";
