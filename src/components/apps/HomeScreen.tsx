@@ -375,25 +375,43 @@ export function HomeScreen() {
         </div>
 
         {/* Status Bar */}
-        <div className="bg-gradient-card rounded-app p-3 mb-6 border border-border/50">
-          <p className="text-sm text-center text-muted-foreground">
-            💭 Sentindo-se bem
-          </p>
-        </div>
+        {userProfile?.hunger_percentage === 0 ? (
+          <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-app p-4 mb-6 border border-red-500/30 backdrop-blur-sm">
+            <p className="text-sm text-center text-red-300 font-bold">
+              ⚠️ Seu personagem está desmaiado por falta de comida!
+            </p>
+            <p className="text-xs text-center text-red-400 mt-1">
+              Apenas o hospital está disponível para tratamento
+            </p>
+          </div>
+        ) : (
+          <div className="bg-gradient-card rounded-app p-3 mb-6 border border-border/50">
+            <p className="text-sm text-center text-muted-foreground">
+              💭 Sentindo-se bem
+            </p>
+          </div>
+        )}
 
         {/* App Grid - Modern iOS style layout */}
         <div className="grid grid-cols-3 gap-6 flex-1 px-2">
-          {apps.map((app, index) => (
-            <AppIcon
-              key={app.id}
-              icon={app.icon}
-              label={app.label}
-              onClick={() => handleAppClick(app.id)}
-              className="justify-self-center animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-              hasNotification={app.hasNotification}
-            />
-          ))}
+          {apps.map((app, index) => {
+            // Se fome = 0, só hospital disponível
+            const isDisabled = userProfile?.hunger_percentage === 0 && app.id !== "hospital";
+            
+            return (
+              <AppIcon
+                key={app.id}
+                icon={app.icon}
+                label={app.label}
+                onClick={() => isDisabled ? null : handleAppClick(app.id)}
+                className={`justify-self-center animate-fade-in ${
+                  isDisabled ? 'opacity-30 cursor-not-allowed' : ''
+                }`}
+                style={{ animationDelay: `${index * 50}ms` }}
+                hasNotification={!isDisabled && app.hasNotification}
+              />
+            );
+          })}
         </div>
         
         {/* Time */}
