@@ -37,15 +37,22 @@ interface InventoryItem {
   effect?: {
     type: string;
     value: number;
-    message: string;
+    message?: string;
   } | {
     type: "multiple";
     effects: Array<{
       type: string;
       value: number;
+      message?: string;
     }>;
-    message: string;
+    message?: string;
   };
+  // Add effects array for items from stores that have multiple effects
+  effects?: Array<{
+    type: string;
+    value: number;
+    message?: string;
+  }>;
 }
 
 interface HistoryItem {
@@ -629,18 +636,20 @@ export default function BagApp({ onBack }: BagAppProps) {
           });
           return;
         }
-      } else if (item.effect) {
-        // Non-medicine items with effects
-        if (item.effect.type === "multiple" && "effects" in item.effect) {
-          // Handle multiple effects
-          let healthChange = 0;
-          let hungerChange = 0;
-          let moodChange = 0;
-          let happinessChange = 0;
-          let energyChange = 0;
-          let alcoholismChange = 0;
+      } else if (item.effect || item.effects) {
+        // Handle items with effects (both single effect and multiple effects)
+        let healthChange = 0;
+        let hungerChange = 0;
+        let moodChange = 0;
+        let happinessChange = 0;
+        let energyChange = 0;
+        let alcoholismChange = 0;
+        let effectMessage = "";
 
-          item.effect.effects.forEach(effect => {
+        // Check if item has multiple effects (effects array)
+        if (item.effects && Array.isArray(item.effects)) {
+          // Handle multiple effects from effects array
+          item.effects.forEach(effect => {
             switch (effect.type) {
               case "health":
                 healthChange += effect.value;
@@ -650,6 +659,7 @@ export default function BagApp({ onBack }: BagAppProps) {
                 break;
               case "mood":
                 moodChange += effect.value;
+                if (effect.message && !effectMessage) effectMessage = effect.message;
                 break;
               case "happiness":
                 happinessChange += effect.value;
@@ -662,94 +672,102 @@ export default function BagApp({ onBack }: BagAppProps) {
                 break;
             }
           });
-
-          // Apply all changes at once
-          const updates: any = {};
-          if (healthChange !== 0) {
-            updates.health = Math.min(100, Math.max(0, (gameStats.health || 100) + healthChange));
-          }
-          if (hungerChange !== 0) {
-            updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger ?? 0) + hungerChange));
-          }
-          const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
-          let totalHappinessChange = 0;
-          if (happinessChange !== 0) totalHappinessChange += happinessChange;
-          if (isHappinessStore) {
-            const extra = moodChange !== 0 ? moodChange : (hungerChange !== 0 ? hungerChange : (energyChange !== 0 ? energyChange : 0));
-            totalHappinessChange += extra;
-          }
-          if (totalHappinessChange !== 0) {
-            updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + totalHappinessChange));
-          }
-          if (energyChange !== 0) {
-            updates.energy = Math.min(100, Math.max(0, (gameStats.energy || 100) + energyChange));
-          }
-          if (alcoholismChange !== 0) {
-            updates.alcoholism = Math.min(100, Math.max(0, (gameStats.alcoholism || 0) + alcoholismChange));
-          }
-
-          if (Object.keys(updates).length > 0) {
-            await updateStats(updates);
-            effectApplied = true;
-          }
-
-          if (moodChange !== 0) {
-            // Set mood message for drinks
-            await addTemporaryEffect(item.effect.message, 60, item.itemType === "drink" ? "bar" : "other");
-          }
-        } else {
+        } else if (item.effect && item.effect.type === "multiple" && "effects" in item.effect) {
+          // Handle multiple effects from effect.effects
+          item.effect.effects.forEach(effect => {
+            switch (effect.type) {
+              case "health":
+                healthChange += effect.value;
+                break;
+              case "hunger":
+                hungerChange += effect.value;
+                break;
+              case "mood":
+                moodChange += effect.value;
+                if (effect.message && !effectMessage) effectMessage = effect.message;
+                break;
+              case "happiness":
+                happinessChange += effect.value;
+                break;
+              case "energy":
+                energyChange += effect.value;
+                break;
+              case "alcoholism":
+                alcoholismChange += effect.value;
+                break;
+            }
+          });
+          if (item.effect.message && !effectMessage) effectMessage = item.effect.message;
+        } else if (item.effect) {
           // Handle single effect
-          const effect = item.effect as { type: string; value: number; message: string };
+          const effect = item.effect as { type: string; value: number; message?: string };
+          if (effect.message) effectMessage = effect.message;
           
           switch (effect.type) {
             case "health":
-              await updateStats({ health: Math.min(100, (gameStats.health || 100) + effect.value) });
-              effectApplied = true;
+              healthChange = effect.value;
               break;
-            case "hunger": {
-              const currentHunger = gameStats.hunger ?? 0;
-              await updateStats({ hunger: Math.min(100, Math.max(0, currentHunger + effect.value)) });
-              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
-              if (isHappinessStore) {
-                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
-              }
-              effectApplied = true;
+            case "hunger":
+              hungerChange = effect.value;
               break;
-            }
-            case "mood": {
-              await addTemporaryEffect(effect.message, 60, item.itemType === "drink" ? "bar" : item.storeId === "icecream" ? "icecream" : "pizzeria");
-              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
-              if (isHappinessStore) {
-                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
-              }
-              effectApplied = true;
+            case "mood":
+              moodChange = effect.value;
               break;
-            }
-            case "happiness": {
-              await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + effect.value) });
-              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
-              if (isHappinessStore) {
-                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
-              }
-              effectApplied = true;
+            case "happiness":
+              happinessChange = effect.value;
               break;
-            }
-            case "energy": {
-              await updateStats({ energy: Math.min(100, (gameStats.energy || 100) + effect.value) });
-              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
-              if (isHappinessStore) {
-                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
-              }
-              effectApplied = true;
+            case "energy":
+              energyChange = effect.value;
               break;
-            }
-            case "alcoholism": {
-              const currentAlcoholism = gameStats.alcoholism || 0;
-              await updateStats({ alcoholism: Math.min(100, Math.max(0, currentAlcoholism + effect.value)) });
-              effectApplied = true;
+            case "alcoholism":
+              alcoholismChange = effect.value;
               break;
-            }
           }
+        }
+
+        // Apply all changes at once
+        const updates: any = {};
+        
+        if (healthChange !== 0) {
+          updates.health = Math.min(100, Math.max(0, (gameStats.health || 100) + healthChange));
+        }
+        
+        if (hungerChange !== 0) {
+          updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger ?? 0) + hungerChange));
+        }
+        
+        if (energyChange !== 0) {
+          updates.energy = Math.min(100, Math.max(0, (gameStats.energy || 100) + energyChange));
+        }
+        
+        // Handle happiness - for ice cream and sexshop stores, always apply happiness from any effect
+        const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+        let totalHappinessChange = happinessChange;
+        
+        if (isHappinessStore) {
+          // Add happiness from mood, hunger, or energy effects if happiness wasn't explicitly set
+          if (happinessChange === 0) {
+            totalHappinessChange = moodChange || hungerChange || energyChange || 0;
+          }
+        }
+        
+        if (totalHappinessChange !== 0) {
+          updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + totalHappinessChange));
+        }
+        
+        if (alcoholismChange !== 0) {
+          updates.alcoholism = Math.min(100, Math.max(0, (gameStats.alcoholism || 0) + alcoholismChange));
+        }
+
+        // Apply updates to database
+        if (Object.keys(updates).length > 0) {
+          await updateStats(updates);
+          effectApplied = true;
+        }
+
+        // Add temporary mood effect if there's a message
+        if (effectMessage && (moodChange !== 0 || item.itemType === "drink")) {
+          await addTemporaryEffect(effectMessage, 60, item.itemType === "drink" ? "bar" : "other");
         }
       } else {
         // Itens sem efeito ainda podem ser consumidos
