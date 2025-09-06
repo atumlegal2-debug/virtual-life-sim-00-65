@@ -719,10 +719,15 @@ export default function BagApp({ onBack }: BagAppProps) {
               effectApplied = true;
               break;
             }
-            case "happiness":
+            case "happiness": {
               await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + effect.value) });
+              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+              if (isHappinessStore) {
+                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
+              }
               effectApplied = true;
               break;
+            }
             case "energy": {
               await updateStats({ energy: Math.min(100, (gameStats.energy || 100) + effect.value) });
               const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
@@ -931,6 +936,12 @@ export default function BagApp({ onBack }: BagAppProps) {
             case "alcoholism":
               if (isAlcoholic(selectedItemToDivide.storeId || '', selectedItemToDivide.id)) {
                 await updateStats({ alcoholism: Math.min(100, (gameStats.alcoholism || 0) + reducedValue) });
+              }
+              break;
+            case "happiness":
+              await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + reducedValue) });
+              if (selectedItemToDivide.storeId === 'sexshop' || selectedItemToDivide.storeId === 'sorveteria') {
+                await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + reducedValue) });
               }
               break;
           }

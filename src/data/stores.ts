@@ -7,13 +7,13 @@ export interface StoreItem {
   itemType?: "food" | "drink" | "object"; // New field for bag categorization
   icon?: string; // Add icon property
   effect?: {
-    type: "health" | "hunger" | "mood" | "alcoholism" | "energy";
+    type: "health" | "hunger" | "mood" | "alcoholism" | "energy" | "happiness";
     value: number;
     duration?: number; // in minutes
     message?: string;
   };
   effects?: Array<{
-    type: "health" | "hunger" | "mood" | "alcoholism" | "energy";
+    type: "health" | "hunger" | "mood" | "alcoholism" | "energy" | "happiness";
     value: number;
     duration?: number; // in minutes
     message?: string;
@@ -945,7 +945,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 15, duration: 15, message: "É como um abraço doce na alma..." },
           { type: "energy", value: 12, duration: 10 },
-          { type: "mood", value: 15, duration: 12 }
+          { type: "happiness", value: 15, duration: 12 }
         ]
       },
       {
@@ -958,7 +958,8 @@ export const STORES = {
         icon: "🍫",
         effects: [
           { type: "mood", value: 18, duration: 20, message: "Esse chocolate... parece ter magia própria!" },
-          { type: "energy", value: 15, duration: 15 }
+          { type: "energy", value: 15, duration: 15 },
+          { type: "happiness", value: 18, duration: 20 }
         ]
       },
       {
@@ -971,7 +972,8 @@ export const STORES = {
         icon: "🍓",
         effects: [
           { type: "mood", value: 18, duration: 15, message: "Tão doce que sinto como se estivesse apaixonado(a)." },
-          { type: "energy", value: 12, duration: 10 }
+          { type: "energy", value: 12, duration: 10 },
+          { type: "happiness", value: 18, duration: 15 }
         ]
       },
       {
@@ -985,7 +987,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 20, duration: 20, message: "Impossível escolher o melhor, cada colher é uma surpresa." },
           { type: "energy", value: 18, duration: 15 },
-          { type: "mood", value: 20, duration: 18 }
+          { type: "happiness", value: 20, duration: 18 }
         ]
       },
       {
@@ -998,7 +1000,8 @@ export const STORES = {
         icon: "🍮",
         effects: [
           { type: "mood", value: 20, duration: 25, message: "Derrete na boca como se fosse pura felicidade..." },
-          { type: "energy", value: 15, duration: 20 }
+          { type: "energy", value: 15, duration: 20 },
+          { type: "happiness", value: 20, duration: 25 }
         ]
       },
 
@@ -1013,7 +1016,7 @@ export const STORES = {
         icon: "🌿",
         effects: [
           { type: "energy", value: 25, duration: 10, message: "Woaah! Parece que minha boca virou um festival de fogos gelados!" },
-          { type: "mood", value: 22, duration: 12 }
+          { type: "happiness", value: 25, duration: 12 }
         ]
       },
       {
@@ -1026,7 +1029,8 @@ export const STORES = {
         icon: "☁️",
         effects: [
           { type: "mood", value: 30, duration: 15, message: "Estou comendo nuvens... tão leve que quase flutuo." },
-          { type: "energy", value: 25, duration: 12 }
+          { type: "energy", value: 25, duration: 12 },
+          { type: "happiness", value: 30, duration: 15 }
         ]
       },
       {
@@ -1039,7 +1043,8 @@ export const STORES = {
         icon: "🌈",
         effects: [
           { type: "mood", value: 32, duration: 20, message: "Cada lambida é uma aventura diferente!" },
-          { type: "energy", value: 30, duration: 18 }
+          { type: "energy", value: 30, duration: 18 },
+          { type: "happiness", value: 32, duration: 20 }
         ]
       },
       {
@@ -1052,7 +1057,7 @@ export const STORES = {
         icon: "🫐",
         effects: [
           { type: "energy", value: 35, duration: 5, message: "Minha língua... tá brilhando! Hahaha!" },
-          { type: "mood", value: 28, duration: 8 }
+          { type: "happiness", value: 35, duration: 8 }
         ]
       },
       {
@@ -1065,7 +1070,8 @@ export const STORES = {
         icon: "🌅",
         effects: [
           { type: "mood", value: 38, duration: 20, message: "Tem gosto de magia... como se fosse o pôr do sol em forma de sorvete." },
-          { type: "energy", value: 30, duration: 15 }
+          { type: "energy", value: 30, duration: 15 },
+          { type: "happiness", value: 38, duration: 20 }
         ]
       },
 
@@ -1081,7 +1087,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 28, duration: 20, message: "Ahh... nada como o bom e velho shake." },
           { type: "energy", value: 20, duration: 15 },
-          { type: "mood", value: 22, duration: 18 }
+          { type: "happiness", value: 28, duration: 18 }
         ]
       },
       {
@@ -1094,7 +1100,7 @@ export const STORES = {
         icon: "🥤",
         effects: [
           { type: "energy", value: 32, duration: 20, message: "Dois sabores, um só shake... perfeito!" },
-          { type: "mood", value: 28, duration: 18 }
+          { type: "happiness", value: 32, duration: 18 }
         ]
       },
       {
@@ -1107,7 +1113,8 @@ export const STORES = {
         icon: "🥤",
         effects: [
           { type: "mood", value: 38, duration: 15, message: "Olha só, ele muda de cor... que incrível!" },
-          { type: "energy", value: 32, duration: 12 }
+          { type: "energy", value: 32, duration: 12 },
+          { type: "happiness", value: 38, duration: 15 }
         ]
       },
       {
@@ -1120,7 +1127,7 @@ export const STORES = {
         icon: "🧊",
         effects: [
           { type: "energy", value: 40, duration: 10, message: "Uuuuh! Até minha respiração ficou gelada!" },
-          { type: "mood", value: 35, duration: 12 }
+          { type: "happiness", value: 40, duration: 12 }
         ]
       },
       {
@@ -1133,7 +1140,8 @@ export const STORES = {
         icon: "👑",
         effects: [
           { type: "mood", value: 45, duration: 25, message: "Esse é digno dos deuses... maravilhoso!" },
-          { type: "energy", value: 38, duration: 20 }
+          { type: "energy", value: 38, duration: 20 },
+          { type: "happiness", value: 45, duration: 25 }
         ]
       },
 
@@ -1148,7 +1156,7 @@ export const STORES = {
         icon: "🫐",
         effects: [
           { type: "energy", value: 20, duration: 20, message: "Refrescante e cheio de vida... combina com verão." },
-          { type: "mood", value: 18, duration: 15 }
+          { type: "happiness", value: 20, duration: 15 }
         ]
       },
       {
@@ -1161,7 +1169,8 @@ export const STORES = {
         icon: "✨",
         effects: [
           { type: "mood", value: 38, duration: 25, message: "Até brilha... parece uma poção deliciosa." },
-          { type: "energy", value: 32, duration: 20 }
+          { type: "energy", value: 32, duration: 20 },
+          { type: "happiness", value: 38, duration: 25 }
         ]
       },
       {
@@ -1174,7 +1183,7 @@ export const STORES = {
         icon: "⚡",
         effects: [
           { type: "energy", value: 45, duration: 5, message: "Uau! Tô pronto(a) pra qualquer missão agora!" },
-          { type: "mood", value: 40, duration: 8 }
+          { type: "happiness", value: 45, duration: 8 }
         ]
       },
       {
@@ -1188,7 +1197,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 20, duration: 15, message: "A mistura perfeita... doce e forte ao mesmo tempo." },
           { type: "energy", value: 18, duration: 12 },
-          { type: "mood", value: 20, duration: 15 }
+          { type: "happiness", value: 20, duration: 15 }
         ]
       },
       {
@@ -1201,7 +1210,8 @@ export const STORES = {
         icon: "🔮",
         effects: [
           { type: "mood", value: 25, duration: 20, message: "Cada colher é uma surpresa diferente... adoro!" },
-          { type: "energy", value: 22, duration: 15 }
+          { type: "energy", value: 22, duration: 15 },
+          { type: "happiness", value: 25, duration: 20 }
         ]
       },
 
@@ -1216,7 +1226,8 @@ export const STORES = {
         icon: "🥞",
         effects: [
           { type: "mood", value: 30, duration: 20, message: "Que explosão de sabores! Me sinto nas nuvens de felicidade!" },
-          { type: "energy", value: 25, duration: 15 }
+          { type: "energy", value: 25, duration: 15 },
+          { type: "happiness", value: 30, duration: 20 }
         ]
       },
 
@@ -1232,7 +1243,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 50, duration: 30, message: "Que delícia! Os churros quentinhos com o milkshake gelado... perfeição!" },
           { type: "energy", value: 35, duration: 25 },
-          { type: "mood", value: 40, duration: 20 }
+          { type: "happiness", value: 50, duration: 20 }
         ]
       },
       {
@@ -1246,7 +1257,7 @@ export const STORES = {
         effects: [
           { type: "hunger", value: 30, duration: 20, message: "Tão fofo e rosa! Me sinto uma princesa tomando isso!" },
           { type: "energy", value: 22, duration: 15 },
-          { type: "mood", value: 28, duration: 18 }
+          { type: "happiness", value: 30, duration: 18 }
         ]
       },
 
@@ -1261,7 +1272,7 @@ export const STORES = {
         icon: "🍓",
         effects: [
           { type: "energy", value: 15, duration: 15, message: "Que refrescante! As frutas vermelhas dão uma energia incrível!" },
-          { type: "mood", value: 12, duration: 12 }
+          { type: "happiness", value: 15, duration: 12 }
         ]
       },
       {
@@ -1274,7 +1285,7 @@ export const STORES = {
         icon: "🥭",
         effects: [
           { type: "energy", value: 18, duration: 15, message: "A manga tropical com chocolate... que combinação perfeita!" },
-          { type: "mood", value: 15, duration: 12 }
+          { type: "happiness", value: 18, duration: 12 }
         ]
       },
 
@@ -1289,7 +1300,8 @@ export const STORES = {
         icon: "🍰",
         effects: [
           { type: "mood", value: 40, duration: 25, message: "Que brownie divino! O contraste do quente com o gelado é pura felicidade!" },
-          { type: "energy", value: 30, duration: 20 }
+          { type: "energy", value: 30, duration: 20 },
+          { type: "happiness", value: 40, duration: 25 }
         ]
       },
 
@@ -1304,7 +1316,8 @@ export const STORES = {
         icon: "🌸",
         effects: [
           { type: "mood", value: 20, duration: 15, message: "Que aroma relaxante... a lavanda acalma minha alma!" },
-          { type: "energy", value: 15, duration: 12 }
+          { type: "energy", value: 15, duration: 12 },
+          { type: "happiness", value: 20, duration: 15 }
         ]
       },
       {
@@ -1318,7 +1331,7 @@ export const STORES = {
         effects: [
           { type: "alcoholism", value: 25, duration: 20, message: "Mmm... esse licor de chocolate tem um sabor único e intenso!" },
           { type: "energy", value: 20, duration: 15 },
-          { type: "mood", value: 30, duration: 18 }
+          { type: "happiness", value: 25, duration: 18 }
         ]
       },
       {
@@ -1332,7 +1345,7 @@ export const STORES = {
         effects: [
           { type: "alcoholism", value: 20, duration: 15, message: "Que combinação refrescante! O gengibre com limão é surpreendente!" },
           { type: "energy", value: 18, duration: 12 },
-          { type: "mood", value: 25, duration: 15 }
+          { type: "happiness", value: 20, duration: 15 }
         ]
       },
       {
