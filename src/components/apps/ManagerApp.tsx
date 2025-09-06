@@ -664,14 +664,17 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
           const newHealth = Math.min(100, (currentUserData?.life_percentage || 100) + healthGain);
 
-          // If treatment is for hunger disease, also boost hunger and reduce disease
+          // If treatment is for hunger disease, also boost hunger and cure malnutrition completely
           if (request.treatment_type.includes('Desnutrição')) {
             const newHunger = Math.min(100, (currentUserData?.hunger_percentage || 0) + 60);
-            const newDisease = Math.max(0, (currentUserData?.disease_percentage || 0) - 15);
+            // Cure malnutrition completely by setting disease_percentage to 0
             await supabase
               .from('users')
-              .update({ life_percentage: newHealth, hunger_percentage: newHunger, disease_percentage: newDisease })
+              .update({ life_percentage: newHealth, hunger_percentage: newHunger, disease_percentage: 0 })
               .eq('id', request.user_id);
+            
+            // Also call the cure_malnutrition function to ensure complete cure
+            await supabase.rpc('cure_malnutrition', { target_user_id: request.user_id });
           } else {
             await supabase
               .from('users')

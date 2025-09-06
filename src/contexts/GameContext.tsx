@@ -275,6 +275,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           window.dispatchEvent(event);
         }
       }
+      
+      // Check and fix any disease inconsistencies
+      checkAndFixDiseaseLevel();
 
       // 3) Diminui alcoolismo ao longo do tempo
       setGameStats(prev => {
@@ -754,6 +757,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         console.log('Disease percentage reset to 0 for user:', currentUser);
       }
     }
+    
+    // Also check if disease percentage is 0 but we have malnutrition disease in the list
+    if (gameStats.disease === 0 && diseases.some(d => d.name === "Desnutrição")) {
+      console.log('Fixing malnutrition disease - disease percentage is 0 but malnutrition still in list');
+      const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+      setDiseases(updatedDiseases);
+      if (currentUser) {
+        localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+      }
+    }
   };
 
   // New function to cure disease with medicine
@@ -1026,6 +1039,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
             const msg = String(newRow.request_message || '');
             if (type.includes('Desnutrição') || msg.includes('Desnutrição')) {
               console.log('Realtime: tratamento aprovado para Desnutrição, curando...');
+              // Force immediate cure and sync
+              setGameStats(prev => ({ ...prev, disease: 0 }));
+              const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+              setDiseases(updatedDiseases);
+              if (currentUser) {
+                localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+              }
               cureHungerDisease();
             }
           }
