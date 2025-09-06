@@ -891,6 +891,10 @@ export type Database = {
           user_id: string
         }
       }
+      cure_malnutrition: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       decrease_alcoholism: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -924,6 +928,14 @@ export type Database = {
       set_current_user: {
         Args: { username_value: string }
         Returns: undefined
+      }
+      update_disease_from_malnutrition: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          decreased: boolean
+          message: string
+          users_updated: number
+        }[]
       }
       update_user_pregnancy: {
         Args: { p_percentage: number; p_username: string }

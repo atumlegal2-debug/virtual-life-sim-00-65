@@ -413,6 +413,19 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
                   <Heart className="h-4 w-4 mr-2" />
                   Solicitar Cirurgia - 300 C'M (+50 Saúde)
                 </Button>
+
+                {/* Malnutrition Treatment - show only if user has disease */}
+                {gameStats.disease > 0 && (
+                  <Button
+                    onClick={() => handleTreatmentRequest("Tratamento para Desnutrição", 200)}
+                    disabled={isLoading}
+                    className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600"
+                    variant={selectedTreatment === "Tratamento para Desnutrição" ? "default" : "outline"}
+                  >
+                    <Pill className="h-4 w-4 mr-2" />
+                    Solicitar Tratamento para Desnutrição - 200 C'M (Cura Completa)
+                  </Button>
+                )}
                 
                 <p className="text-xs text-blue-300 text-center mt-2">
                   As solicitações serão enviadas aos médicos para aprovação
