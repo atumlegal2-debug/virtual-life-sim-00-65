@@ -163,6 +163,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           energy: profile.energy_percentage ?? 100
         });
         
+        // Check for approved treatments that should cure malnutrition
+        await checkForApprovedTreatments(profile.id);
+        
         console.log('🔄 Stats carregados do banco:', {
           health: profile.life_percentage,
           hunger: profile.hunger_percentage,
@@ -769,6 +772,45 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  
+  // Function to check for approved treatments and cure automatically
+  const checkForApprovedTreatments = async (userId: string) => {
+    try {
+      const { data: approvedTreatments } = await supabase
+        .from('hospital_treatment_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'accepted')
+        .not('processed_at', 'is', null);
+
+      if (approvedTreatments && approvedTreatments.length > 0) {
+        const malnutritionTreatments = approvedTreatments.filter(t => 
+          t.treatment_type.includes('Desnutrição')
+        );
+
+        if (malnutritionTreatments.length > 0) {
+          console.log('Found approved malnutrition treatments, curing automatically...');
+          
+          // Remove malnutrition from diseases list
+          const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+          setDiseases(updatedDiseases);
+          
+          // Update disease percentage to 0
+          setGameStats(prev => ({ ...prev, disease: 0 }));
+          
+          // Update localStorage
+          if (currentUser) {
+            localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+          }
+          
+          console.log('Malnutrition automatically cured for approved treatments');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking approved treatments:', error);
+    }
+  };
+
   // New function to cure disease with medicine
   const cureDiseaseWithMedicine = async (medicineName: string, userId: string) => {
     // Map medicine names to disease names
@@ -1085,6 +1127,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [userId]);
+
+  // Check for retroactive approved treatments on component mount
+  useEffect(() => {
+    if (userId && currentUser) {
+      checkForApprovedTreatments(userId);
+    }
+  }, [userId, currentUser]);
+  
+  // Listen for global malnutrition cure events
+  useEffect(() => {
+    const handleGlobalCure = () => {
+      if (userId && currentUser) {
+        console.log('Global malnutrition cure event received, checking user...');
+        checkForApprovedTreatments(userId);
+      }
+    };
+
+    window.addEventListener('globalMalnutritionCure', handleGlobalCure);
+    return () => window.removeEventListener('globalMalnutritionCure', handleGlobalCure);
+  }, [userId, currentUser]);
 
   return (
     <GameContext.Provider value={{
