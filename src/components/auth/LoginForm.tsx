@@ -317,7 +317,7 @@ export function LoginForm() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
         <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30 pointer-events-none"></div>
           <CardHeader className="text-center relative">
             <div className="flex items-center justify-center gap-3 mb-6">
               <Button 
@@ -374,7 +374,7 @@ export function LoginForm() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary-glow/5 opacity-50"></div>
         <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30 pointer-events-none"></div>
           <CardHeader className="relative">
             <div className="flex items-center gap-4">
               <Button 
@@ -450,7 +450,7 @@ export function LoginForm() {
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-primary-glow/10 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
         <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30 pointer-events-none"></div>
           <CardHeader className="text-center relative pb-8">
             <div className="mb-6 p-4 bg-gradient-primary rounded-3xl w-fit mx-auto shadow-app">
               <div className="text-3xl font-bold text-white">RPG</div>
@@ -534,7 +534,7 @@ export function LoginForm() {
       <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20 animate-pulse"></div>
       <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-primary-glow/10 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
       <Card className="w-full max-w-md bg-gradient-card border-border/30 shadow-card backdrop-blur-sm relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-30 pointer-events-none"></div>
         <CardHeader className="text-center relative">
           <div className="flex items-center gap-4 mb-6">
             {(showLoginForm && savedProfiles.length > 0) && (
