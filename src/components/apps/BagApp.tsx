@@ -663,7 +663,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             updates.health = Math.min(100, Math.max(0, (gameStats.health || 100) + healthChange));
           }
           if (hungerChange !== 0) {
-            updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger || 100) + hungerChange));
+            updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger ?? 0) + hungerChange));
           }
           if (happinessChange !== 0) {
             updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + happinessChange));
@@ -693,11 +693,14 @@ export default function BagApp({ onBack }: BagAppProps) {
               await updateStats({ health: Math.min(100, (gameStats.health || 100) + effect.value) });
               effectApplied = true;
               break;
-            case "hunger":
-              const hungerIncrease = item.price ? Math.min(effect.value, Math.floor(item.price / 10)) : effect.value;
-              await updateStats({ hunger: Math.min(100, (gameStats.hunger || 100) + hungerIncrease) });
+            case "hunger": {
+              const baseIncrease = item.price ? Math.min(effect.value, Math.floor(item.price / 10)) : effect.value;
+              const hungerIncrease = effect.value > 0 ? Math.max(1, baseIncrease) : baseIncrease;
+              const currentHunger = gameStats.hunger ?? 0;
+              await updateStats({ hunger: Math.min(100, Math.max(0, currentHunger + hungerIncrease)) });
               effectApplied = true;
               break;
+            }
             case "mood":
               await addTemporaryEffect(effect.message, 60, item.itemType === "drink" ? "bar" : item.storeId === "icecream" ? "icecream" : "pizzeria");
               effectApplied = true;
