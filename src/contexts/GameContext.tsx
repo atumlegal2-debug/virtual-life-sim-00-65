@@ -795,17 +795,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
           const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
           setDiseases(updatedDiseases);
           
-          // Update disease percentage to 0
-          setGameStats(prev => ({ ...prev, disease: 0 }));
+          // Decide hunger recovery to avoid instant re-infection
+          const targetHunger = (gameStats.hunger ?? 0) <= 49 ? 60 : (gameStats.hunger ?? 0);
+          
+          // Update local stats immediately
+          setGameStats(prev => ({ ...prev, disease: 0, hunger: targetHunger }));
+          
+          // Persist in DB
+          await supabase
+            .from('users')
+            .update({ disease_percentage: 0, hunger_percentage: targetHunger })
+            .eq('id', userId);
           
           // Update localStorage
           if (currentUser) {
             localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
           }
           
-          console.log('Malnutrition automatically cured for approved treatments');
+          console.log('Malnutrition automatically cured and hunger restored to', targetHunger);
         }
-      }
+        }
     } catch (error) {
       console.error('Error checking approved treatments:', error);
     }
