@@ -407,6 +407,8 @@ export default function BagApp({ onBack }: BagAppProps) {
       // Add DB items (override localStorage if exists)
       if (customItemsFromDB.data) {
         customItemsFromDB.data.forEach((item: any) => {
+          // Get existing item from localStorage to preserve effect
+          const existingItem = customItems[item.id];
           allCustomItems.set(item.id, {
             id: item.id,
             name: item.name,
@@ -414,7 +416,7 @@ export default function BagApp({ onBack }: BagAppProps) {
             itemType: item.item_type,
             icon: item.icon,
             isCustom: true,
-            effect: null
+            effect: existingItem?.effect || null // Preserve effect from localStorage
           });
         });
       }
