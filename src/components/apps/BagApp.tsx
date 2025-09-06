@@ -665,8 +665,15 @@ export default function BagApp({ onBack }: BagAppProps) {
           if (hungerChange !== 0) {
             updates.hunger = Math.min(100, Math.max(0, (gameStats.hunger ?? 0) + hungerChange));
           }
-          if (happinessChange !== 0) {
-            updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + happinessChange));
+          const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+          let totalHappinessChange = 0;
+          if (happinessChange !== 0) totalHappinessChange += happinessChange;
+          if (isHappinessStore) {
+            const extra = moodChange !== 0 ? moodChange : (hungerChange !== 0 ? hungerChange : (energyChange !== 0 ? energyChange : 0));
+            totalHappinessChange += extra;
+          }
+          if (totalHappinessChange !== 0) {
+            updates.happiness = Math.min(100, Math.max(0, (gameStats.happiness || 100) + totalHappinessChange));
           }
           if (energyChange !== 0) {
             updates.energy = Math.min(100, Math.max(0, (gameStats.energy || 100) + energyChange));
@@ -696,21 +703,35 @@ export default function BagApp({ onBack }: BagAppProps) {
             case "hunger": {
               const currentHunger = gameStats.hunger ?? 0;
               await updateStats({ hunger: Math.min(100, Math.max(0, currentHunger + effect.value)) });
+              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+              if (isHappinessStore) {
+                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
+              }
               effectApplied = true;
               break;
             }
-            case "mood":
+            case "mood": {
               await addTemporaryEffect(effect.message, 60, item.itemType === "drink" ? "bar" : item.storeId === "icecream" ? "icecream" : "pizzeria");
+              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+              if (isHappinessStore) {
+                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
+              }
               effectApplied = true;
               break;
+            }
             case "happiness":
               await updateStats({ happiness: Math.min(100, (gameStats.happiness || 100) + effect.value) });
               effectApplied = true;
               break;
-            case "energy":
+            case "energy": {
               await updateStats({ energy: Math.min(100, (gameStats.energy || 100) + effect.value) });
+              const isHappinessStore = item.storeId === 'sexshop' || item.storeId === 'sorveteria';
+              if (isHappinessStore) {
+                await updateStats({ happiness: Math.min(100, Math.max(0, (gameStats.happiness || 100) + effect.value)) });
+              }
               effectApplied = true;
               break;
+            }
             case "alcoholism": {
               const currentAlcoholism = gameStats.alcoholism || 0;
               await updateStats({ alcoholism: Math.min(100, Math.max(0, currentAlcoholism + effect.value)) });
@@ -892,12 +913,20 @@ export default function BagApp({ onBack }: BagAppProps) {
               break;
             case "hunger":
               await updateStats({ hunger: Math.min(100, (gameStats.hunger || 0) + reducedValue) });
+              if (selectedItemToDivide.storeId === 'sexshop' || selectedItemToDivide.storeId === 'sorveteria') {
+                await updateStats({ happiness: Math.min(100, (gameStats.happiness || 0) + reducedValue) });
+              }
               break;
             case "mood":
-              await updateStats({ happiness: Math.min(100, (gameStats.happiness || 0) + reducedValue) });
+              if (selectedItemToDivide.storeId === 'sexshop' || selectedItemToDivide.storeId === 'sorveteria') {
+                await updateStats({ happiness: Math.min(100, (gameStats.happiness || 0) + reducedValue) });
+              }
               break;
             case "energy":
               await updateStats({ energy: Math.min(100, (gameStats.energy || 0) + reducedValue) });
+              if (selectedItemToDivide.storeId === 'sexshop' || selectedItemToDivide.storeId === 'sorveteria') {
+                await updateStats({ happiness: Math.min(100, (gameStats.happiness || 0) + reducedValue) });
+              }
               break;
             case "alcoholism":
               if (isAlcoholic(selectedItemToDivide.storeId || '', selectedItemToDivide.id)) {
