@@ -11,9 +11,9 @@ interface CreationAppProps {
 }
 
 const CATEGORIES = {
-  food: { name: "Comida", price: 30, icon: "🍽️", description: "Crie comidas deliciosas e personalizadas" },
-  drink: { name: "Bebida", price: 8, icon: "🍺", description: "Invente bebidas refrescantes únicas" },
-  object: { name: "Objeto", price: 300, icon: "📦", description: "Desenvolva objetos únicos e especiais" }
+  food: { name: "Comida", price: 30, icon: "🍽️", description: "Crie comidas deliciosas que aumentam 5 pontos de fome" },
+  drink: { name: "Bebida", price: 8, icon: "🍺", description: "Invente bebidas refrescantes que aumentam 10 pontos de energia" },
+  object: { name: "Objeto", price: 300, icon: "📦", description: "Desenvolva objetos únicos que aumentam 100 pontos de felicidade" }
 };
 
 export function CreationApp({ onBack }: CreationAppProps) {

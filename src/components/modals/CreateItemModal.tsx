@@ -211,18 +211,20 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
       if (selectedCategory === "food") {
         itemEffect = {
           type: "hunger",
-          value: 10,
-          message: `Você comeu ${customName} e se sente mais satisfeito! (+10 fome)`
+          value: 5,
+          message: `Você comeu ${customName} e se sente mais satisfeito! (+5 fome)`
         };
       } else if (selectedCategory === "drink") {
         itemEffect = {
-          type: "multiple",
-          effects: [
-            { type: "hunger", value: 10 },
-            { type: "happiness", value: 10 },
-            { type: "energy", value: 10 }
-          ],
-          message: `Você bebeu ${customName} e se sente revigorado! (+10 fome, +10 felicidade, +10 energia)`
+          type: "energy",
+          value: 10,
+          message: `Você bebeu ${customName} e se sente revigorado! (+10 energia)`
+        };
+      } else if (selectedCategory === "object") {
+        itemEffect = {
+          type: "happiness",
+          value: 100,
+          message: `Você usou ${customName} e se sente muito feliz! (+100 felicidade)`
         };
       }
       
