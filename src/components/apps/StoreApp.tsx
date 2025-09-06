@@ -578,7 +578,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                         )}
                         <div className="flex items-center justify-between">
                           <span className="text-money font-bold text-lg">{item.price} CM</span>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-wrap">
                             {item.relationshipType && (
                               <Badge variant="secondary" className="text-xs">
                                 {item.relationshipType === "namoro" && "💕"}
@@ -592,11 +592,23 @@ export function StoreApp({ onBack }: StoreAppProps) {
                                 {item.effect.type === "health" && "💊"}
                                 {item.effect.type === "hunger" && "🍽️"}
                                 {item.effect.type === "mood" && "😊"}
+                                {item.effect.type === "happiness" && "😊"}
                                 {item.effect.type === "energy" && "⚡"}
                                 {item.effect.type === "alcoholism" && "🍷"}
                                 +{item.effect.value}
                               </Badge>
                             )}
+                            {item.effects && item.effects.map((effect, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {effect.type === "health" && "💊"}
+                                {effect.type === "hunger" && "🍽️"}
+                                {effect.type === "mood" && "😊"}
+                                {effect.type === "happiness" && "😊"}
+                                {effect.type === "energy" && "⚡"}
+                                {effect.type === "alcoholism" && "🍷"}
+                                +{effect.value}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                       </div>
