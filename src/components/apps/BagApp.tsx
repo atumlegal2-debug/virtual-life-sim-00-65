@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { STORES } from "@/data/stores";
 import { useGame } from "@/contexts/GameContext";
-import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffectName, isAlcoholic, getAlcoholLevel } from "@/lib/itemCategories";
+import { getItemType, getCategoryIcon, getCategoryName, getEffectIcon, getEffectName, isAlcoholic } from "@/lib/itemCategories";
 import { SendRingModal } from "@/components/modals/SendRingModal";
 import { SendItemModal } from "@/components/modals/SendItemModal";
 import { SendFriendshipItemModal } from "@/components/modals/SendFriendshipItemModal";
@@ -694,10 +694,8 @@ export default function BagApp({ onBack }: BagAppProps) {
               effectApplied = true;
               break;
             case "hunger": {
-              const baseIncrease = item.price ? Math.min(effect.value, Math.floor(item.price / 10)) : effect.value;
-              const hungerIncrease = effect.value > 0 ? Math.max(1, baseIncrease) : baseIncrease;
               const currentHunger = gameStats.hunger ?? 0;
-              await updateStats({ hunger: Math.min(100, Math.max(0, currentHunger + hungerIncrease)) });
+              await updateStats({ hunger: Math.min(100, Math.max(0, currentHunger + effect.value)) });
               effectApplied = true;
               break;
             }
@@ -713,13 +711,12 @@ export default function BagApp({ onBack }: BagAppProps) {
               await updateStats({ energy: Math.min(100, (gameStats.energy || 100) + effect.value) });
               effectApplied = true;
               break;
-            case "alcoholism":
-              if (isAlcoholic(item.name, item.itemType || 'object')) {
-                const alcoholLevel = getAlcoholLevel(item.name, item.itemType || 'object');
-                await updateStats({ alcoholism: Math.min(100, (gameStats.alcoholism || 0) + alcoholLevel) });
-                effectApplied = true;
-              }
+            case "alcoholism": {
+              const currentAlcoholism = gameStats.alcoholism || 0;
+              await updateStats({ alcoholism: Math.min(100, Math.max(0, currentAlcoholism + effect.value)) });
+              effectApplied = true;
               break;
+            }
           }
         }
       } else {
