@@ -294,7 +294,11 @@ export default function BagApp({ onBack }: BagAppProps) {
       relationshipType: storeItem.relationshipType,
       originalItem: storeItem,
       price: storeItem.price || 0,
-      effect: storeItem.effect ? { ...storeItem.effect, message: storeItem.effect.message || '' } : undefined
+      effect: storeItem.effects ? {
+        type: "multiple",
+        effects: storeItem.effects,
+        message: ""
+      } : (storeItem.effect ? { ...storeItem.effect, message: storeItem.effect.message || '' } : undefined)
     };
 
     const historyItem: HistoryItem = {
@@ -1036,17 +1040,32 @@ export default function BagApp({ onBack }: BagAppProps) {
           )}
           
            {item.effect && !item.isRing && (
-            <div className="mb-3">
-              <Badge variant="outline" className="text-xs">
-                {item.effect.type === "multiple" && "effects" in item.effect ? (
-                  "✨ Múltiplos efeitos"
-                ) : (
-                  <>
-                    {getEffectIcon(item.effect.type as any)}
-                    +{(item.effect as any).value} {getEffectName(item.effect.type as any)}
-                  </>
-                )}
-              </Badge>
+            <div className="mb-3 flex gap-1 flex-wrap">
+              {item.effect.type === "multiple" && "effects" in item.effect ? (
+                item.effect.effects.map((effect, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {getEffectIcon(effect.type as any)}
+                    +{effect.value} {getEffectName(effect.type as any)}
+                  </Badge>
+                ))
+              ) : (
+                <Badge variant="outline" className="text-xs">
+                  {getEffectIcon(item.effect.type as any)}
+                  +{(item.effect as any).value} {getEffectName(item.effect.type as any)}
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          {/* Show original item effects if available (for items with multiple effects) */}
+          {item.originalItem?.effects && !item.effect && !item.isRing && (
+            <div className="mb-3 flex gap-1 flex-wrap">
+              {item.originalItem.effects.map((effect, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {getEffectIcon(effect.type as any)}
+                  +{effect.value} {getEffectName(effect.type as any)}
+                </Badge>
+              ))}
             </div>
           )}
           
