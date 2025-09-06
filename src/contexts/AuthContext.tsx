@@ -248,6 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             wallet_balance: 2000.00,
             life_percentage: 100.00,
             hunger_percentage: 100.00,
+            happiness_percentage: 100.00,
+            energy_percentage: 100.00,
             mood: 100.00,
             alcoholism_percentage: 0.00,
             disease_percentage: 0.00,
