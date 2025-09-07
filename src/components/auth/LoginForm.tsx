@@ -6,7 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Users, ArrowLeft, User, X } from "lucide-react";
+import { Eye, EyeOff, Users, ArrowLeft, User, X, HelpCircle } from "lucide-react";
+import { TutorialModal } from "@/components/modals/TutorialModal";
 
 interface User {
   id: string;
@@ -32,6 +33,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
+  const [showTutorial, setShowTutorial] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -506,6 +508,16 @@ export function LoginForm() {
             {/* Options */}
             <div className="border-t border-border/30 pt-6 space-y-3 relative">
               <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full h-12 border-primary/30 hover:border-primary/50 bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
+                onClick={() => setShowTutorial(true)}
+              >
+                <HelpCircle size={18} className="mr-2 text-primary" />
+                Como Criar Conta no Amino
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 className="w-full h-12 border-border/50 hover:border-primary/50 bg-background/50 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
                 onClick={() => setShowLoginForm(true)}
@@ -524,6 +536,11 @@ export function LoginForm() {
             </div>
           </CardContent>
         </Card>
+
+        <TutorialModal 
+          isOpen={showTutorial} 
+          onClose={() => setShowTutorial(false)} 
+        />
       </div>
     );
   }
@@ -627,7 +644,17 @@ export function LoginForm() {
               {isRegistering ? "Já tem uma conta? Faça login" : "Não tem conta? Registre-se"}
             </Button>
 
-            <div className="border-t border-border/30 pt-6">
+            <div className="border-t border-border/30 pt-6 space-y-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full h-12 border-primary/30 hover:border-primary/50 bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
+                onClick={() => setShowTutorial(true)}
+              >
+                <HelpCircle size={18} className="mr-2 text-primary" />
+                Como Criar Conta no Amino
+              </Button>
+              
               <Button 
                 type="button" 
                 variant="outline" 
@@ -641,6 +668,11 @@ export function LoginForm() {
           </form>
         </CardContent>
       </Card>
+
+      <TutorialModal 
+        isOpen={showTutorial} 
+        onClose={() => setShowTutorial(false)} 
+      />
     </div>
   );
 }
