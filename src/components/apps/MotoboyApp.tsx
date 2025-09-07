@@ -419,8 +419,16 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
       if (balanceError) throw balanceError;
 
       // Adicionar itens à bolsa do usuário
+      console.log(`🎒 Adicionando ${order.items.length} itens ao inventário do usuário ${userData.username} (ID: ${userData.id})`);
+      
+      let itemsAdded = 0;
+      let itemsSkipped = 0;
+      const errors = [];
+
       for (const item of order.items) {
         try {
+          console.log(`📦 Processando item: ${item.name} (quantidade: ${item.quantity})`);
+          
           // Check if user already has this item and would exceed limit
           const { data: existingItems, error: checkError } = await supabase
             .from('inventory')
@@ -429,7 +437,8 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             .eq('item_id', item.name);
 
           if (checkError) {
-            console.error('Error checking existing inventory:', checkError);
+            console.error('❌ Error checking existing inventory for', item.name, ':', checkError);
+            errors.push(`Erro ao verificar inventário de ${item.name}: ${checkError.message}`);
             continue;
           }
 
@@ -437,8 +446,11 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           const maxQuantityToAdd = Math.max(0, 10 - currentQuantity);
           const finalQuantity = Math.min(item.quantity, maxQuantityToAdd);
           
+          console.log(`📊 Item ${item.name}: atual=${currentQuantity}, máximo a adicionar=${maxQuantityToAdd}, final=${finalQuantity}`);
+          
           if (finalQuantity === 0) {
             console.log(`⚠️ Skipping ${item.name} - user already has 10 items`);
+            itemsSkipped++;
             toast({
               title: "Limite de inventário atingido",
               description: `${item.name}: você já possui o máximo de 10 itens`,
@@ -457,6 +469,8 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             });
           }
 
+          console.log(`✅ Inserindo no inventário: user_id=${userData.id}, item_id=${item.name}, quantity=${finalQuantity}`);
+          
           const { error: inventoryError } = await supabase
             .from('inventory')
             .insert({
@@ -468,7 +482,9 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             });
 
           if (inventoryError) {
-            console.error('Error adding item to inventory:', inventoryError);
+            console.error('❌ Error adding item to inventory:', inventoryError);
+            errors.push(`Erro ao adicionar ${item.name}: ${inventoryError.message}`);
+            
             if (inventoryError.message?.includes('Limite de 10 itens')) {
               toast({
                 title: "Limite de inventário atingido",
@@ -477,10 +493,26 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
                 duration: 5000
               });
             }
+          } else {
+            console.log(`✅ Item ${item.name} adicionado com sucesso ao inventário`);
+            itemsAdded++;
           }
         } catch (error) {
-          console.error('Error processing item delivery:', error);
+          console.error('❌ Error processing item delivery for', item.name, ':', error);
+          errors.push(`Erro ao processar ${item.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         }
+      }
+
+      console.log(`📋 Resumo da entrega: ${itemsAdded} itens adicionados, ${itemsSkipped} ignorados, ${errors.length} erros`);
+      
+      if (errors.length > 0) {
+        console.error('❌ Erros durante a entrega:', errors);
+        toast({
+          title: "Alguns itens não foram entregues",
+          description: `${errors.length} erro(s) durante a entrega. Verifique o console.`,
+          variant: "destructive",
+          duration: 8000
+        });
       }
 
       // Marcar pedido como entregue
@@ -514,10 +546,20 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
       const displayName = userData.nickname || (userData.username.endsWith('1919') || userData.username.endsWith('4444') || userData.username.endsWith('3852') || userData.username.endsWith('5555') ? userData.username.slice(0, -4) : userData.username);
 
-      toast({
-        title: "Itens enviados!",
-        description: `Itens enviados para ${displayName} e ${order.total_amount.toFixed(2)} CM descontado`
-      });
+      if (itemsAdded > 0) {
+        toast({
+          title: "Itens enviados com sucesso!",
+          description: `${itemsAdded} itens enviados para ${displayName} e ${order.total_amount.toFixed(2)} CM descontado`,
+          duration: 6000
+        });
+      } else {
+        toast({
+          title: "Nenhum item foi enviado",
+          description: `Todos os itens foram rejeitados ou ocorreram erros. Verifique o inventário de ${displayName}`,
+          variant: "destructive",
+          duration: 8000
+        });
+      }
 
       // Incrementar estatísticas do dia
       const newDeliveryCount = todayDeliveries + 1;
