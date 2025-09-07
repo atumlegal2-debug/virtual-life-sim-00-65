@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Users, ArrowLeft, User, X, HelpCircle, Clipboard } from "lucide-react";
+import { Eye, EyeOff, Users, ArrowLeft, User, X, HelpCircle } from "lucide-react";
 import { TutorialModal } from "@/components/modals/TutorialModal";
 
 interface User {
@@ -34,7 +34,7 @@ export function LoginForm() {
   const [rememberLogin, setRememberLogin] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [isPasting, setIsPasting] = useState(false);
+  
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -102,61 +102,6 @@ export function LoginForm() {
     setSavedProfiles(updatedProfiles);
   };
 
-  // Function to paste from clipboard
-  const handlePasteFromClipboard = async () => {
-    setIsPasting(true);
-    try {
-      // Check if clipboard API is available
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        toast({
-          title: "Recurso não disponível",
-          description: "Seu navegador não suporta colar automaticamente. Tente colar manualmente com Ctrl+V.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const clipboardText = await navigator.clipboard.readText();
-      
-      if (!clipboardText.trim()) {
-        toast({
-          title: "Área de transferência vazia",
-          description: "Não há nada copiado para colar. Copie um username primeiro.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Clean the text (remove spaces, special characters, keep only letters and numbers)
-      const cleanText = clipboardText.trim().replace(/[^a-zA-Z0-9]/g, '');
-      
-      if (cleanText.length === 0) {
-        toast({
-          title: "Texto inválido",
-          description: "O texto copiado não contém caracteres válidos para username.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setUsername(cleanText);
-      
-      toast({
-        title: "Texto colado!",
-        description: `Username "${cleanText}" foi colado automaticamente.`,
-      });
-
-    } catch (error) {
-      console.error('Error accessing clipboard:', error);
-      toast({
-        title: "Erro ao colar",
-        description: "Não foi possível acessar a área de transferência. Tente colar manualmente com Ctrl+V.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsPasting(false);
-    }
-  };
 
   // Function to handle quick login from saved profile
   const handleQuickLogin = async (username: string) => {
@@ -651,23 +596,8 @@ export function LoginForm() {
                   className="bg-background/50 border-border/50 focus:border-primary h-12 rounded-xl backdrop-blur-sm transition-all duration-300 focus:shadow-app pr-20"
                   required
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-1 hover:bg-primary/10 rounded-lg"
-                    onClick={handlePasteFromClipboard}
-                    disabled={isPasting}
-                    title="Colar automaticamente"
-                  >
-                    {isPasting ? (
-                      <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                    ) : (
-                      <Clipboard size={14} className="text-primary hover:text-primary/80" />
-                    )}
-                  </Button>
-                  {username && (
+                {username && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <Button
                       type="button"
                       variant="ghost"
@@ -678,25 +608,12 @@ export function LoginForm() {
                     >
                       <X size={14} className="text-muted-foreground hover:text-destructive" />
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground/70">
-                  Deve terminar com exatamente 4 dígitos
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-auto p-1 hover:bg-primary/10 rounded-lg text-primary hover:text-primary/80"
-                  onClick={handlePasteFromClipboard}
-                  disabled={isPasting}
-                >
-                  <Clipboard size={12} className="mr-1" />
-                  {isPasting ? "Colando..." : "Colar"}
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground/70">
+                Deve terminar com exatamente 4 dígitos
+              </p>
             </div>
 
             {/* Remember Login Checkbox */}
