@@ -40,6 +40,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileModalUser, setProfileModalUser] = useState<{ userId: string, username: string } | null>(null);
   const [userProfiles, setUserProfiles] = useState<Record<string, { avatar?: string, nickname?: string, id: string }>>({});
+  const [processingDeliveries, setProcessingDeliveries] = useState(false);
   const { toast } = useToast();
 
   const getDisplayName = (username: string) => {
@@ -608,6 +609,58 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     }
   };
 
+  const processPendingDeliveries = async () => {
+    if (processingDeliveries) return;
+    
+    setProcessingDeliveries(true);
+    try {
+      console.log('🚚 Iniciando processamento de entregas pendentes via edge function...');
+      
+      const { data, error } = await supabase.functions.invoke('process-pending-deliveries');
+      
+      if (error) {
+        console.error('❌ Erro ao processar entregas:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao processar entregas pendentes: " + error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const result = data;
+      console.log('✅ Resultado do processamento:', result);
+      
+      if (result.success) {
+        const { summary } = result;
+        toast({
+          title: "Entregas processadas!",
+          description: `${summary.itemsAdded} itens entregues em ${summary.ordersProcessed} pedidos`,
+          duration: 6000
+        });
+        
+        // Recarregar pedidos
+        loadOrders();
+      } else {
+        toast({
+          title: "Erro no processamento",
+          description: result.error || "Erro desconhecido",
+          variant: "destructive"
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao processar entregas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao processar entregas pendentes",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingDeliveries(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col h-full bg-gradient-primary">
@@ -679,27 +732,75 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           <ArrowLeft size={20} />
         </Button>
         <h1 className="text-lg font-bold text-primary-foreground">Motoboy</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            localStorage.removeItem('motoboy_auth');
-            setIsAuthenticated(false);
-            // Disparar evento para limpar notificações
-            window.dispatchEvent(new CustomEvent('motoboyLogout'));
-            toast({
-              title: "Logout realizado",
-              description: "Você foi desconectado do Motoboy"
-            });
-          }}
-          className="text-primary-foreground hover:bg-background/20"
-        >
-          Sair
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={processPendingDeliveries}
+            disabled={processingDeliveries}
+            className="text-primary-foreground hover:bg-background/20"
+            title="Processar entregas pendentes"
+          >
+            {processingDeliveries ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+            ) : (
+              <Package size={16} />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              localStorage.removeItem('motoboy_auth');
+              setIsAuthenticated(false);
+              // Disparar evento para limpar notificações
+              window.dispatchEvent(new CustomEvent('motoboyLogout'));
+              toast({
+                title: "Logout realizado",
+                description: "Você foi desconectado do Motoboy"
+              });
+            }}
+            className="text-primary-foreground hover:bg-background/20"
+          >
+            Sair
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 p-4 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="text-orange-500" size={20} />
+              Processamento de Entregas
+            </CardTitle>
+            <CardDescription>
+              Processar entregas pendentes e garantir que os itens sejam entregues aos usuários
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={processPendingDeliveries}
+              disabled={processingDeliveries}
+              className="w-full"
+              variant="outline"
+            >
+              {processingDeliveries ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                  Processando entregas...
+                </>
+              ) : (
+                <>
+                  <Package className="mr-2" size={16} />
+                  Processar Entregas Pendentes
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
