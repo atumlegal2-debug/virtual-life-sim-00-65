@@ -481,35 +481,79 @@ export default function BagApp({ onBack }: BagAppProps) {
     }
   }, [currentUser, cachedUserId, showCachedDataFirst, cachedData, processInventoryItemOptimized]);
 
-  // Realtime: refresh inventory when it changes  
+  // Realtime: refresh inventory when it changes (especialmente motoboy)
   useEffect(() => {
     if (!currentUser) return;
 
     const channel = supabase
-      .channel(`inventory-${currentUser}`)
+      .channel(`inventory-realtime-${currentUser}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public', 
-          table: 'inventory'
+          table: 'inventory',
+          filter: `user_id=eq.${currentUser}`
         },
         (payload) => {
-          console.log('📦 Inventory change detected:', payload);
-          // Force refresh inventory after any change to ensure consistency
-          setTimeout(() => {
-            loadAllData(true); // Force refresh
-          }, 500);
+          console.log('📦 Novo item recebido:', payload);
+          const newItem = payload.new;
+          
+          // Atualização especial para itens do motoboy
+          if (newItem?.sent_by_username === 'motoboy') {
+            console.log('🚚 Item do motoboy recebido em tempo real!');
+            // Refresh imediato para mostrar item do motoboy
+            setTimeout(() => {
+              loadAllData(true);
+            }, 100);
+          } else {
+            // Refresh normal para outros itens
+            setTimeout(() => {
+              loadAllData(true);
+            }, 300);
+          }
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public', 
+          table: 'inventory',
+          filter: `user_id=eq.${currentUser}`
+        },
+        (payload) => {
+          console.log('📦 Item atualizado:', payload);
+          setTimeout(() => {
+            loadAllData(true);
+          }, 200);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public', 
+          table: 'inventory',
+          filter: `user_id=eq.${currentUser}`
+        },
+        (payload) => {
+          console.log('📦 Item removido:', payload);
+          setTimeout(() => {
+            loadAllData(true);
+          }, 200);
+        }
+      )
+      .subscribe((status) => {
+        console.log(`📡 Status real-time inventory: ${status}`);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [currentUser, loadAllData]);
 
-  // Load data on component mount with instant cache + real-time subscription
+  // Load data on component mount with instant cache
   useEffect(() => {
     if (!currentUser) return;
 
@@ -524,39 +568,6 @@ export default function BagApp({ onBack }: BagAppProps) {
         setTimeout(() => loadAllData(), 100);
       }
     }
-    
-    // Set up real-time subscription using channel that doesn't conflict
-    const channel = supabase
-      .channel(`bag-updates-${currentUser}`)
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'inventory'
-        }, 
-        () => {
-          console.log('New inventory item received, refreshing...');
-          setTimeout(() => loadAllData(true), 200); // Small delay to ensure DB consistency
-        }
-      )
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'inventory'
-        }, 
-        () => {
-          console.log('Inventory item updated, refreshing...');
-          setTimeout(() => loadAllData(true), 200);
-        }
-      )
-      .subscribe((status) => {
-        console.log('Inventory realtime status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [currentUser, loadAllData, showCachedDataFirst, cachedData]);
 
   // Auto-refresh quando receber novos itens (polling a cada 30s quando app está aberto)
