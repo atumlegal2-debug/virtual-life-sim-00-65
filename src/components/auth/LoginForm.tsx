@@ -581,6 +581,19 @@ export function LoginForm() {
         </CardHeader>
         
         <CardContent className="relative">
+          {/* Tutorial Button - Moved to top for visibility */}
+          <div className="mb-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full h-14 border-2 border-primary/50 hover:border-primary bg-gradient-to-r from-primary/10 to-primary/20 backdrop-blur-sm rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-app hover:scale-105"
+              onClick={() => setShowTutorial(true)}
+            >
+              <HelpCircle size={24} className="mr-3 text-primary" />
+              Como Criar Conta no Amino
+            </Button>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-3">
               <label htmlFor="username" className="text-sm font-semibold text-foreground">
@@ -650,16 +663,6 @@ export function LoginForm() {
             </Button>
 
             <div className="border-t border-border/30 pt-6 space-y-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full h-12 border-primary/30 hover:border-primary/50 bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm rounded-xl font-medium transition-all duration-300 hover:shadow-app"
-                onClick={() => setShowTutorial(true)}
-              >
-                <HelpCircle size={18} className="mr-2 text-primary" />
-                Como Criar Conta no Amino
-              </Button>
-              
               <Button 
                 type="button" 
                 variant="outline" 
