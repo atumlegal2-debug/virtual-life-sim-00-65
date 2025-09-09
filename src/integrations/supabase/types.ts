@@ -911,6 +911,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      deliver_pending_motoboy_items: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          delivery_count: number
+          items_delivered: string
+          users_updated: string
+        }[]
+      }
       get_user_pregnancy: {
         Args: { p_username: string }
         Returns: {
