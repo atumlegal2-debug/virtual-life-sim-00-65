@@ -162,10 +162,10 @@ export function StoreApp({ onBack }: StoreAppProps) {
       const currentInventoryCount = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
       const cartItemCount = cart.find(cartItem => cartItem.id === item.id)?.quantity || 0;
       
-      if (currentInventoryCount + cartItemCount >= 10) {
+      if (currentInventoryCount + cartItemCount >= 3) {
         toast({
           title: "Limite atingido",
-          description: `Você já possui/tem no carrinho o máximo de 10 unidades de ${item.name}`,
+          description: `Você já possui/tem no carrinho o máximo de 3 unidades de ${item.name}`,
           variant: "destructive"
         });
         return;
@@ -701,21 +701,21 @@ export function StoreApp({ onBack }: StoreAppProps) {
                               const currentInventoryCount = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
                               const cartItemCount = cart.find(cartItem => cartItem.id === item.id)?.quantity || 0;
                               
-                              // Limita quantidade no carrinho para máximo 10 unidades por item
-                              if (cartItemCount >= 10) {
+                              // Limita quantidade no carrinho para máximo 3 unidades por item
+                              if (cartItemCount >= 3) {
                                 toast({
                                   title: "Limite atingido",
-                                  description: `Você só pode ter até 10 unidades de ${item.name} no carrinho`,
+                                  description: `Você só pode ter até 3 unidades de ${item.name} no carrinho`,
                                   variant: "destructive"
                                 });
                                 return;
                               }
                               
                               // Verifica se já possui muitos itens no total (inventário + carrinho)
-                              if (currentInventoryCount + cartItemCount >= 10) {
+                              if (currentInventoryCount + cartItemCount >= 3) {
                                 toast({
                                   title: "Limite atingido",
-                                  description: `Você já possui/tem no carrinho o máximo de 10 unidades de ${item.name}`,
+                                  description: `Você já possui/tem no carrinho o máximo de 3 unidades de ${item.name}`,
                                   variant: "destructive"
                                 });
                                 return;

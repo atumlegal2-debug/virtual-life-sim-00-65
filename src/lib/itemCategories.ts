@@ -86,7 +86,7 @@ export function getAlcoholLevel(storeId: string, itemId: string): number {
   ];
   
   if (lightDrinks.includes(itemId)) return 5;
-  if (mediumDrinks.includes(itemId)) return 10;
+  if (mediumDrinks.includes(itemId)) return 3;
   if (strongDrinks.includes(itemId)) return 20;
   
   // Default for other alcoholic drinks

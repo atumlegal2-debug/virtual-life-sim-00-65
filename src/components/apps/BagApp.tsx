@@ -901,8 +901,8 @@ export default function BagApp({ onBack }: BagAppProps) {
           .eq('user_id', friendId)
           .eq('item_id', selectedItemToDivide.id);
 
-        if (updateError?.message?.includes('Limite de 10 itens')) {
-          throw new Error(`${friendUsername} já atingiu o limite de 10 itens deste tipo`);
+        if (updateError?.message?.includes('Limite de 3 itens')) {
+          throw new Error(`${friendUsername} já atingiu o limite de 3 itens deste tipo`);
         }
         if (updateError) throw updateError;
       } else {
@@ -918,8 +918,8 @@ export default function BagApp({ onBack }: BagAppProps) {
             received_at: new Date().toISOString()
           });
 
-        if (addError?.message?.includes('Limite de 10 itens')) {
-          throw new Error(`${friendUsername} já atingiu o limite de 10 itens deste tipo`);
+        if (addError?.message?.includes('Limite de 3 itens')) {
+          throw new Error(`${friendUsername} já atingiu o limite de 3 itens deste tipo`);
         }
         if (addError) throw addError;
 

@@ -39,7 +39,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [carts, setCarts] = useState<Record<string, CartItem[]>>({});
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const { toast } = useToast();
-  const MAX_PER_ITEM = 10;
+  const MAX_PER_ITEM = 3;
 
   const getCartForStore = (storeId: string): CartItem[] => {
     return carts[storeId] || [];

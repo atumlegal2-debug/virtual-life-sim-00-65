@@ -450,11 +450,11 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
           console.log(`📊 Item ${item.name}: atual=${currentQuantity}, máximo a adicionar=${maxQuantityToAdd}, final=${finalQuantity}`);
           
           if (finalQuantity === 0) {
-            console.log(`⚠️ Skipping ${item.name} - user already has 10 items`);
+            console.log(`⚠️ Skipping ${item.name} - user already has 3 items`);
             itemsSkipped++;
             toast({
               title: "Limite de inventário atingido",
-              description: `${item.name}: você já possui o máximo de 10 itens`,
+              description: `${item.name}: você já possui o máximo de 3 itens`,
               variant: "destructive",
               duration: 5000
             });
@@ -465,7 +465,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             console.log(`📦 Item ${item.name} quantity limited from ${item.quantity} to ${finalQuantity} (current: ${currentQuantity})`);
             toast({
               title: "Quantidade limitada",
-              description: `${item.name}: quantidade limitada para ${finalQuantity} (máximo 10 por item)`,
+              description: `${item.name}: quantidade limitada para ${finalQuantity} (máximo 3 por item)`,
               duration: 5000
             });
           }
@@ -486,10 +486,10 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             console.error('❌ Error adding item to inventory:', inventoryError);
             errors.push(`Erro ao adicionar ${item.name}: ${inventoryError.message}`);
             
-            if (inventoryError.message?.includes('Limite de 10 itens')) {
+            if (inventoryError.message?.includes('Limite de 3 itens')) {
               toast({
                 title: "Limite de inventário atingido",
-                description: `${item.name}: limite de 10 itens atingido`,
+                description: `${item.name}: limite de 3 itens atingido`,
                 variant: "destructive",
                 duration: 5000
               });

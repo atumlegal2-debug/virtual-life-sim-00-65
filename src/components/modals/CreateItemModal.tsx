@@ -177,8 +177,8 @@ export function CreateItemModal({ isOpen, onClose }: CreateItemModalProps) {
         });
 
       if (inventoryError) {
-        if (inventoryError.message?.includes('Limite de 10 itens')) {
-          throw new Error('Limite de 10 itens atingido para este tipo de item');
+        if (inventoryError.message?.includes('Limite de 3 itens')) {
+          throw new Error('Limite de 3 itens atingido para este tipo de item');
         }
         throw inventoryError;
       }

@@ -446,7 +446,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           } catch (error) {
             console.error('Error processing item transfer:', error);
             // Check if this is a limit exceeded error
-            if (error.message && error.message.includes('Limite de 10 itens por tipo atingido')) {
+            if (error.message && error.message.includes('Limite de 3 itens por tipo atingido')) {
               console.warn(`Inventory limit reached for ${transfer.item.name}`);
             }
           }

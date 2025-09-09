@@ -384,9 +384,9 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
           if (existingItem) {
             // Check if total quantity would exceed limit and cap at 10
-            const newTotal = Math.min(10, existingItem.quantity + item.quantity);
+            const newTotal = Math.min(3, existingItem.quantity + item.quantity);
             if (newTotal > existingItem.quantity) {
-              console.log(`📈 Item ${item.name} quantity will be limited to 10 (current: ${existingItem.quantity}, final: ${newTotal})`);
+              console.log(`📈 Item ${item.name} quantity will be limited to 3 (current: ${existingItem.quantity}, final: ${newTotal})`);
             }
             
             // Update existing item quantity
@@ -402,16 +402,16 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             if (error) {
               console.error(`❌ Error updating item ${item.name}:`, error);
               // Check if it's the limit error from trigger
-              if (error.message?.includes('Limite de 10 itens')) {
-                throw new Error(`Limite de 10 itens atingido para ${item.name}`);
+              if (error.message?.includes('Limite de 3 itens')) {
+                throw new Error(`Limite de 3 itens atingido para ${item.name}`);
               }
               throw error;
             }
             
             console.log(`✅ Item ${item.name} quantity updated successfully:`, data);
           } else {
-            // Limit new quantity to maximum of 10
-            const limitedQuantity = Math.min(10, item.quantity);
+            // Limit new quantity to maximum of 3
+            const limitedQuantity = Math.min(3, item.quantity);
             if (limitedQuantity < item.quantity) {
               console.log(`📦 Item ${item.name} quantity limited from ${item.quantity} to ${limitedQuantity}`);
             }
@@ -431,8 +431,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
               console.error(`❌ Error inserting item ${item.name}:`, error);
               console.error('Insert data was:', { user_id: order.user_id, item_id: item.id, quantity: item.quantity });
               // Check if it's the limit error from trigger
-              if (error.message?.includes('Limite de 10 itens')) {
-                throw new Error(`Limite de 10 itens atingido para ${item.name}`);
+              if (error.message?.includes('Limite de 3 itens')) {
+                throw new Error(`Limite de 3 itens atingido para ${item.name}`);
               }
               throw error;
             }
@@ -442,7 +442,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         } catch (itemError) {
           console.error(`💥 Failed to process item ${item.name}:`, itemError);
           // If it's a limit error, show a specific message
-          if (itemError.message?.includes('Limite de 10 itens')) {
+          if (itemError.message?.includes('Limite de 3 itens')) {
             toast({
               title: "Limite de inventário atingido",
               description: itemError.message,
