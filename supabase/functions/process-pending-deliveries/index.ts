@@ -96,13 +96,13 @@ Deno.serve(async (req) => {
             }
 
             const currentQuantity = existingItems?.reduce((sum, inv) => sum + inv.quantity, 0) || 0;
-            const maxQuantityToAdd = Math.max(0, 10 - currentQuantity);
+            const maxQuantityToAdd = Math.max(0, 3 - currentQuantity);
             const finalQuantity = Math.min(item.quantity, maxQuantityToAdd);
             
             console.log(`📊 ${item.name}: atual=${currentQuantity}, máximo a adicionar=${maxQuantityToAdd}, final=${finalQuantity}`);
             
             if (finalQuantity === 0) {
-              console.log(`⚠️ Pulando ${item.name} - usuário já possui o máximo (10 itens)`);
+              console.log(`⚠️ Pulando ${item.name} - usuário já possui o máximo (3 itens)`);
               orderItemsSkipped++;
               continue;
             }
@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
                 user_id: userData.id,
                 item_id: item.id || item.name,
                 quantity: finalQuantity,
-                sent_by_username: 'motoboy',
+                sent_by_username: 'Motoboy',
                 received_at: new Date().toISOString()
               });
 
