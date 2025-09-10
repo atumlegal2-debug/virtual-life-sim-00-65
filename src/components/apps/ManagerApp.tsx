@@ -229,6 +229,28 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
       setCurrentManager(manager);
       setIsLoggedIn(true);
+      
+      // Load store status immediately after login
+      setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('stores')
+            .select('is_open')
+            .eq('id', manager.store_id)
+            .single();
+
+          if (error) {
+            console.error('Error loading store status after login:', error);
+            return;
+          }
+          
+          console.log('Store status loaded after login:', data);
+          setStoreIsOpen(data.is_open);
+        } catch (error) {
+          console.error('Error loading store status after login:', error);
+        }
+      }, 100);
+      
       toast({
         title: "Login realizado com sucesso!",
         description: `Bem-vindo ao painel gerencial, ${manager.username}!`,
@@ -778,8 +800,12 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   };
 
   const loadStoreStatus = async () => {
-    if (!currentManager) return;
+    if (!currentManager) {
+      console.log('loadStoreStatus: No current manager');
+      return;
+    }
     
+    console.log('loadStoreStatus: Loading status for store:', currentManager.store_id);
     try {
       const { data, error } = await supabase
         .from('stores')
@@ -787,26 +813,41 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         .eq('id', currentManager.store_id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('loadStoreStatus: Error loading store status:', error);
+        return;
+      }
+      
+      console.log('loadStoreStatus: Store status loaded:', data);
       setStoreIsOpen(data.is_open);
     } catch (error) {
-      console.error('Error loading store status:', error);
+      console.error('loadStoreStatus: Error in try-catch:', error);
     }
   };
 
   const toggleStoreStatus = async () => {
-    if (!currentManager) return;
+    if (!currentManager) {
+      console.log('toggleStoreStatus: No current manager');
+      return;
+    }
+    
+    const newStatus = !storeIsOpen;
+    console.log('toggleStoreStatus: Changing store status from', storeIsOpen, 'to', newStatus, 'for store:', currentManager.store_id);
     
     try {
-      const newStatus = !storeIsOpen;
       const { error } = await supabase
         .from('stores')
         .update({ is_open: newStatus })
         .eq('id', currentManager.store_id);
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error('toggleStoreStatus: Database error:', error);
+        throw error;
+      }
+
+      console.log('toggleStoreStatus: Database updated successfully');
       setStoreIsOpen(newStatus);
+      
       toast({
         title: newStatus ? "Loja Aberta! 🔓" : "Loja Fechada! 🔒",
         description: newStatus 
@@ -814,7 +855,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           : "Clientes não poderão fazer novos pedidos"
       });
     } catch (error) {
-      console.error('Error toggling store status:', error);
+      console.error('toggleStoreStatus: Error in try-catch:', error);
       toast({
         title: "Erro",
         description: "Não foi possível alterar o status da loja",
