@@ -76,6 +76,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [transferAmount, setTransferAmount] = useState("");
   const [patientHistory, setPatientHistory] = useState<any[]>([]);
+  const [storeIsOpen, setStoreIsOpen] = useState(true);
   const { toast } = useToast();
 
   // Timer for motoboy orders countdown
@@ -773,6 +774,52 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       setPatientHistory(combined);
     } catch (error) {
       console.error('Error loading patient history:', error);
+    }
+  };
+
+  const loadStoreStatus = async () => {
+    if (!currentManager) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('is_open')
+        .eq('id', currentManager.store_id)
+        .single();
+
+      if (error) throw error;
+      setStoreIsOpen(data.is_open);
+    } catch (error) {
+      console.error('Error loading store status:', error);
+    }
+  };
+
+  const toggleStoreStatus = async () => {
+    if (!currentManager) return;
+    
+    try {
+      const newStatus = !storeIsOpen;
+      const { error } = await supabase
+        .from('stores')
+        .update({ is_open: newStatus })
+        .eq('id', currentManager.store_id);
+
+      if (error) throw error;
+      
+      setStoreIsOpen(newStatus);
+      toast({
+        title: newStatus ? "Loja Aberta! 🔓" : "Loja Fechada! 🔒",
+        description: newStatus 
+          ? "Clientes podem fazer pedidos agora" 
+          : "Clientes não poderão fazer novos pedidos"
+      });
+    } catch (error) {
+      console.error('Error toggling store status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o status da loja",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1720,6 +1767,70 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           Sair
         </Button>
       </div>
+
+      <Card className="bg-gradient-card border-border/50 mb-6">
+        <CardHeader>
+          <CardTitle className="text-sm text-muted-foreground">Status da Loja</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                storeIsOpen ? 'bg-green-500/20' : 'bg-red-500/20'
+              }`}>
+                <Store size={24} className={storeIsOpen ? 'text-green-500' : 'text-red-500'} />
+              </div>
+              <div>
+                <p className={`text-lg font-bold ${storeIsOpen ? 'text-green-500' : 'text-red-500'}`}>
+                  {storeIsOpen ? 'ABERTA' : 'FECHADA'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {storeIsOpen ? 'Recebendo pedidos' : 'Não recebendo pedidos'}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={toggleStoreStatus}
+              variant={storeIsOpen ? "destructive" : "default"}
+              size="sm"
+            >
+              {storeIsOpen ? 'Fechar Loja' : 'Abrir Loja'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-card border-border/50 mb-6">
+        <CardHeader>
+          <CardTitle className="text-sm text-muted-foreground">Status da Loja</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                storeIsOpen ? 'bg-green-500/20' : 'bg-red-500/20'
+              }`}>
+                <Store size={24} className={storeIsOpen ? 'text-green-500' : 'text-red-500'} />
+              </div>
+              <div>
+                <p className={`text-lg font-bold ${storeIsOpen ? 'text-green-500' : 'text-red-500'}`}>
+                  {storeIsOpen ? 'ABERTA' : 'FECHADA'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {storeIsOpen ? 'Recebendo pedidos' : 'Não recebendo pedidos'}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={toggleStoreStatus}
+              variant={storeIsOpen ? "destructive" : "default"}
+              size="sm"
+            >
+              {storeIsOpen ? 'Fechar Loja' : 'Abrir Loja'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="bg-gradient-card border-border/50 mb-6">
         <CardHeader>

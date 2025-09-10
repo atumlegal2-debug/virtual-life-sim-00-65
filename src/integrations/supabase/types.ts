@@ -656,6 +656,7 @@ export type Database = {
           balance: number | null
           created_at: string
           id: string
+          is_open: boolean
           manager_password: string
           name: string
         }
@@ -663,6 +664,7 @@ export type Database = {
           balance?: number | null
           created_at?: string
           id: string
+          is_open?: boolean
           manager_password: string
           name: string
         }
@@ -670,6 +672,7 @@ export type Database = {
           balance?: number | null
           created_at?: string
           id?: string
+          is_open?: boolean
           manager_password?: string
           name?: string
         }
