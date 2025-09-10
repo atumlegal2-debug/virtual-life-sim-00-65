@@ -277,6 +277,23 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
               maxValue={100}
               color="health"
             />
+            <StatBar
+              label="Fome"
+              value={gameStats.hunger}
+              maxValue={100}
+              color="hunger"
+            />
+            {(gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && (
+              <div className="bg-orange-800/50 border border-orange-600 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-orange-200 mb-1">
+                  <Pill className="h-4 w-4" />
+                  <span className="text-sm font-medium">Alerta Médico</span>
+                </div>
+                <p className="text-xs text-orange-300">
+                  Você está com sinais de desnutrição. Faça uma consulta e solicite tratamento.
+                </p>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-red-300">Dinheiro disponível:</span>
               <span className="text-white font-medium">{coins.toLocaleString()} C'M</span>
@@ -414,8 +431,8 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
                   Solicitar Cirurgia - 300 C'M (+50 Saúde)
                 </Button>
 
-                {/* Malnutrition Treatment - show only if user has disease */}
-                {gameStats.disease > 0 && (
+                {/* Malnutrition Treatment - show only if user has hunger disease or low hunger */}
+                {(gameStats.disease > 0 || gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && (
                   <Button
                     onClick={() => handleTreatmentRequest("Tratamento para Desnutrição", 200)}
                     disabled={isLoading}
