@@ -907,6 +907,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       loadPendingOrders();
       loadSalesHistory();
       loadMotoboyOrders(); // Load motoboy orders on login
+      loadStoreStatus(); // Load store status on login
       if (currentManager.store_id === 'hospital') {
         loadBirthRequests();
         loadTreatmentRequests();
@@ -923,14 +924,14 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
   }, [isLoggedIn, currentManager, currentView]);
 
-  // Real-time subscriptions for motoboy orders
+  // Real-time subscriptions for motoboy orders and store status
   useEffect(() => {
     if (!isLoggedIn || !currentManager) return;
 
     console.log('=== CONFIGURANDO SUBSCRIPTION PARA MOTOBOY ORDERS ===');
     console.log('Store ID:', currentManager.store_id);
 
-    const subscription = supabase
+    const motoboySubscription = supabase
       .channel('motoboy_orders_changes')
       .on(
         'postgres_changes',
@@ -955,9 +956,28 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       )
       .subscribe();
 
+    // Real-time subscription for store status changes
+    const storeStatusSubscription = supabase
+      .channel(`store-status-manager-${currentManager.store_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'stores',
+          filter: `id=eq.${currentManager.store_id}`
+        },
+        (payload) => {
+          console.log('Store status updated in manager:', payload);
+          setStoreIsOpen(payload.new.is_open);
+        }
+      )
+      .subscribe();
+
     return () => {
-      console.log('=== REMOVENDO SUBSCRIPTION MOTOBOY ORDERS ===');
-      subscription.unsubscribe();
+      console.log('=== REMOVENDO SUBSCRIPTIONS ===');
+      motoboySubscription.unsubscribe();
+      storeStatusSubscription.unsubscribe();
     };
   }, [isLoggedIn, currentManager]);
 

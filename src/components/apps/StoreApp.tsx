@@ -133,10 +133,14 @@ export function StoreApp({ onBack }: StoreAppProps) {
 
   const checkStoreStatus = async (storeId: string) => {
     try {
+      // Use the correct store ID from STORES mapping
+      const storeData = STORES[storeId as StoreType];
+      const actualStoreId = storeData?.id || storeId;
+      
       const { data, error } = await supabase
         .from('stores')
         .select('is_open')
-        .eq('id', storeId)
+        .eq('id', actualStoreId)
         .single();
 
       if (error) {
@@ -154,19 +158,30 @@ export function StoreApp({ onBack }: StoreAppProps) {
   useEffect(() => {
     if (!selectedStore) return;
 
+    // Use the correct store ID from STORES mapping
+    const storeData = STORES[selectedStore];
+    const actualStoreId = storeData?.id || selectedStore;
+
     const channel = supabase
-      .channel(`store-status-${selectedStore}`)
+      .channel(`store-status-${actualStoreId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'stores',
-          filter: `id=eq.${selectedStore}`
+          filter: `id=eq.${actualStoreId}`
         },
         (payload) => {
           console.log('Store status updated:', payload);
           setStoreIsOpen(payload.new.is_open);
+          
+          // Show toast notification about store status change
+          toast({
+            title: payload.new.is_open ? "Loja Aberta" : "Loja Fechada",
+            description: `${storeData?.name || selectedStore} está agora ${payload.new.is_open ? 'aberta' : 'fechada'}`,
+            duration: 3000
+          });
         }
       )
       .subscribe();
@@ -174,7 +189,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedStore]);
+  }, [selectedStore, toast]);
 
   const handleAddToCart = async (item: StoreItem) => {
     // Check if store is open
@@ -525,20 +540,28 @@ export function StoreApp({ onBack }: StoreAppProps) {
           }}>
             <ArrowLeft size={20} />
           </Button>
-          <div className="flex items-center gap-3">
-            {(() => {
-              const StoreIcon = STORE_ICONS[selectedStore];
-              const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore));
-              return (
-                <>
-                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category?.color || 'from-primary to-primary'} flex items-center justify-center`}>
-                    <StoreIcon size={20} className="text-white" />
-                  </div>
+        <div className="flex items-center gap-3">
+          {(() => {
+            const StoreIcon = STORE_ICONS[selectedStore];
+            const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore));
+            return (
+              <>
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category?.color || 'from-primary to-primary'} flex items-center justify-center`}>
+                  <StoreIcon size={20} className="text-white" />
+                </div>
+                <div className="flex flex-col">
                   <h1 className="text-lg font-bold text-foreground">{store.name}</h1>
-                </>
-              );
-            })()}
-          </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${storeIsOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className={`text-xs font-medium ${storeIsOpen ? 'text-green-600' : 'text-red-600'}`}>
+                      {storeIsOpen ? 'Aberta' : 'Fechada'}
+                    </span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
         </div>
         
         <div className="flex items-center gap-2">
