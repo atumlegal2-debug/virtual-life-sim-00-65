@@ -11,7 +11,7 @@ interface StoreContextType {
   increaseQuantity: (storeId: string, itemId: string) => void;
   decreaseQuantity: (storeId: string, itemId: string) => void;
   clearCart: (storeId: string) => void;
-  submitOrder: (storeId: string, buyerId: string, buyerName: string) => Promise<void>;
+  submitOrder: (storeId: string, buyerId: string, buyerName: string, deliveryType?: 'pickup' | 'delivery') => Promise<void>;
   submitOrderWithDeliveryType: (storeId: string, buyerId: string, buyerName: string, deliveryType: string) => Promise<void>;
   approveOrder: (orderId: string, buyerId: string, deductMoney: (amount: number) => void, addToBag: (items: CartItem[]) => void) => void;
   rejectOrder: (orderId: string) => void;
@@ -208,7 +208,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const submitOrder = async (storeId: string, buyerId: string, buyerName: string) => {
+  const submitOrder = async (storeId: string, buyerId: string, buyerName: string, deliveryType: 'pickup' | 'delivery' = 'pickup') => {
     // Default to pickup for backward compatibility
     return submitOrderWithDeliveryType(storeId, buyerId, buyerName, 'pickup');
   };
