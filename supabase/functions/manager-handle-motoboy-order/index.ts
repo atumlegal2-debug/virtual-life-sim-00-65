@@ -65,13 +65,13 @@ serve(async (req) => {
     if (action === 'reject' && motoboyOrder?.order_id) {
       console.log(`[manager-handle-motoboy-order] Rejecting order ${orderId} (orders.id=${motoboyOrder.order_id}) - updating source order to pickup and closing duplicates`)
 
-      // 1) Make sure the original order no longer targets motoboy delivery
+      // 1) Make sure the original order no longer targets motoboy delivery and block future motoboy creation
       const { error: orderUpdateErr } = await supabase
         .from('orders')
         .update({
           delivery_type: 'pickup',
           manager_approved: null,
-          manager_notes: (notes || '') + ' [Motoboy rejeitado pelo gerente]',
+          manager_notes: (notes || '') + ' [Motoboy rejeitado pelo gerente] [motoboy_blocked]',
           updated_at: new Date().toISOString()
         })
         .eq('id', motoboyOrder.order_id)
