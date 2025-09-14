@@ -258,6 +258,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           users!inner(username)
         `)
         .eq('store_id', currentManager.store_id)
+        .eq('delivery_type', 'pickup')
         .is('manager_approved', null)
         .order('created_at', { ascending: false });
 
