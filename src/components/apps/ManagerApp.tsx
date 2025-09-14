@@ -258,6 +258,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           users!inner(username)
         `)
         .eq('store_id', currentManager.store_id)
+        .eq('delivery_type', 'pickup')
         .eq('status', 'pending')
         .is('manager_approved', null)
         .order('created_at', { ascending: false });
@@ -902,28 +903,27 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   useEffect(() => {
     if (!isLoggedIn || !currentManager) return;
 
-    console.log('=== CONFIGURANDO SUBSCRIPTIONS (ORDERS + MOTOBOY) ===');
+    console.log('=== CONFIGURANDO SUBSCRIPTIONS (PICKUP + MOTOBOY) ===');
 
-    const ordersSubscription = supabase
-      .channel(`orders_changes_${currentManager.store_id}`)
+    const pickupOrdersSubscription = supabase
+      .channel(`pickup_orders_${currentManager.store_id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `store_id=eq.${currentManager.store_id}`
+          filter: `store_id=eq.${currentManager.store_id}AND delivery_type=eq.pickup`
         },
         (payload) => {
-          console.log('📥 Order change received:', payload);
-          // Atualiza pedidos pendentes em tempo real
+          console.log('📥 Pickup order change received:', payload);
           loadPendingOrders();
         }
       )
       .subscribe();
 
     const motoboySubscription = supabase
-      .channel(`motoboy_orders_changes_${currentManager.store_id}`)
+      .channel(`motoboy_orders_${currentManager.store_id}`)
       .on(
         'postgres_changes',
         {
@@ -935,10 +935,9 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         (payload) => {
           console.log('📦 Motoboy order change received:', payload);
           toast({
-            title: "Atualização de motoboy",
+            title: "Novo pedido de motoboy!",
             description: "Pedidos de motoboy foram atualizados.",
           });
-          // Recarrega lista de motoboy
           loadMotoboyOrders();
         }
       )
@@ -946,7 +945,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
     return () => {
       console.log('=== REMOVENDO SUBSCRIPTIONS ===');
-      ordersSubscription.unsubscribe();
+      pickupOrdersSubscription.unsubscribe();
       motoboySubscription.unsubscribe();
     };
   }, [isLoggedIn, currentManager]);
