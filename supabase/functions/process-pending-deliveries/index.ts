@@ -20,7 +20,9 @@ interface MotoboyOrder {
   motoboy_status: string;
   delivered_at: string | null;
   order_id: string;
+  motoboy_notes?: string | null;
 }
+
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -55,9 +57,15 @@ Deno.serve(async (req) => {
     let errorsCount = 0;
     const processingSummary: string[] = [];
 
-    for (const order of deliveredOrders || []) {
+for (const order of deliveredOrders || []) {
       try {
         console.log(`\n🔄 Processando pedido ${order.id} para usuário ${order.customer_username}`);
+        
+        // Skip if already marked as applied to inventory
+        if (order.motoboy_notes && order.motoboy_notes.includes('[inventory_applied]')) {
+          console.log(`⏭️ Pedido ${order.id} já processado (inventory_applied). Pulando.`);
+          continue;
+        }
         
         // Buscar dados do usuário
         const { data: userData, error: userError } = await supabaseClient
@@ -143,6 +151,15 @@ Deno.serve(async (req) => {
         if (orderErrors.length > 0) {
           processingSummary.push(`❌ ${displayName}: ${orderErrors.length} erro(s)`);
           errorsCount++;
+        }
+
+        // Mark order as inventory applied to prevent reprocessing
+        const { error: markErr } = await supabaseClient
+          .from('motoboy_orders')
+          .update({ motoboy_notes: `${order.motoboy_notes || ''} [inventory_applied]` })
+          .eq('id', order.id);
+        if (markErr) {
+          console.warn(`⚠️ Falha ao marcar pedido ${order.id} como inventory_applied:`, markErr);
         }
 
         processedCount++;
