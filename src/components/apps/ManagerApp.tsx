@@ -738,22 +738,22 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     if (!currentManager) return;
     
     try {
-      const { data, error } = await supabase
-        .from('motoboy_orders')
-        .select('*')
-        .eq('store_id', currentManager.store_id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('manager-motoboy-orders', {
+        body: {
+          username: currentManager.username,
+          password: currentManager.password,
+          storeId: currentManager.store_id
+        }
+      });
 
       if (error) throw error;
-      
-      // Load display names for all customers using optimized cache
-      const ordersWithDisplayNames = (data || []).map(order => ({
+
+      const orders = (data?.orders || []).map((order: any) => ({
         ...order,
-        // Use getDisplayName which handles caching automatically
         customer_display_name: order.customer_username ? getDisplayName(order.customer_username) : order.customer_username
       }));
       
-      setMotoboyOrders(ordersWithDisplayNames);
+      setMotoboyOrders(orders);
     } catch (error) {
       console.error('Error loading motoboy orders:', error);
     }
@@ -1266,14 +1266,15 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
     const handleMotoboyOrder = async (orderId: string, action: 'accept' | 'reject', notes?: string) => {
       try {
-        const { error } = await supabase
-          .from('motoboy_orders')
-          .update({ 
-            manager_status: action === 'accept' ? 'approved' : 'rejected',
-            manager_notes: notes || (action === 'accept' ? 'Pedido aprovado para entrega' : 'Pedido rejeitado'),
-            manager_processed_at: new Date().toISOString()
-          })
-          .eq('id', orderId);
+        const { data, error } = await supabase.functions.invoke('manager-handle-motoboy-order', {
+          body: {
+            username: currentManager.username,
+            password: currentManager.password,
+            orderId,
+            action,
+            notes: notes || (action === 'accept' ? 'Pedido aprovado para entrega' : 'Pedido rejeitado')
+          }
+        });
 
         if (error) throw error;
 
@@ -1285,8 +1286,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         });
 
         // Reload orders to update the list
-        loadMotoboyOrders();
-
         await loadMotoboyOrders();
       } catch (error) {
         console.error('Error handling motoboy order:', error);

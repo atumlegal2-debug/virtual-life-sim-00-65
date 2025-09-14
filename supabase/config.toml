@@ -22,6 +22,24 @@ port = 54322
 [functions.process-orders]
 verify_jwt = false
 
+[functions.auto-process-orders]
+verify_jwt = false
+
+[functions.debug-orders]
+verify_jwt = false
+
+[functions.manager-motoboy-orders]
+verify_jwt = false
+
+[functions.manager-handle-motoboy-order]
+verify_jwt = false
+
+[functions.motoboy-list-orders]
+verify_jwt = false
+
+[functions.motoboy-handle-order]
+verify_jwt = false
+
 [realtime]
 enabled = true
 port = 54323
