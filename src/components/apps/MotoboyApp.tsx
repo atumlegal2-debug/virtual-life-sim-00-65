@@ -34,10 +34,27 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [orders, setOrders] = useState<MotoboyOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<MotoboyOrder[]>([]);
 
-  // Function to clear all orders
-  const clearAllOrders = () => {
-    setOrders([]);
-    setAcceptedOrders([]);
+  // Function to clear all orders (server + UI)
+  const clearAllOrders = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('motoboy-clear-orders');
+      if (error) throw error;
+      setOrders([]);
+      setAcceptedOrders([]);
+      toast({
+        title: 'Pedidos limpos!',
+        description: `${data?.deleted ?? 0} pedidos removidos do servidor`,
+      });
+      // Recarrega para garantir que não voltem
+      await loadOrders();
+    } catch (e) {
+      console.error('Erro ao limpar pedidos:', e);
+      toast({ title: 'Erro', description: 'Falha ao limpar pedidos', variant: 'destructive' });
+    } finally {
+      setClearing(false);
+    }
   };
   const [loading, setLoading] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
@@ -47,6 +64,7 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [profileModalUser, setProfileModalUser] = useState<{ userId: string, username: string } | null>(null);
   const [userProfiles, setUserProfiles] = useState<Record<string, { avatar?: string, nickname?: string, id: string }>>({});
   const [processingDeliveries, setProcessingDeliveries] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const { toast } = useToast();
 
   const getDisplayName = (username: string) => {
@@ -672,8 +690,12 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
             onClick={clearAllOrders}
             className="text-primary-foreground hover:bg-background/20"
             title="Limpar todos os pedidos da tela"
-          >
-            <Trash2 size={16} />
+>
+            {clearing ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+            ) : (
+              <Trash2 size={16} />
+            )}
           </Button>
           <Button
             variant="ghost"
