@@ -289,47 +289,21 @@ export function StoreApp({ onBack }: StoreAppProps) {
         // Check if this is a hospital order (no motoboy delivery for hospital)
         const isHospital = false; // Hospital is not in current stores
         
-        if (deliveryOption === "delivery" && !isHospital) {
-          // Create motoboy order - use the correct store ID from STORES data
-          const storeData = STORES[selectedStore];
-          const sanitizedItems = cart.map(({ id, name, price, quantity }) => ({ id, name, price, quantity }));
-          const { error } = await supabase
-            .from('motoboy_orders')
-            .insert({
-              order_id: crypto.randomUUID(),
-              store_id: storeData.id,
-              customer_name: currentUser,
-              customer_username: currentUser, // Salvar username completo para buscar nickname
-              items: sanitizedItems as any,
-              total_amount: total,
-              manager_status: 'pending',
-              motoboy_status: 'waiting'
-            });
-
-          if (error) throw error;
-
+        // Always use regular order submission with delivery type
+        await submitOrderWithDeliveryType(selectedStore, currentUser, currentUser.slice(0, -4), deliveryOption || "pickup");
+        
+        if (deliveryOption === "pickup") {
           toast({
-            title: "Pedido enviado para o gerente!",
-            description: "Aguarde a aprovação para envio ao motoboy",
+            title: "Pedido de retirada enviado!",
+            description: "Aguarde a aprovação do gerente do estabelecimento",
             duration: 5000
           });
         } else {
-          // Regular order submission with delivery type
-          await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4), deliveryOption);
-          
-          if (deliveryOption === "pickup") {
-            toast({
-              title: "Pedido de retirada enviado!",
-              description: "Aguarde a aprovação do gerente do estabelecimento",
-              duration: 5000
-            });
-          } else {
-            toast({
-              title: "Pedido de delivery enviado!",
-              description: "Será aprovado automaticamente em 1 minuto e enviado para entrega",
-              duration: 5000
-            });
-          }
+          toast({
+            title: "Pedido de delivery enviado!",
+            description: "Será aprovado automaticamente em 1 minuto e enviado para entrega",
+            duration: 5000
+          });
         }
 
         setShowCartCheckout(false);

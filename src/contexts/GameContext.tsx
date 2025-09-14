@@ -1288,6 +1288,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [userId, currentUser]);
+
+  // Auto-process orders periodically (every 30 seconds)
+  useEffect(() => {
+    const processOrders = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('auto-process-orders');
+        if (error) {
+          console.error('Error in auto-process-orders:', error);
+        } else {
+          console.log('📦 Auto-process orders completed:', data);
+        }
+      } catch (error) {
+        console.error('Error calling auto-process-orders:', error);
+      }
+    };
+
+    // Run immediately and then every 30 seconds
+    processOrders();
+    const interval = setInterval(processOrders, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
   
   // Listen for global malnutrition cure events
   useEffect(() => {
