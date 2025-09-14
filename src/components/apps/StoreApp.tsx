@@ -86,7 +86,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [currentProposal, setCurrentProposal] = useState<any>(null);
   const [showCartCheckout, setShowCartCheckout] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
-  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "delivery">("pickup");
+  // Removed delivery option - only pickup available now
   const [storeIsOpen, setStoreIsOpen] = useState(true);
   
   const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, submitOrderWithDeliveryType, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
@@ -289,26 +289,17 @@ export function StoreApp({ onBack }: StoreAppProps) {
         // Check if this is a hospital order (no motoboy delivery for hospital)
         const isHospital = false; // Hospital is not in current stores
         
-        // Always use regular order submission with delivery type
-        await submitOrderWithDeliveryType(selectedStore, currentUser, currentUser.slice(0, -4), deliveryOption || "pickup");
+        // Always use pickup only - no delivery option
+        await submitOrderWithDeliveryType(selectedStore, currentUser, currentUser.slice(0, -4), "pickup");
         
-        if (deliveryOption === "pickup") {
-          toast({
-            title: "Pedido de retirada enviado!",
-            description: "Aguarde a aprovação do gerente do estabelecimento",
-            duration: 5000
-          });
-        } else {
-          toast({
-            title: "Pedido de delivery enviado!",
-            description: "Será aprovado automaticamente em 1 minuto e enviado para entrega",
-            duration: 5000
-          });
-        }
+        toast({
+          title: "Pedido de retirada enviado!",
+          description: "Aguarde a aprovação do gerente do estabelecimento",
+          duration: 5000
+        });
 
         setShowCartCheckout(false);
         clearCart(selectedStore);
-        setDeliveryOption("pickup");
       } catch (error) {
         console.error('Error submitting order:', error);
         toast({
@@ -844,32 +835,10 @@ export function StoreApp({ onBack }: StoreAppProps) {
                   <span className="font-bold text-lg">Total:</span>
                   <span className="font-bold text-lg text-money">{getCartTotal(selectedStore)} CM</span>
                 </div>
-                {/* Delivery Option Selection */}
+                {/* Only pickup option available */}
                 <div className="space-y-3 mb-4">
-                  <div className="text-sm font-medium">Opção de entrega:</div>
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="deliveryOption"
-                        value="pickup"
-                        checked={deliveryOption === "pickup"}
-                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "delivery")}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Retirada no local</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="deliveryOption"
-                        value="delivery"
-                        checked={deliveryOption === "delivery"}
-                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "delivery")}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Entrega por motoboy</span>
-                    </label>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    🏪 Retirada no local
                   </div>
                 </div>
 

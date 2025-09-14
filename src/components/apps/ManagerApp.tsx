@@ -70,8 +70,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const [birthRequests, setBirthRequests] = useState<BirthRequest[]>([]);
   const [treatmentRequests, setTreatmentRequests] = useState<TreatmentRequest[]>([]);
-  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers" | "patient-history" | "motoboy-orders">("dashboard");
-  const [motoboyOrders, setMotoboyOrders] = useState<any[]>([]);
+  const [currentView, setCurrentView] = useState<"dashboard" | "orders" | "sales" | "hospital" | "treatments" | "transfers" | "patient-history">("dashboard");
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [transferAmount, setTransferAmount] = useState("");
@@ -79,17 +78,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   
   const { toast } = useToast();
 
-  // Timer for motoboy orders countdown
-  useEffect(() => {
-    if (currentView === "motoboy-orders" && motoboyOrders.length > 0) {
-      const interval = setInterval(() => {
-        // Force re-render to update countdown timers
-        setMotoboyOrders(prev => [...prev]);
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [currentView, motoboyOrders.length]);
 
   // Load saved logins from localStorage
   useEffect(() => {
@@ -754,8 +742,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
          customer_display_name: order.customer_username ? getDisplayName(order.customer_username) : order.customer_username
        }));
        
-       console.log('📦 Loaded motoboy orders:', orders.length, 'orders for store:', currentManager.store_id);
-       setMotoboyOrders(orders);
      } catch (error) {
        console.error('Error loading motoboy orders:', error);
      }
@@ -883,7 +869,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     if (isLoggedIn && currentManager) {
       loadPendingOrders();
       loadSalesHistory();
-      loadMotoboyOrders(); // Load motoboy orders on login
+      
       
       if (currentManager.store_id === 'hospital') {
         loadBirthRequests();
@@ -895,9 +881,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
     if (currentView === "patient-history") {
       loadPatientHistory();
-    }
-    if (currentView === "motoboy-orders") {
-      loadMotoboyOrders();
     }
   }, [isLoggedIn, currentManager, currentView]);
 
@@ -941,7 +924,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                title: "Novo pedido de motoboy!",
                description: `Pedido de ${(payload.new as any)?.customer_username || 'cliente'} foi criado`,
              });
-             loadMotoboyOrders();
            }
          }
        )
@@ -1275,195 +1257,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     );
   }
 
-  // Motoboy Orders View
-  if (currentView === "motoboy-orders") {
-    const pendingMotoboyOrders = motoboyOrders.filter(o => o.manager_status === 'approved' && o.motoboy_status === 'waiting');
-    const processedMotoboyOrders = motoboyOrders.filter(o => !(o.manager_status === 'approved' && o.motoboy_status === 'waiting'));
-
-    const handleMotoboyOrder = async (orderId: string, action: 'accept' | 'reject', notes?: string) => {
-      try {
-        const { data, error } = await supabase.functions.invoke('manager-handle-motoboy-order', {
-          body: {
-            username: currentManager.username,
-            password: currentManager.password,
-            orderId,
-            action,
-            notes: notes || (action === 'accept' ? 'Pedido aprovado para entrega' : 'Pedido rejeitado')
-          }
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: action === 'accept' ? "Pedido aprovado! ✅" : "Pedido rejeitado ❌",
-          description: action === 'accept' 
-            ? "O pedido foi liberado para o motoboy" 
-            : "O pedido foi rejeitado"
-        });
-
-        // Reload orders to update the list
-        await loadMotoboyOrders();
-      } catch (error) {
-        console.error('Error handling motoboy order:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível processar o pedido",
-          variant: "destructive"
-        });
-      }
-    };
-    
-    return (
-      <div className="flex flex-col h-full">
-         <div className="flex items-center gap-3 mb-6">
-           <Button variant="ghost" size="sm" onClick={() => setCurrentView("dashboard")}>
-             <ArrowLeft size={20} />
-           </Button>
-           <h1 className="text-xl font-bold text-foreground">Pedidos de Motoboy ({motoboyOrders.length})</h1>
-           <Button 
-             variant="outline" 
-             size="sm" 
-             onClick={() => {
-               console.log('🔄 Manual refresh of motoboy orders');
-               loadMotoboyOrders();
-             }}
-           >
-             🔄 Atualizar
-           </Button>
-         </div>
-
-        <div className="space-y-4 overflow-y-auto">
-          {/* Pending Motoboy Orders */}
-          {pendingMotoboyOrders.length > 0 && (
-            <Card className="bg-orange-800 border-orange-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  Pedidos Pendentes ({pendingMotoboyOrders.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {pendingMotoboyOrders.map((order) => {
-                  const createdAt = new Date(order.created_at).getTime();
-                  const now = Date.now();
-                  const elapsedSeconds = Math.floor((now - createdAt) / 1000);
-                  const remainingSeconds = Math.max(0, 60 - elapsedSeconds);
-                  const remainingMinutes = Math.floor(remainingSeconds / 60);
-                  const displaySeconds = remainingSeconds % 60;
-                  
-                  return (
-                    <div key={order.id} className="bg-orange-700 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-medium text-white">{getDisplayName(order.customer_username)}</h4>
-                          <p className="text-sm text-orange-300">Endereço: {order.delivery_address || 'Não informado'}</p>
-                          <p className="text-sm text-orange-200">Total: {formatMoney(order.total_amount)} CM</p>
-                          <p className="text-xs text-orange-400 mt-1">
-                            {new Date(order.created_at).toLocaleString('pt-BR')}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge variant="secondary" className="bg-orange-600 text-orange-100">
-                            Pendente
-                          </Badge>
-                          {remainingSeconds > 0 ? (
-                            <div className="flex items-center gap-1 text-white bg-orange-600 px-2 py-1 rounded text-xs">
-                              <Clock size={12} />
-                              <span>{remainingMinutes}:{displaySeconds.toString().padStart(2, '0')}</span>
-                            </div>
-                          ) : (
-                            <div className="text-red-300 text-xs font-bold">
-                              TEMPO EXPIRADO
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    
-                    {/* Items */}
-                    <div className="mb-3 p-2 bg-orange-600 rounded">
-                      <p className="text-xs text-orange-200 mb-1">1 minuto:</p>
-                      {Array.isArray(order.items) && order.items.map((item: any, index: number) => (
-                        <div key={index} className="flex justify-between text-xs text-white">
-                          <span>{item.name} x{item.quantity}</span>
-                          <span>{formatMoney(item.price * item.quantity)} CM</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleMotoboyOrder(order.id, 'accept')}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle size={16} className="mr-1" />
-                        Aprovar para Entrega
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleMotoboyOrder(order.id, 'reject')}
-                        className="flex-1"
-                      >
-                        <XCircle size={16} className="mr-1" />
-                        Rejeitar
-                      </Button>
-                    </div>
-                  </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Processed Motoboy Orders */}
-          {processedMotoboyOrders.length > 0 && (
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  Pedidos Processados ({processedMotoboyOrders.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {processedMotoboyOrders.slice(0, 10).map((order) => (
-                  <div key={order.id} className="bg-gray-700 rounded-lg p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-white text-sm">{getDisplayName(order.customer_username)}</h4>
-                        <p className="text-xs text-gray-300">{formatMoney(order.total_amount)} CM</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(order.manager_processed_at || order.updated_at).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                      <Badge 
-                        variant={order.manager_status === 'accepted' ? 'default' : 'destructive'}
-                        className="text-xs"
-                      >
-                        {order.manager_status === 'accepted' ? '✅ Aprovado' : '❌ Rejeitado'}
-                      </Badge>
-                    </div>
-                    {order.manager_notes && (
-                      <p className="text-xs text-gray-400 mt-1">{order.manager_notes}</p>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {pendingMotoboyOrders.length === 0 && processedMotoboyOrders.length === 0 && (
-            <Card className="bg-orange-800 border-orange-700">
-              <CardContent className="pt-6 text-center">
-                <Truck className="h-16 w-16 mx-auto text-orange-400 mb-4" />
-                <p className="text-orange-300">Nenhum pedido de motoboy no momento</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   if (!isLoggedIn) {
     return (
@@ -1802,17 +1595,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           Pedidos Pendentes ({pendingOrders.length})
         </Button>
         
-        {/* Show motoboy orders for non-hospital stores */}
-        {currentManager?.store_id !== 'hospital' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => setCurrentView("motoboy-orders")}
-          >
-            <Truck size={16} className="mr-2" />
-            Pedidos do Motoboy ({motoboyOrders.filter(o => o.manager_status === 'approved' && o.motoboy_status === 'waiting').length})
-          </Button>
-        )}
         <Button
           variant="outline"
           className="w-full justify-start"
