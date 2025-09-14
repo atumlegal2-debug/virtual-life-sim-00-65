@@ -87,6 +87,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [showCartCheckout, setShowCartCheckout] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState<"pickup" | "motoboy">("pickup");
+  const [storeIsOpen, setStoreIsOpen] = useState(true);
   
   const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
@@ -106,6 +107,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   useEffect(() => {
     if (selectedStore && currentUser) {
       refreshWallet();
+      checkStoreStatus(selectedStore); // Check if store is open
     }
   }, [selectedStore, currentUser, refreshWallet]);
 
@@ -129,7 +131,76 @@ export function StoreApp({ onBack }: StoreAppProps) {
     }
   };
 
+  const checkStoreStatus = async (storeId: string) => {
+    try {
+      // Use the correct store ID from STORES mapping
+      const storeData = STORES[storeId as StoreType];
+      const actualStoreId = storeData?.id || storeId;
+      
+      const { data, error } = await supabase
+        .from('stores')
+        .select('is_open')
+        .eq('id', actualStoreId)
+        .single();
+
+      if (error) {
+        console.error('Error checking store status:', error);
+        return;
+      }
+      
+      setStoreIsOpen(data.is_open);
+    } catch (error) {
+      console.error('Error checking store status:', error);
+    }
+  };
+
+  // Realtime subscription for store status changes
+  useEffect(() => {
+    if (!selectedStore) return;
+
+    // Use the correct store ID from STORES mapping
+    const storeData = STORES[selectedStore];
+    const actualStoreId = storeData?.id || selectedStore;
+
+    const channel = supabase
+      .channel(`store-status-${actualStoreId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'stores',
+          filter: `id=eq.${actualStoreId}`
+        },
+        (payload) => {
+          console.log('Store status updated:', payload);
+          setStoreIsOpen(payload.new.is_open);
+          
+          // Show toast notification about store status change
+          toast({
+            title: payload.new.is_open ? "Loja Aberta" : "Loja Fechada",
+            description: `${storeData?.name || selectedStore} está agora ${payload.new.is_open ? 'aberta' : 'fechada'}`,
+            duration: 3000
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedStore, toast]);
+
   const handleAddToCart = async (item: StoreItem) => {
+    // Check if store is open
+    if (!storeIsOpen) {
+      toast({
+        title: "Loja Fechada",
+        description: "Esta loja está fechada no momento. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+      return;
+    }
     // Check current inventory for this item
     if (!currentUser) return;
     
@@ -189,6 +260,16 @@ export function StoreApp({ onBack }: StoreAppProps) {
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
+    
+    // Check if store is open
+    if (!storeIsOpen) {
+      toast({
+        title: "Loja Fechada",
+        description: "Esta loja está fechada no momento. Não é possível finalizar pedidos.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const total = getCartTotal(selectedStore);
     
@@ -459,20 +540,28 @@ export function StoreApp({ onBack }: StoreAppProps) {
           }}>
             <ArrowLeft size={20} />
           </Button>
-          <div className="flex items-center gap-3">
-            {(() => {
-              const StoreIcon = STORE_ICONS[selectedStore];
-              const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore));
-              return (
-                <>
-                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category?.color || 'from-primary to-primary'} flex items-center justify-center`}>
-                    <StoreIcon size={20} className="text-white" />
-                  </div>
+        <div className="flex items-center gap-3">
+          {(() => {
+            const StoreIcon = STORE_ICONS[selectedStore];
+            const category = STORE_CATEGORIES.find(c => c.stores.includes(selectedStore));
+            return (
+              <>
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category?.color || 'from-primary to-primary'} flex items-center justify-center`}>
+                  <StoreIcon size={20} className="text-white" />
+                </div>
+                <div className="flex flex-col">
                   <h1 className="text-lg font-bold text-foreground">{store.name}</h1>
-                </>
-              );
-            })()}
-          </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${storeIsOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className={`text-xs font-medium ${storeIsOpen ? 'text-green-600' : 'text-red-600'}`}>
+                      {storeIsOpen ? 'Aberta' : 'Fechada'}
+                    </span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -522,6 +611,25 @@ export function StoreApp({ onBack }: StoreAppProps) {
           )}
         </div>
       </div>
+
+      {/* Store Status Alert */}
+      {!storeIsOpen && (
+        <Card className="mb-4 bg-red-800/50 border-red-600">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3 text-red-100">
+              <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">
+                <X size={20} className="text-white" />
+              </div>
+              <div>
+                <h3 className="font-medium">Loja Fechada</h3>
+                <p className="text-sm text-red-200">
+                  Esta loja está temporariamente fechada. Não é possível fazer pedidos no momento.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Store Items grouped by category */}
       <div className="flex-1 overflow-y-auto space-y-6 mb-4">
@@ -612,14 +720,15 @@ export function StoreApp({ onBack }: StoreAppProps) {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddToCart(item)}
-                        className="shrink-0 group-hover:scale-105 transition-transform"
-                      >
-                        <ShoppingBag size={16} className="mr-1" />
-                        Adicionar
-                      </Button>
+                       <Button
+                         size="sm"
+                         onClick={() => handleAddToCart(item)}
+                         className="shrink-0 group-hover:scale-105 transition-transform"
+                         disabled={!storeIsOpen}
+                       >
+                         <ShoppingBag size={16} className="mr-1" />
+                         {storeIsOpen ? 'Adicionar' : 'Fechado'}
+                       </Button>
                     </div>
                   </CardContent>
                 </Card>
