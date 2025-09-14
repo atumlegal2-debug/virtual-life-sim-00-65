@@ -402,6 +402,7 @@ export type Database = {
           customer_username: string
           delivered_at: string | null
           delivery_address: string | null
+          expires_at: string | null
           id: string
           items: Json
           manager_notes: string | null
@@ -422,6 +423,7 @@ export type Database = {
           customer_username: string
           delivered_at?: string | null
           delivery_address?: string | null
+          expires_at?: string | null
           id?: string
           items: Json
           manager_notes?: string | null
@@ -442,6 +444,7 @@ export type Database = {
           customer_username?: string
           delivered_at?: string | null
           delivery_address?: string | null
+          expires_at?: string | null
           id?: string
           items?: Json
           manager_notes?: string | null
@@ -461,6 +464,8 @@ export type Database = {
         Row: {
           approved_at: string | null
           created_at: string
+          delivery_option: string | null
+          delivery_type: string | null
           id: string
           items: Json
           manager_approved: boolean | null
@@ -474,6 +479,8 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           created_at?: string
+          delivery_option?: string | null
+          delivery_type?: string | null
           id?: string
           items: Json
           manager_approved?: boolean | null
@@ -487,6 +494,8 @@ export type Database = {
         Update: {
           approved_at?: string | null
           created_at?: string
+          delivery_option?: string | null
+          delivery_type?: string | null
           id?: string
           items?: Json
           manager_approved?: boolean | null
@@ -884,6 +893,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_approve_delivery_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      consume_inventory_item: {
+        Args: {
+          p_item_id: string
+          p_quantity_to_consume?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       create_user_pregnancy: {
         Args: { p_percentage?: number; p_username: string }
         Returns: {
@@ -896,6 +917,10 @@ export type Database = {
       }
       cure_malnutrition: {
         Args: { target_user_id: string }
+        Returns: boolean
+      }
+      cure_patient_treatment: {
+        Args: { p_treatment_type: string; p_user_id: string }
         Returns: boolean
       }
       decrease_alcoholism: {
@@ -922,6 +947,14 @@ export type Database = {
           users_updated: string
         }[]
       }
+      expire_motoboy_orders: {
+        Args: Record<PropertyKey, never> | { expiration_minutes?: number }
+        Returns: Json
+      }
+      get_current_manager_store_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_pregnancy: {
         Args: { p_username: string }
         Returns: {
@@ -931,6 +964,14 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+      }
+      process_hospital_birth: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      process_order_delivery_rules: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       reset_user_pregnancy: {
         Args: { p_username: string }

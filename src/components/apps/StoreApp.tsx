@@ -89,7 +89,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [deliveryOption, setDeliveryOption] = useState<"pickup" | "motoboy">("pickup");
   const [storeIsOpen, setStoreIsOpen] = useState(true);
   
-  const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
+  const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, submitOrderWithDeliveryType, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
   const { currentUser, money, updateMoney, addTemporaryEffect, refreshWallet } = useGame();
   const { proposals, getProposalsForUser, acceptProposal, rejectProposal } = useRelationship();
   const { toast } = useToast();
@@ -314,11 +314,11 @@ export function StoreApp({ onBack }: StoreAppProps) {
             duration: 5000
           });
         } else {
-          // Regular order submission
-          await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4));
+          // Regular pickup order submission with correct delivery_type
+          await submitOrderWithDeliveryType(selectedStore, currentUser, currentUser.slice(0, -4), "pickup");
           toast({
-            title: "Pedido enviado!",
-            description: "Olá, seu pedido está em processo, entre em contato com o chat do estabelecimento e aguarde",
+            title: "Pedido de retirada enviado!",
+            description: "Aguarde a aprovação do gerente do estabelecimento",
             duration: 5000
           });
         }

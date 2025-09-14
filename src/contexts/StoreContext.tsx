@@ -12,6 +12,7 @@ interface StoreContextType {
   decreaseQuantity: (storeId: string, itemId: string) => void;
   clearCart: (storeId: string) => void;
   submitOrder: (storeId: string, buyerId: string, buyerName: string) => Promise<void>;
+  submitOrderWithDeliveryType: (storeId: string, buyerId: string, buyerName: string, deliveryType: string) => Promise<void>;
   approveOrder: (orderId: string, buyerId: string, deductMoney: (amount: number) => void, addToBag: (items: CartItem[]) => void) => void;
   rejectOrder: (orderId: string) => void;
   getOrdersForStore: (storeId: string) => StoreOrder[];
@@ -124,7 +125,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCarts(prev => ({ ...prev, [storeId]: [] }));
   };
 
-  const submitOrder = async (storeId: string, buyerId: string, buyerName: string) => {
+  const submitOrderWithDeliveryType = async (storeId: string, buyerId: string, buyerName: string, deliveryType: string) => {
     const currentCart = getCartForStore(storeId);
     
     try {
@@ -169,7 +170,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         store_id: actualStoreId,
         items: JSON.parse(JSON.stringify(currentCart)) as any,
         total_amount: getCartTotal(storeId),
-        status: 'pending'
+        status: 'pending',
+        delivery_type: deliveryType
       };
 
       console.log('Dados do pedido:', orderData);
@@ -204,6 +206,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Erro na submissão do pedido:', error);
     }
+  };
+
+  const submitOrder = async (storeId: string, buyerId: string, buyerName: string) => {
+    // Default to pickup for backward compatibility
+    return submitOrderWithDeliveryType(storeId, buyerId, buyerName, 'pickup');
   };
 
   const approveOrder = (orderId: string, buyerId: string, deductMoney: (amount: number) => void, addToBag: (items: CartItem[]) => void) => {
@@ -255,6 +262,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       decreaseQuantity,
       clearCart,
       submitOrder,
+      submitOrderWithDeliveryType,
       approveOrder,
       rejectOrder,
       getOrdersForStore,
