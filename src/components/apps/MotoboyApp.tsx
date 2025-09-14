@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Truck, MapPin, Clock, Package, Lock, X } from "lucide-react";
+import { ArrowLeft, Truck, MapPin, Clock, Package, Lock, X, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,12 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const [rememberLogin, setRememberLogin] = useState(false);
   const [orders, setOrders] = useState<MotoboyOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<MotoboyOrder[]>([]);
+
+  // Function to clear all orders
+  const clearAllOrders = () => {
+    setOrders([]);
+    setAcceptedOrders([]);
+  };
   const [loading, setLoading] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [todayDeliveries, setTodayDeliveries] = useState(0);
@@ -660,6 +666,15 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
         </Button>
         <h1 className="text-lg font-bold text-primary-foreground">Motoboy</h1>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllOrders}
+            className="text-primary-foreground hover:bg-background/20"
+            title="Limpar todos os pedidos da tela"
+          >
+            <Trash2 size={16} />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
