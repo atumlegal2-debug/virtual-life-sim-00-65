@@ -258,7 +258,6 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           users!inner(username)
         `)
         .eq('store_id', currentManager.store_id)
-        .eq('delivery_type', 'pickup')
         .eq('status', 'pending')
         .is('manager_approved', null)
         .order('created_at', { ascending: false });
@@ -903,11 +902,28 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
   useEffect(() => {
     if (!isLoggedIn || !currentManager) return;
 
-    console.log('=== CONFIGURANDO SUBSCRIPTION PARA MOTOBOY ORDERS ===');
-    console.log('Store ID:', currentManager.store_id);
+    console.log('=== CONFIGURANDO SUBSCRIPTIONS (ORDERS + MOTOBOY) ===');
+
+    const ordersSubscription = supabase
+      .channel(`orders_changes_${currentManager.store_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `store_id=eq.${currentManager.store_id}`
+        },
+        (payload) => {
+          console.log('📥 Order change received:', payload);
+          // Atualiza pedidos pendentes em tempo real
+          loadPendingOrders();
+        }
+      )
+      .subscribe();
 
     const motoboySubscription = supabase
-      .channel('motoboy_orders_changes')
+      .channel(`motoboy_orders_changes_${currentManager.store_id}`)
       .on(
         'postgres_changes',
         {
@@ -917,23 +933,20 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           filter: `store_id=eq.${currentManager.store_id}`
         },
         (payload) => {
-          console.log('=== MOTOBOY ORDER UPDATE RECEIVED ===');
-          console.log('Payload:', payload);
-          
+          console.log('📦 Motoboy order change received:', payload);
           toast({
-            title: "Novo pedido de motoboy!",
-            description: "Um novo pedido foi recebido.",
+            title: "Atualização de motoboy",
+            description: "Pedidos de motoboy foram atualizados.",
           });
-          
-          // Reload motoboy orders
+          // Recarrega lista de motoboy
           loadMotoboyOrders();
         }
       )
       .subscribe();
 
-
     return () => {
       console.log('=== REMOVENDO SUBSCRIPTIONS ===');
+      ordersSubscription.unsubscribe();
       motoboySubscription.unsubscribe();
     };
   }, [isLoggedIn, currentManager]);
