@@ -1168,6 +1168,127 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [userId, currentUser]);
   
+  // Real-time listener for hospital treatment approvals
+  useEffect(() => {
+    if (!userId || !currentUser) return;
+
+    console.log('Setting up real-time listener for hospital treatments...');
+    
+    const channel = supabase
+      .channel('hospital-treatments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'hospital_treatment_requests',
+          filter: `user_id=eq.${userId}`
+        },
+        async (payload) => {
+          console.log('Real-time hospital treatment update:', payload);
+          
+          const request = payload.new;
+          if (request.status === 'accepted' && request.treatment_type.includes('Desnutrição')) {
+            console.log('🏥 Real-time malnutrition treatment approved, applying cure...');
+            
+            // Call the cure function immediately
+            const { error: cureError } = await supabase.rpc('cure_malnutrition', { 
+              target_user_id: userId 
+            });
+            
+            if (cureError) {
+              console.error('Error in real-time malnutrition cure:', cureError);
+            } else {
+              console.log('✅ Real-time malnutrition cure applied successfully');
+              
+              // Update local state immediately
+              const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
+              setDiseases(updatedDiseases);
+              
+              // Refresh stats from database
+              const { data: updatedStats } = await supabase
+                .from('users')
+                .select('life_percentage, hunger_percentage, disease_percentage')
+                .eq('id', userId)
+                .single();
+              
+              if (updatedStats) {
+                setGameStats(prev => ({
+                  ...prev,
+                  health: updatedStats.life_percentage || 100,
+                  hunger: updatedStats.hunger_percentage || 100,
+                  disease: updatedStats.disease_percentage || 0
+                }));
+                
+                console.log('🔄 Real-time stats updated:', updatedStats);
+              }
+              
+              // Update localStorage
+              localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+              localStorage.removeItem(`${currentUser}_hunger_disease_feeling`);
+              
+              // Dispatch event
+              window.dispatchEvent(new CustomEvent('diseaseCured', {
+                detail: { diseaseName: 'Desnutrição', remainingDiseases: updatedDiseases }
+              }));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time hospital treatments listener');
+      supabase.removeChannel(channel);
+    };
+  }, [userId, currentUser, diseases]);
+  
+  // Real-time listener for user stats changes
+  useEffect(() => {
+    if (!userId || !currentUser) return;
+
+    console.log('Setting up real-time listener for user stats...');
+    
+    const channel = supabase
+      .channel('user-stats-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('Real-time user stats update:', payload);
+          
+          const userData = payload.new;
+          setGameStats(prev => ({
+            ...prev,
+            health: userData.life_percentage || prev.health,
+            hunger: userData.hunger_percentage || prev.hunger,
+            happiness: userData.happiness_percentage || prev.happiness,
+            energy: userData.energy_percentage || prev.energy,
+            alcoholism: userData.alcoholism_percentage || prev.alcoholism,
+            disease: userData.disease_percentage || prev.disease
+          }));
+          
+          // Update wallet balance if changed
+          if (userData.wallet_balance !== undefined) {
+            setMoney(userData.wallet_balance);
+          }
+          
+          console.log('🔄 Real-time user stats synchronized');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time user stats listener');
+      supabase.removeChannel(channel);
+    };
+  }, [userId, currentUser]);
+  
   // Listen for global malnutrition cure events
   useEffect(() => {
     const handleGlobalCure = () => {
