@@ -790,29 +790,50 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
       
       if (effectApplied) {
-        // Use the database function to properly consume the item
-        const { data: consumeResult, error: consumeError } = await supabase
-          .rpc('consume_inventory_item', {
-            p_user_id: userRecord,
-            p_item_id: item.id,
-            p_quantity_to_consume: 1
-          });
+        // Consume the specific inventory row to guarantee correct removal
+        const { data: invRow, error: invFetchErr } = await supabase
+          .from('inventory')
+          .select('id, quantity')
+          .eq('id', item.inventoryId)
+          .maybeSingle();
 
-        if (consumeError) {
-          console.error('Error consuming item:', consumeError);
+        if (invFetchErr || !invRow) {
+          console.error('Failed to fetch inventory row before consume:', invFetchErr);
           toast({
-            title: "Erro ao consumir item",
-            description: "Não foi possível remover o item do inventário",
-            variant: "destructive",
+            title: 'Erro ao consumir item',
+            description: 'Não foi possível encontrar o item no inventário',
+            variant: 'destructive',
           });
           return;
         }
 
+        if ((invRow.quantity ?? 0) > 1) {
+          const { error: updErr } = await supabase
+            .from('inventory')
+            .update({ quantity: (invRow.quantity as number) - 1 })
+            .eq('id', invRow.id);
+          if (updErr) {
+            console.error('Error decreasing item quantity:', updErr);
+            toast({ title: 'Erro', description: 'Falha ao atualizar quantidade', variant: 'destructive' });
+            return;
+          }
+        } else {
+          const { error: delErr } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('id', invRow.id);
+          if (delErr) {
+            console.error('Error deleting inventory row:', delErr);
+            toast({ title: 'Erro', description: 'Falha ao remover item', variant: 'destructive' });
+            return;
+          }
+        }
+
         // Refresh inventory to reflect changes
-        loadAllData(true);
+        await loadAllData(true);
         
         toast({
-          title: "Item usado!",
+          title: 'Item usado!',
           description: `Você usou ${item.name}`,
         });
       }
