@@ -283,7 +283,7 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
               maxValue={100}
               color="hunger"
             />
-            {(gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && (
+            {(gameStats.hunger <= 49 || gameStats.health <= 25 || diseases.some(d => d.name === "Desnutrição")) && (
               <div className="bg-orange-800/50 border border-orange-600 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-orange-200 mb-1">
                   <Pill className="h-4 w-4" />
@@ -369,7 +369,7 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
         )}
 
         {/* Emergency Malnutrition Treatment (available before consultation) */}
-        {(gameStats.disease > 0 || gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && !hasConsultation && (
+        {(gameStats.disease > 0 || gameStats.hunger <= 49 || gameStats.health <= 25 || diseases.some(d => d.name === "Desnutrição")) && !hasConsultation && (
           <Card className="bg-orange-800 border-orange-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -465,7 +465,7 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
                 </Button>
 
                 {/* Malnutrition Treatment - show only if user has hunger disease or low hunger */}
-                {(gameStats.disease > 0 || gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && (
+                {(gameStats.disease > 0 || gameStats.hunger <= 49 || gameStats.health <= 25 || diseases.some(d => d.name === "Desnutrição")) && (
                   <Button
                     onClick={() => handleTreatmentRequest("Tratamento para Desnutrição", 200)}
                     disabled={isLoading}
