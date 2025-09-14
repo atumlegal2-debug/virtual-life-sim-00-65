@@ -86,7 +86,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
   const [currentProposal, setCurrentProposal] = useState<any>(null);
   const [showCartCheckout, setShowCartCheckout] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
-  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "motoboy">("pickup");
+  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "delivery">("pickup");
   const [storeIsOpen, setStoreIsOpen] = useState(true);
   
   const { addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, submitOrder, submitOrderWithDeliveryType, getCartTotal, getOrdersForStore, approveOrder, rejectOrder, getManagerPassword, getCartForStore } = useStore();
@@ -289,7 +289,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
         // Check if this is a hospital order (no motoboy delivery for hospital)
         const isHospital = false; // Hospital is not in current stores
         
-        if (deliveryOption === "motoboy" && !isHospital) {
+        if (deliveryOption === "delivery" && !isHospital) {
           // Create motoboy order - use the correct store ID from STORES data
           const storeData = STORES[selectedStore];
           const sanitizedItems = cart.map(({ id, name, price, quantity }) => ({ id, name, price, quantity }));
@@ -314,13 +314,22 @@ export function StoreApp({ onBack }: StoreAppProps) {
             duration: 5000
           });
         } else {
-          // Regular pickup order submission with correct delivery_type
-          await submitOrderWithDeliveryType(selectedStore, currentUser, currentUser.slice(0, -4), "pickup");
-          toast({
-            title: "Pedido de retirada enviado!",
-            description: "Aguarde a aprovação do gerente do estabelecimento",
-            duration: 5000
-          });
+          // Regular order submission with delivery type
+          await submitOrder(selectedStore, currentUser, currentUser.slice(0, -4), deliveryOption);
+          
+          if (deliveryOption === "pickup") {
+            toast({
+              title: "Pedido de retirada enviado!",
+              description: "Aguarde a aprovação do gerente do estabelecimento",
+              duration: 5000
+            });
+          } else {
+            toast({
+              title: "Pedido de delivery enviado!",
+              description: "Será aprovado automaticamente em 1 minuto e enviado para entrega",
+              duration: 5000
+            });
+          }
         }
 
         setShowCartCheckout(false);
@@ -871,7 +880,7 @@ export function StoreApp({ onBack }: StoreAppProps) {
                         name="deliveryOption"
                         value="pickup"
                         checked={deliveryOption === "pickup"}
-                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "motoboy")}
+                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "delivery")}
                         className="rounded"
                       />
                       <span className="text-sm">Retirada no local</span>
@@ -880,9 +889,9 @@ export function StoreApp({ onBack }: StoreAppProps) {
                       <input
                         type="radio"
                         name="deliveryOption"
-                        value="motoboy"
-                        checked={deliveryOption === "motoboy"}
-                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "motoboy")}
+                        value="delivery"
+                        checked={deliveryOption === "delivery"}
+                        onChange={(e) => setDeliveryOption(e.target.value as "pickup" | "delivery")}
                         className="rounded"
                       />
                       <span className="text-sm">Entrega por motoboy</span>
