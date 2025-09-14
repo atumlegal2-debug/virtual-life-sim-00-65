@@ -43,6 +43,16 @@ serve(async (req) => {
       update = { ...update, manager_status: 'rejected', motoboy_status: 'rejected', manager_processed_at: new Date().toISOString() }
     }
 
+    // Fetch the motoboy order to get the underlying orders.id
+    const { data: motoboyOrder, error: moErr } = await supabase
+      .from('motoboy_orders')
+      .select('order_id, store_id')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (moErr) throw moErr
+
+    // Update the selected motoboy order first
     const { data, error } = await supabase
       .from('motoboy_orders')
       .update(update)
@@ -50,6 +60,35 @@ serve(async (req) => {
       .select()
 
     if (error) throw error
+
+    // If rejected, prevent the order from being recreated and close duplicates
+    if (action === 'reject' && motoboyOrder?.order_id) {
+      console.log(`[manager-handle-motoboy-order] Rejecting order ${orderId} (orders.id=${motoboyOrder.order_id}) - updating source order to pickup and closing duplicates`)
+
+      // 1) Make sure the original order no longer targets motoboy delivery
+      const { error: orderUpdateErr } = await supabase
+        .from('orders')
+        .update({
+          delivery_type: 'pickup',
+          manager_approved: null,
+          manager_notes: (notes || '') + ' [Motoboy rejeitado pelo gerente]',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', motoboyOrder.order_id)
+      if (orderUpdateErr) console.warn('Failed to update source order to pickup:', orderUpdateErr)
+
+      // 2) Mark all motoboy orders for this same order_id as rejected to avoid resurfacing
+      const { error: dupErr } = await supabase
+        .from('motoboy_orders')
+        .update({
+          manager_status: 'rejected',
+          motoboy_status: 'rejected',
+          manager_processed_at: new Date().toISOString(),
+          manager_notes: (notes || '') + ' [duplicate closed]'
+        })
+        .eq('order_id', motoboyOrder.order_id)
+      if (dupErr) console.warn('Failed to close duplicate motoboy orders:', dupErr)
+    }
 
     return new Response(JSON.stringify({ success: true, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
   } catch (error: any) {
