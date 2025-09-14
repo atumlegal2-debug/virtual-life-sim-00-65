@@ -368,6 +368,39 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
           </Card>
         )}
 
+        {/* Emergency Malnutrition Treatment (available before consultation) */}
+        {(gameStats.disease > 0 || gameStats.hunger <= 49 || diseases.some(d => d.name === "Desnutrição")) && !hasConsultation && (
+          <Card className="bg-orange-800 border-orange-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Pill className="h-5 w-5" />
+                Tratamento de Emergência
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-red-800/50 border border-red-600 rounded-lg p-3">
+                <p className="text-red-200 text-sm font-medium mb-2">
+                  ⚠️ Estado Crítico de Desnutrição Detectado
+                </p>
+                <p className="text-red-300 text-xs">
+                  Você está em estado crítico e precisa de tratamento imediato para desnutrição.
+                </p>
+              </div>
+              <Button
+                onClick={() => handleTreatmentRequest("Tratamento para Desnutrição", 200)}
+                disabled={isLoading}
+                className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600"
+              >
+                <Pill className="h-4 w-4 mr-2" />
+                Tratamento de Emergência para Desnutrição - 200 C'M
+              </Button>
+              <p className="text-xs text-orange-300 text-center">
+                Este tratamento de emergência cura completamente a desnutrição
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Consultation Step */}
         {!hasConsultation ? (
           <Card className="bg-blue-800 border-blue-700">
@@ -379,7 +412,7 @@ export function HospitalApp({ onBack }: HospitalAppProps) {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-blue-300">
-                Para acessar os tratamentos, você precisa primeiro fazer uma consulta médica.
+                Para acessar os demais tratamentos, você precisa primeiro fazer uma consulta médica.
               </p>
               <Button
                 onClick={handleConsultation}
