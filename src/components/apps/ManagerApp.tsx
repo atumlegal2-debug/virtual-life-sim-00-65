@@ -494,7 +494,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         .update({
           manager_approved: true,
           approved_at: new Date().toISOString(),
-          status: 'approved'
+          status: 'approved',
+          manager_notes: (order.manager_notes || '') + ' MANUAL_APPROVED_BY_MANAGER'
         })
         .eq('id', order.id);
 
@@ -522,7 +523,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         .from('orders')
         .update({
           manager_approved: false,
-          status: 'rejected'
+          status: 'rejected',
+          manager_notes: 'MANUAL_REJECTED_BY_MANAGER'
         })
         .eq('id', orderId);
 
