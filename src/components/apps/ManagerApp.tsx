@@ -913,7 +913,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `store_id=eq.${currentManager.store_id}AND delivery_type=eq.pickup`
+          filter: `store_id=eq.${currentManager.store_id}`
         },
         (payload) => {
           console.log('📥 Pickup order change received:', payload);
@@ -1273,8 +1273,8 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
   // Motoboy Orders View
   if (currentView === "motoboy-orders") {
-    const pendingMotoboyOrders = motoboyOrders.filter(o => o.manager_status === 'pending');
-    const processedMotoboyOrders = motoboyOrders.filter(o => o.manager_status !== 'pending');
+    const pendingMotoboyOrders = motoboyOrders.filter(o => o.manager_status === 'approved' && o.motoboy_status === 'waiting');
+    const processedMotoboyOrders = motoboyOrders.filter(o => !(o.manager_status === 'approved' && o.motoboy_status === 'waiting'));
 
     const handleMotoboyOrder = async (orderId: string, action: 'accept' | 'reject', notes?: string) => {
       try {
@@ -1796,7 +1796,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
             onClick={() => setCurrentView("motoboy-orders")}
           >
             <Truck size={16} className="mr-2" />
-            Pedidos do Motoboy ({motoboyOrders.filter(o => o.manager_status === 'pending').length})
+            Pedidos do Motoboy ({motoboyOrders.filter(o => o.manager_status === 'approved' && o.motoboy_status === 'waiting').length})
           </Button>
         )}
         <Button
