@@ -671,15 +671,31 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
 
           // If treatment is for hunger disease, also boost hunger and cure malnutrition completely
           if (request.treatment_type.includes('Desnutrição')) {
-            const newHunger = Math.min(100, (currentUserData?.hunger_percentage || 0) + 60);
-            // Cure malnutrition completely by setting disease_percentage to 0
-            await supabase
-              .from('users')
-              .update({ life_percentage: newHealth, hunger_percentage: newHunger, disease_percentage: 0 })
-              .eq('id', request.user_id);
+            // Use the cure_malnutrition function for guaranteed complete cure
+            const { error: cureError } = await supabase.rpc('cure_malnutrition', { 
+              target_user_id: request.user_id 
+            });
             
-            // Also call the cure_malnutrition function to ensure complete cure
-            await supabase.rpc('cure_malnutrition', { target_user_id: request.user_id });
+            if (cureError) {
+              console.error('Error calling cure_malnutrition function:', cureError);
+              // Fallback manual update
+              const newHunger = Math.min(100, (currentUserData?.hunger_percentage || 0) + 60);
+              await supabase
+                .from('users')
+                .update({ 
+                  life_percentage: Math.max(50, newHealth), 
+                  hunger_percentage: Math.max(80, newHunger), 
+                  disease_percentage: 0 
+                })
+                .eq('id', request.user_id);
+            } else {
+              console.log('Malnutrition cure function executed successfully for user:', request.username);
+              // Also update health with the treatment
+              await supabase
+                .from('users')
+                .update({ life_percentage: Math.max(50, newHealth) })
+                .eq('id', request.user_id);
+            }
           } else {
             await supabase
               .from('users')

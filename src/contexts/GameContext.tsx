@@ -791,30 +791,54 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (malnutritionTreatments.length > 0) {
           console.log('Found approved malnutrition treatments, curing automatically...');
           
+          // Call the database function to ensure complete cure
+          const { error: cureError } = await supabase.rpc('cure_malnutrition', { 
+            target_user_id: userId 
+          });
+          
+          if (cureError) {
+            console.error('Error calling cure_malnutrition function:', cureError);
+          } else {
+            console.log('cure_malnutrition function called successfully');
+          }
+          
           // Remove malnutrition from diseases list
           const updatedDiseases = diseases.filter(d => d.name !== "Desnutrição");
           setDiseases(updatedDiseases);
           
-          // Decide hunger recovery to avoid instant re-infection
-          const targetHunger = (gameStats.hunger ?? 0) <= 49 ? 60 : (gameStats.hunger ?? 0);
-          
-          // Update local stats immediately
-          setGameStats(prev => ({ ...prev, disease: 0, hunger: targetHunger }));
-          
-          // Persist in DB
-          await supabase
+          // Force refresh stats from database to get the latest values
+          const { data: updatedUserStats } = await supabase
             .from('users')
-            .update({ disease_percentage: 0, hunger_percentage: targetHunger })
-            .eq('id', userId);
+            .select('life_percentage, hunger_percentage, disease_percentage')
+            .eq('id', userId)
+            .single();
+          
+          if (updatedUserStats) {
+            // Update local stats with database values
+            setGameStats(prev => ({
+              ...prev,
+              health: updatedUserStats.life_percentage || 100,
+              hunger: updatedUserStats.hunger_percentage || 100,
+              disease: updatedUserStats.disease_percentage || 0
+            }));
+            
+            console.log('Stats updated from database after malnutrition cure:', updatedUserStats);
+          }
           
           // Update localStorage
           if (currentUser) {
             localStorage.setItem(`${currentUser}_diseases`, JSON.stringify(updatedDiseases));
+            localStorage.removeItem(`${currentUser}_hunger_disease_feeling`);
           }
           
-          console.log('Malnutrition automatically cured and hunger restored to', targetHunger);
+          console.log('Malnutrition automatically cured and stats refreshed');
+          
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('diseaseCured', {
+            detail: { diseaseName: 'Desnutrição', remainingDiseases: updatedDiseases }
+          }));
         }
-        }
+      }
     } catch (error) {
       console.error('Error checking approved treatments:', error);
     }
