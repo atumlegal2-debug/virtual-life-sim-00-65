@@ -734,30 +734,32 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     }
   };
 
-  const loadMotoboyOrders = async () => {
-    if (!currentManager) return;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('manager-motoboy-orders', {
-        body: {
-          username: currentManager.username,
-          password: currentManager.password,
-          storeId: currentManager.store_id
-        }
-      });
+   const loadMotoboyOrders = async () => {
+     if (!currentManager) return;
+     
+     try {
+       console.log('🔄 Loading motoboy orders for store:', currentManager.store_id);
+       const { data, error } = await supabase.functions.invoke('manager-motoboy-orders', {
+         body: {
+           username: currentManager.username,
+           password: currentManager.password,
+           storeId: currentManager.store_id
+         }
+       });
 
-      if (error) throw error;
+       if (error) throw error;
 
-      const orders = (data?.orders || []).map((order: any) => ({
-        ...order,
-        customer_display_name: order.customer_username ? getDisplayName(order.customer_username) : order.customer_username
-      }));
-      
-      setMotoboyOrders(orders);
-    } catch (error) {
-      console.error('Error loading motoboy orders:', error);
-    }
-  };
+       const orders = (data?.orders || []).map((order: any) => ({
+         ...order,
+         customer_display_name: order.customer_username ? getDisplayName(order.customer_username) : order.customer_username
+       }));
+       
+       console.log('📦 Loaded motoboy orders:', orders.length, 'orders for store:', currentManager.store_id);
+       setMotoboyOrders(orders);
+     } catch (error) {
+       console.error('Error loading motoboy orders:', error);
+     }
+   };
 
   const loadPatientHistory = async () => {
     try {
@@ -922,26 +924,28 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
       )
       .subscribe();
 
-    const motoboySubscription = supabase
-      .channel(`motoboy_orders_${currentManager.store_id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'motoboy_orders',
-          filter: `store_id=eq.${currentManager.store_id}`
-        },
-        (payload) => {
-          console.log('📦 Motoboy order change received:', payload);
-          toast({
-            title: "Novo pedido de motoboy!",
-            description: "Pedidos de motoboy foram atualizados.",
-          });
-          loadMotoboyOrders();
-        }
-      )
-      .subscribe();
+     const motoboySubscription = supabase
+       .channel(`motoboy_orders_${currentManager.store_id}`)
+       .on(
+         'postgres_changes',
+         {
+           event: '*',
+           schema: 'public',
+           table: 'motoboy_orders',
+           filter: `store_id=eq.${currentManager.store_id}`
+         },
+         (payload) => {
+           console.log('📦 Motoboy order change received for store:', currentManager.store_id, payload);
+           if ((payload.new as any)?.store_id === currentManager.store_id) {
+             toast({
+               title: "Novo pedido de motoboy!",
+               description: `Pedido de ${(payload.new as any)?.customer_username || 'cliente'} foi criado`,
+             });
+             loadMotoboyOrders();
+           }
+         }
+       )
+       .subscribe();
 
     return () => {
       console.log('=== REMOVENDO SUBSCRIPTIONS ===');
@@ -1311,12 +1315,22 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
     
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentView("dashboard")}>
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-xl font-bold text-foreground">Pedidos de Motoboy</h1>
-        </div>
+         <div className="flex items-center gap-3 mb-6">
+           <Button variant="ghost" size="sm" onClick={() => setCurrentView("dashboard")}>
+             <ArrowLeft size={20} />
+           </Button>
+           <h1 className="text-xl font-bold text-foreground">Pedidos de Motoboy ({motoboyOrders.length})</h1>
+           <Button 
+             variant="outline" 
+             size="sm" 
+             onClick={() => {
+               console.log('🔄 Manual refresh of motoboy orders');
+               loadMotoboyOrders();
+             }}
+           >
+             🔄 Atualizar
+           </Button>
+         </div>
 
         <div className="space-y-4 overflow-y-auto">
           {/* Pending Motoboy Orders */}
