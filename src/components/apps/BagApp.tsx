@@ -790,21 +790,25 @@ export default function BagApp({ onBack }: BagAppProps) {
       }
       
       if (effectApplied) {
-        // Remove item from inventory
-        await supabase
-          .from('inventory')
-          .update({ quantity: item.quantity - 1 })
-          .eq('id', item.inventoryId);
+        // Use the database function to properly consume the item
+        const { data: consumeResult, error: consumeError } = await supabase
+          .rpc('consume_inventory_item', {
+            p_user_id: userRecord,
+            p_item_id: item.id,
+            p_quantity_to_consume: 1
+          });
 
-        // If quantity becomes 0, delete the row
-        if (item.quantity <= 1) {
-          await supabase
-            .from('inventory')
-            .delete()
-            .eq('id', item.inventoryId);
+        if (consumeError) {
+          console.error('Error consuming item:', consumeError);
+          toast({
+            title: "Erro ao consumir item",
+            description: "Não foi possível remover o item do inventário",
+            variant: "destructive",
+          });
+          return;
         }
 
-        // Refresh inventory
+        // Refresh inventory to reflect changes
         loadAllData(true);
         
         toast({
