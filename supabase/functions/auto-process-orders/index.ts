@@ -29,13 +29,23 @@ serve(async (req) => {
       console.log('✅ Regras de entrega processadas')
     }
 
-    // Expirar pedidos de motoboy que não foram aceitos em 1 minuto
-    const { data: expireData, error: expireError } = await supabaseClient.rpc('expire_motoboy_orders')
+    // Expirar pedidos de motoboy que não foram aceitos em 1 minuto (usando a versão sem parâmetros)
+    const { data: expireData, error: expireError } = await supabaseClient
+      .from('motoboy_orders')
+      .update({ 
+        motoboy_status: 'expired',
+        manager_status: 'expired',
+        updated_at: new Date().toISOString()
+      })
+      .eq('manager_status', 'approved')
+      .eq('motoboy_status', 'waiting')
+      .lt('manager_processed_at', new Date(Date.now() - 60000).toISOString())
+      .select()
     
     if (expireError) {
       console.error('❌ Erro ao expirar pedidos de motoboy:', expireError)
     } else {
-      console.log('✅ Pedidos de motoboy expirados:', expireData)
+      console.log('✅ Pedidos de motoboy expirados:', expireData?.length || 0)
     }
 
     return new Response(

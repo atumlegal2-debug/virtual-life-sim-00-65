@@ -1293,6 +1293,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const processOrders = async () => {
       try {
+        // Debug orders first
+        const { data: debugData, error: debugError } = await supabase.functions.invoke('debug-orders');
+        if (debugError) {
+          console.error('Error in debug-orders:', debugError);
+        } else {
+          console.log('🔍 Debug orders result:', debugData);
+        }
+
+        // Then auto-process
         const { data, error } = await supabase.functions.invoke('auto-process-orders');
         if (error) {
           console.error('Error in auto-process-orders:', error);
@@ -1300,7 +1309,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           console.log('📦 Auto-process orders completed:', data);
         }
       } catch (error) {
-        console.error('Error calling auto-process-orders:', error);
+        console.error('Error calling order functions:', error);
       }
     };
 
