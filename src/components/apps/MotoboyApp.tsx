@@ -197,59 +197,37 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
     }
   }, []);
 
-  // Auto-refresh orders every 30 seconds when authenticated
+  // Auto-refresh orders every 10 seconds when authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
-    
     const interval = setInterval(() => {
-      // Silent refresh without loading state
       loadOrdersSilently();
-    }, 30000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   const loadOrdersSilently = async () => {
     try {
-      console.log('=== REFRESH SILENCIOSO PEDIDOS MOTOBOY ===');
-      
-      // Carregar pedidos disponíveis (waiting)
-      const { data: waitingOrders, error: waitingError } = await supabase
-        .from('motoboy_orders')
-        .select('*')
-        .eq('manager_status', 'approved')
-        .eq('motoboy_status', 'waiting')
-        .order('created_at', { ascending: false });
+      console.log('=== REFRESH SILENCIOSO PEDIDOS MOTOBOY (Edge) ===');
+      const { data, error } = await supabase.functions.invoke('motoboy-list-orders');
+      if (error) throw error;
 
-      // Carregar pedidos aceitos (accepted)
-      const { data: acceptedOrdersData, error: acceptedError } = await supabase
-        .from('motoboy_orders')
-        .select('*')
-        .eq('manager_status', 'approved')
-        .eq('motoboy_status', 'accepted')
-        .order('created_at', { ascending: false });
-      
-      if (waitingError) throw waitingError;
-      if (acceptedError) throw acceptedError;
-      
-      // Update orders without showing loading
-      setOrders(waitingOrders || []);
-      setAcceptedOrders(acceptedOrdersData || []);
-      
-      // Load display names in background for new customers
-      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
-      const uniqueCustomers = new Set(allOrders.map(order => order.customer_name).filter(Boolean));
-      
+      const waiting = data?.waiting || [];
+      const accepted = data?.accepted || [];
+
+      setOrders(waiting);
+      setAcceptedOrders(accepted);
+
+      const allOrders = [...waiting, ...accepted];
+      const uniqueCustomers = new Set(allOrders.map((o: any) => o.customer_name).filter(Boolean));
       Promise.all(
         Array.from(uniqueCustomers)
-          .filter(customer => !displayNames[customer]) // Only load new ones
-          .map(customer => loadDisplayNameForUser(customer))
-      ).catch(error => {
-        console.error('Error loading display names silently:', error);
-      });
-      
+          .filter((u: string) => !displayNames[u])
+          .map((u: string) => loadDisplayNameForUser(u))
+      ).catch((e) => console.error('Error loading display names silently:', e));
     } catch (error) {
       console.error('Error in silent refresh:', error);
-      // Don't show toast on silent refresh errors
+      // no toast in silent refresh
     }
   };
 
@@ -278,44 +256,21 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      console.log('=== CARREGANDO PEDIDOS MOTOBOY APP ===');
-      
-      // Carregar pedidos disponíveis (waiting)
-      const { data: waitingOrders, error: waitingError } = await supabase
-        .from('motoboy_orders')
-        .select('*')
-        .eq('manager_status', 'approved')
-        .eq('motoboy_status', 'waiting')
-        .order('created_at', { ascending: false });
+      console.log('=== CARREGANDO PEDIDOS MOTOBOY APP (Edge) ===');
+      const { data, error } = await supabase.functions.invoke('motoboy-list-orders');
+      if (error) throw error;
 
-      // Carregar pedidos aceitos (accepted)
-      const { data: acceptedOrdersData, error: acceptedError } = await supabase
-        .from('motoboy_orders')
-        .select('*')
-        .eq('manager_status', 'approved')
-        .eq('motoboy_status', 'accepted')
-        .order('created_at', { ascending: false });
+      const waiting = data?.waiting || [];
+      const accepted = data?.accepted || [];
 
-      console.log('Query results:', { waitingOrders, acceptedOrdersData, waitingError, acceptedError });
-      
-      if (waitingError) throw waitingError;
-      if (acceptedError) throw acceptedError;
-      
-      // Set orders first to show them immediately
-      setOrders(waitingOrders || []);
-      setAcceptedOrders(acceptedOrdersData || []);
-      
-      // Load display names in background without blocking UI
-      const allOrders = [...(waitingOrders || []), ...(acceptedOrdersData || [])];
-      const uniqueCustomers = new Set(allOrders.map(order => order.customer_name).filter(Boolean));
-      
-      // Load display names for unique customers only
+      setOrders(waiting);
+      setAcceptedOrders(accepted);
+
+      const allOrders = [...waiting, ...accepted];
+      const uniqueCustomers = new Set(allOrders.map((o: any) => o.customer_name).filter(Boolean));
       Promise.all(
-        Array.from(uniqueCustomers).map(customer => loadDisplayNameForUser(customer))
-      ).catch(error => {
-        console.error('Error loading display names:', error);
-      });
-      
+        Array.from(uniqueCustomers).map((u: string) => loadDisplayNameForUser(u))
+      ).catch((e) => console.error('Error loading display names:', e));
     } catch (error) {
       console.error('Error loading orders:', error);
       toast({
@@ -330,57 +285,29 @@ export function MotoboyApp({ onBack }: MotoboyAppProps) {
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from('motoboy_orders')
-        .update({
-          motoboy_status: 'accepted',
-          motoboy_accepted_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Entrega aceita!",
-        description: "Você aceitou a entrega"
+      const { error } = await supabase.functions.invoke('motoboy-handle-order', {
+        body: { orderId, action: 'accept' }
       });
-      
+      if (error) throw error;
+      toast({ title: 'Entrega aceita!', description: 'Você aceitou a entrega' });
       loadOrders();
     } catch (error) {
       console.error('Error accepting order:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao aceitar entrega",
-        variant: "destructive"
-      });
+      toast({ title: 'Erro', description: 'Erro ao aceitar entrega', variant: 'destructive' });
     }
   };
 
   const handleRejectOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from('motoboy_orders')
-        .update({
-          motoboy_status: 'rejected',
-          motoboy_accepted_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Entrega rejeitada!",
-        description: "Você rejeitou a entrega"
+      const { error } = await supabase.functions.invoke('motoboy-handle-order', {
+        body: { orderId, action: 'reject' }
       });
-      
+      if (error) throw error;
+      toast({ title: 'Entrega rejeitada!', description: 'Você rejeitou a entrega' });
       loadOrders();
     } catch (error) {
       console.error('Error rejecting order:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao rejeitar entrega",
-        variant: "destructive"
-      });
+      toast({ title: 'Erro', description: 'Erro ao rejeitar entrega', variant: 'destructive' });
     }
   };
 
