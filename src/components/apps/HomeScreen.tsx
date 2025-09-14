@@ -18,8 +18,7 @@ import {
   ChevronDown,
   Sparkles,
   Cookie,
-  Activity,
-  Bike
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -39,13 +38,13 @@ import { FriendsApp } from "./FriendsApp";
 import { CreationApp } from "./CreationApp";
 import { MeyBabyApp } from "./MeyBabyApp";
 import { FortuneApp } from "./FortuneApp";
-import { MotoboyApp } from "./MotoboyApp";
+
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useRelationship } from "@/contexts/RelationshipContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation" | "meybaby" | "fortune" | "motoboy";
+type AppType = "home" | "life" | "bag" | "store" | "world" | "friends" | "wallet" | "bank" | "relationship" | "pregnancy" | "roulette" | "hospital" | "manager" | "creation" | "meybaby" | "fortune";
 
 export function HomeScreen() {
   const { currentUser, logout } = useGame();
@@ -102,106 +101,13 @@ export function HomeScreen() {
   const userProposals = currentUser ? getProposalsForUser(currentUser) : [];
   const hasRelationshipNotifications = userProposals.length > 0;
 
-  // Check for pending motoboy orders (only if logged into motoboy)
-  const [motoboyOrders, setMotoboyOrders] = useState<any[]>([]);
-  const [isMotoboyAuthenticated, setIsMotoboyAuthenticated] = useState(false);
-  const hasMotoboyNotifications = isMotoboyAuthenticated && motoboyOrders.length > 0;
 
-  // Check motoboy authentication status and load orders
-  useEffect(() => {
-    const checkMotoboyAuth = () => {
-      const savedAuth = localStorage.getItem('motoboy_auth');
-      const isAuthenticated = savedAuth === 'true';
-      setIsMotoboyAuthenticated(isAuthenticated);
-      
-      if (isAuthenticated) {
-        loadMotoboyOrders();
-      } else {
-        // Limpar notificações quando não autenticado
-        setMotoboyOrders([]);
-      }
-    };
-
-    const loadMotoboyOrders = async () => {
-      try {
-        // Buscar todos os pedidos pendentes (waiting, accepted)
-        const { data, error } = await supabase
-          .from('motoboy_orders')
-          .select('id')
-          .eq('manager_status', 'approved')
-          .in('motoboy_status', ['waiting', 'accepted']);
-
-        if (!error) {
-          setMotoboyOrders(data || []);
-        }
-      } catch (error) {
-        console.error('Error loading motoboy orders:', error);
-      }
-    };
-
-    checkMotoboyAuth();
-
-    // Set up realtime subscription for motoboy orders (only if authenticated)
-    let channel: any = null;
-    if (isMotoboyAuthenticated) {
-      channel = supabase
-        .channel('motoboy-orders-notifications')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'motoboy_orders' }, 
-          () => {
-            // Só recarregar se ainda estiver autenticado
-            const currentAuth = localStorage.getItem('motoboy_auth');
-            if (currentAuth === 'true') {
-              loadMotoboyOrders();
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    // Listen for motoboy auth changes (login/logout)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'motoboy_auth') {
-        checkMotoboyAuth();
-      }
-    };
-
-    // Listen for custom login event from motoboy app
-    const handleMotoboyLogin = () => {
-      setIsMotoboyAuthenticated(true);
-      // Carregar pedidos após login
-      setTimeout(() => {
-        checkMotoboyAuth();
-      }, 100);
-    };
-
-    // Listen for custom logout event from motoboy app
-    const handleMotoboyLogout = () => {
-      setIsMotoboyAuthenticated(false);
-      setMotoboyOrders([]);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('motoboyLogin', handleMotoboyLogin);
-    window.addEventListener('motoboyLogout', handleMotoboyLogout);
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('motoboyLogin', handleMotoboyLogin);
-      window.removeEventListener('motoboyLogout', handleMotoboyLogout);
-    };
-  }, [isMotoboyAuthenticated]);
 
   const handleAppClick = (appId: AppType) => {
     if (appId === "relationship" && hasRelationshipNotifications) {
       // Mark proposals as viewed when entering relationship app
       markProposalsAsViewed(currentUser || "");
     }
-    // Note: Motoboy notifications persist until all orders are delivered/rejected
-    // They don't get cleared when entering the app
     setCurrentApp(appId);
   };
 
@@ -237,7 +143,6 @@ export function HomeScreen() {
     { id: "creation" as const, icon: Sparkles, label: "Minha Criação" },
     { id: "meybaby" as const, icon: Baby, label: "My Baby" },
     { id: "fortune" as const, icon: Cookie, label: "Biscoito da Sorte" },
-    { id: "motoboy" as const, icon: Bike, label: "Motoboy", hasNotification: hasMotoboyNotifications },
   ];
 
   const renderApp = () => {
@@ -272,8 +177,6 @@ export function HomeScreen() {
         return <MeyBabyApp onBack={() => setCurrentApp("home")} />;
       case "fortune":
         return <FortuneApp onBack={() => setCurrentApp("home")} />;
-      case "motoboy":
-        return <MotoboyApp onBack={() => setCurrentApp("home")} />;
       default:
         return null;
     }
