@@ -259,6 +259,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
         `)
         .eq('store_id', currentManager.store_id)
         .eq('delivery_type', 'pickup')
+        .eq('status', 'pending')
         .is('manager_approved', null)
         .order('created_at', { ascending: false });
 
