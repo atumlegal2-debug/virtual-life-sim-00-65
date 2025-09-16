@@ -672,7 +672,7 @@ export function ManagerApp({ onBack }: ManagerAppProps) {
                 .from('users')
                 .update({ 
                   life_percentage: Math.max(50, newHealth), 
-                  hunger_percentage: Math.max(80, newHunger), 
+                  hunger_percentage: Math.min(100, newHunger), 
                   disease_percentage: 0 
                 })
                 .eq('id', request.user_id);
