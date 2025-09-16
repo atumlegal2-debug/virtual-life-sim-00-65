@@ -259,6 +259,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           if (typeof userRow?.hunger_percentage === 'number') {
             hungerToCheck = userRow.hunger_percentage;
             if (userRow.hunger_percentage !== gameStats.hunger) {
+              console.log(`🍎 Sync hunger: UI ${gameStats.hunger} -> DB ${userRow.hunger_percentage}`);
               setGameStats(prev => ({ ...prev, hunger: userRow.hunger_percentage as number }));
             }
           }

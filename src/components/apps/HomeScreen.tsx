@@ -59,7 +59,9 @@ export function HomeScreen() {
   useEffect(() => {
     const hungerInterval = setInterval(async () => {
       try {
-        await supabase.functions.invoke('hunger-decrease');
+        console.log('🔄 HomeScreen - Calling hunger-decrease function');
+        const result = await supabase.functions.invoke('hunger-decrease');
+        console.log('🔄 HomeScreen - Hunger function result:', result);
         // Atualizar o perfil do usuário após diminuir a fome
         fetchUserProfile();
       } catch (error) {
@@ -78,6 +80,28 @@ export function HomeScreen() {
       if (savedStatus !== null) {
         setIsOnline(savedStatus === 'true');
       }
+
+      // Real-time listener for user updates
+      const channel = supabase
+        .channel(`home-profile-${currentUser}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'users',
+            filter: `username=eq.${currentUser}`
+          },
+          (payload) => {
+            console.log('🔄 HomeScreen - Real-time user update:', payload.new);
+            setUserProfile(payload.new);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [currentUser]);
 
@@ -90,6 +114,7 @@ export function HomeScreen() {
           .eq('username', currentUser)
           .single();
         
+        console.log('🔄 HomeScreen - Profile refreshed for', currentUser, 'hunger:', data?.hunger_percentage);
         setUserProfile(data);
       }
     } catch (error) {
