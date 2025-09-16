@@ -12,37 +12,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🍎 Iniciando processo de diminuição de fome (10 minutos)...');
+    console.log('Starting hunger decrease process...');
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Call the function to decrease hunger for all users (with 10-minute timing control)
+    // Call the function to decrease hunger for all users (with 5-minute timing control)
     const { data, error } = await supabase.rpc('decrease_hunger');
     
     if (error) {
-      console.error('❌ Erro ao diminuir fome:', error);
+      console.error('Error decreasing hunger:', error);
       throw error;
     }
 
     if (data.decreased) {
-      console.log(`✅ Fome diminuída com sucesso para ${data.users_updated} usuários`);
-      console.log(`⏰ Última diminuição: ${data.timestamp}`);
-      console.log(`📊 Segundos desde última: ${data.seconds_since_last}`);
+      console.log(`Hunger decreased successfully for ${data.users_updated} users`);
     } else {
-      console.log(`⏭️ Diminuição pulada: ${data.message}`);
-      console.log(`⏰ Próxima diminuição em ${Math.round(data.next_decrease_in_seconds || 0)} segundos`);
-      console.log(`📊 Segundos desde última: ${data.seconds_since_last || 0}`);
+      console.log(`Skipped hunger decrease: ${data.message}. Next decrease in ${Math.round(data.next_decrease_in_seconds)} seconds`);
     }
     
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Processo de diminuição de fome executado',
-        data: data
-      }),
+      JSON.stringify({ success: true, message: 'Hunger decreased successfully' }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -52,7 +44,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('💥 Erro na função:', error);
+    console.error('Function error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
