@@ -244,10 +244,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!isLoggedIn) return;
     
     const interval = setInterval(async () => {
-      // Note: Hunger decrease is now handled by the server-side edge function
-      // This ensures consistent timing and prevents double decreasing
+      // Note: Hunger decrease is handled by separate 10-minute interval
+      // This interval handles other stats and checks
 
-      // 1) Sincroniza fome do banco (para refletir o edge function)
+      // 1) Sincroniza fome do banco (para refletir a edge function de 10 minutos)
       let hungerToCheck = gameStats.hunger;
       try {
         if (userId) {
@@ -259,7 +259,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           if (typeof userRow?.hunger_percentage === 'number') {
             hungerToCheck = userRow.hunger_percentage;
             if (userRow.hunger_percentage !== gameStats.hunger) {
-              console.log(`🍎 Sync hunger: UI ${gameStats.hunger} -> DB ${userRow.hunger_percentage}`);
+              console.log(`🍎 Sincronizando fome: UI ${gameStats.hunger} -> DB ${userRow.hunger_percentage}`);
               setGameStats(prev => ({ ...prev, hunger: userRow.hunger_percentage as number }));
             }
           }
@@ -268,9 +268,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         console.warn('Falha ao sincronizar fome:', e);
       }
 
-      // 2) Ativa automaticamente Desnutrição quando fome < 50
+      // 2) Ativa automaticamente Desnutrição quando fome <= 49
       if (hungerToCheck <= 49 && !diseases.some(d => d.name === "Desnutrição")) {
-        console.log('Aplicando doença de fome (Desnutrição). Fome atual:', hungerToCheck);
+        console.log('🦠 Aplicando doença de fome (Desnutrição). Fome atual:', hungerToCheck);
         await addDisease("Desnutrição", "Consulta Médica");
 
         // Notificação na Home
@@ -283,7 +283,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Check and fix any disease inconsistencies
       checkAndFixDiseaseLevel();
 
-      // 3) Diminui alcoolismo ao longo do tempo
+      // 3) Diminui alcoolismo ao longo do tempo (a cada minuto)
       setGameStats(prev => {
         const currentAlcoholism = prev.alcoholism || 0;
         if (currentAlcoholism > 0) {
@@ -293,7 +293,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
               .from('users')
               .update({ alcoholism_percentage: newAlcoholism })
               .eq('id', userId)
-              .then(() => console.log('Alcoholism decreased to:', newAlcoholism));
+              .then(() => console.log('🍷 Alcoolismo diminuído para:', newAlcoholism));
           }
           return { ...prev, alcoholism: newAlcoholism };
         }
@@ -314,7 +314,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
               .from('users')
               .update({ happiness_percentage: newHappiness })
               .eq('id', userId)
-              .then(() => console.log('Happiness decreased to:', newHappiness));
+              .then(() => console.log('😊 Felicidade diminuída para:', newHappiness));
           }
           localStorage.setItem(`${currentUser}_last_happiness_decrease`, currentTime.toString());
           return { ...prev, happiness: newHappiness };
@@ -330,7 +330,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
               .from('users')
               .update({ energy_percentage: newEnergy })
               .eq('id', userId)
-              .then(() => console.log('Energy decreased to:', newEnergy));
+              .then(() => console.log('⚡ Energia diminuída para:', newEnergy));
           }
           localStorage.setItem(`${currentUser}_last_energy_decrease`, currentTime.toString());
           return { ...prev, energy: newEnergy };
@@ -1308,18 +1308,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
           console.error('Error in auto-process-orders:', error);
         } else {
           console.log('📦 Auto-process orders completed:', data);
-        }
+        console.log('🔄 GameContext - Calling hunger-decrease function (10min interval)');
       } catch (error) {
-        console.error('Error calling order functions:', error);
-      }
-    };
+        console.log('🔄 GameContext - Hunger function result:', result);
+        
+        // Se a fome foi diminuída, atualizar stats locais
+        if (result.data?.data?.decreased && currentUser) {
+          console.log('🍎 Fome foi diminuída, atualizando stats locais...');
+          await loadUserStatsByUsername(currentUser);
+        }
 
-    // Run immediately and then every 30 seconds
+        console.error('❌ Erro ao diminuir fome:', error);
     processOrders();
-    const interval = setInterval(processOrders, 30000);
+    }, 600000); // 10 minutos (600000ms)
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
   
 
   return (

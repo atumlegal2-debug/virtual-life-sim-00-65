@@ -57,6 +57,9 @@ export function HomeScreen() {
 
   // Iniciar sistema automático de diminuição da fome
   useEffect(() => {
+    // Remover este useEffect - a diminuição de fome agora é gerenciada pelo GameContext
+    // com intervalo correto de 10 minutos
+    /*
     const hungerInterval = setInterval(async () => {
       try {
         console.log('🔄 HomeScreen - Calling hunger-decrease function');
@@ -70,6 +73,10 @@ export function HomeScreen() {
     }, 60000); // 1 minuto
 
     return () => clearInterval(hungerInterval);
+    */
+    
+    // A diminuição de fome agora é controlada pelo GameContext a cada 10 minutos
+    console.log('🍎 Sistema de fome: controlado pelo GameContext (10 minutos)');
   }, []);
 
   useEffect(() => {
