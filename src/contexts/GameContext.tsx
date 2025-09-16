@@ -1321,18 +1321,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
   
-  // Listen for global malnutrition cure events
-  useEffect(() => {
-    const handleGlobalCure = () => {
-      if (userId && currentUser) {
-        console.log('Global malnutrition cure event received, checking user...');
-        checkForApprovedTreatments(userId);
-      }
-    };
-
-    window.addEventListener('globalMalnutritionCure', handleGlobalCure);
-    return () => window.removeEventListener('globalMalnutritionCure', handleGlobalCure);
-  }, [userId, currentUser]);
 
   return (
     <GameContext.Provider value={{
