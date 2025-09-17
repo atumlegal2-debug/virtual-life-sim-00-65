@@ -1146,15 +1146,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
         (payload) => {
           const u: any = payload.new;
-          const freshStats = {
-            health: u.life_percentage ?? 100,
-            hunger: u.hunger_percentage ?? 100,
-            alcoholism: u.alcoholism_percentage ?? 0,
-            happiness: u.happiness_percentage ?? 100,
-            energy: u.energy_percentage ?? 100,
-            disease: u.disease_percentage ?? 0,
-          };
-          setGameStats(prev => ({ ...prev, ...freshStats }));
+          setGameStats(prev => ({
+            ...prev,
+            health: u.life_percentage ?? prev.health ?? 100,
+            hunger: u.hunger_percentage ?? prev.hunger ?? 100,
+            alcoholism: u.alcoholism_percentage ?? prev.alcoholism ?? 0,
+            happiness: u.happiness_percentage ?? prev.happiness ?? 100,
+            energy: u.energy_percentage ?? prev.energy ?? 100,
+            disease: u.disease_percentage ?? prev.disease ?? 0,
+          }));
         }
       )
       .subscribe();
