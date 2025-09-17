@@ -1069,11 +1069,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (userId && isLoggedIn && currentUser) {
       const saveStatsToDatabase = async () => {
         try {
+          // Do NOT autosave hunger_percentage here to avoid racing against server timer
+          // Hunger is updated by the server; when user explicitly changes hunger via updateStats,
+          // that call will update hunger directly.
           await supabase
             .from('users')
             .update({
               life_percentage: gameStats.health,
-              hunger_percentage: gameStats.hunger,
               alcoholism_percentage: gameStats.alcoholism,
               disease_percentage: gameStats.disease,
               wallet_balance: money
