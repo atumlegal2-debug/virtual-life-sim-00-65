@@ -59,9 +59,21 @@ export function HomeScreen() {
   useEffect(() => {
     const hungerInterval = setInterval(async () => {
       try {
-        console.log('🔄 HomeScreen - Calling hunger-decrease function');
-        const result = await supabase.functions.invoke('hunger-decrease');
-        console.log('🔄 HomeScreen - Hunger function result:', result);
+        // Tenta primeiro via RPC (seguro: a função só diminui se já tiver passado 10min)
+        console.log('🔄 HomeScreen - Calling decrease_hunger (RPC)');
+        const { data, error } = await supabase.rpc('decrease_hunger');
+
+        if (error) {
+          console.warn('RPC decrease_hunger failed, falling back to Edge Function:', error.message || error);
+          try {
+            const edgeResult = await supabase.functions.invoke('hunger-decrease');
+            console.log('🔄 HomeScreen - Edge hunger-decrease result:', edgeResult);
+          } catch (edgeErr) {
+            console.error('Erro ao chamar Edge Function hunger-decrease:', edgeErr);
+          }
+        } else {
+          console.log('🔄 HomeScreen - RPC decrease_hunger result:', data);
+        }
         // Atualizar o perfil do usuário após diminuir a fome
         fetchUserProfile();
       } catch (error) {
