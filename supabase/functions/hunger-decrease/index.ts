@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Call the function to decrease hunger for all users (with 5-minute timing control)
+    // Call the function to decrease hunger for all users (with 10-minute timing control)
     const { data, error } = await supabase.rpc('decrease_hunger');
     
     if (error) {
