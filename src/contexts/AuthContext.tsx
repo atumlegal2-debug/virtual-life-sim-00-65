@@ -247,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             about: 'Jogador do RPG Real Life Virtual',
             wallet_balance: 2000.00,
             life_percentage: 100.00,
-            hunger_percentage: 100.00,
+            hunger_percentage: 60.00,
             happiness_percentage: 100.00,
             energy_percentage: 100.00,
             mood: 100.00,

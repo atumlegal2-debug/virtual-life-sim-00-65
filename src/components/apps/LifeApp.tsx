@@ -336,12 +336,12 @@ export function LifeApp({ onBack }: LifeAppProps) {
           console.log('🩺 User stats update received:', payload);
           const u: any = payload.new;
           const freshStats = {
-            health: u.life_percentage ?? 100,
-            hunger: u.hunger_percentage ?? 100,
-            mood: u.mood?.toString() ?? "Sentindo-se bem",
-            alcoholism: u.alcoholism_percentage ?? 0,
-            happiness: u.happiness_percentage ?? 100,
-            energy: u.energy_percentage ?? 100,
+            health: u.life_percentage ?? localGameStats.health,
+            hunger: u.hunger_percentage ?? localGameStats.hunger,
+            mood: u.mood?.toString() ?? localGameStats.mood,
+            alcoholism: u.alcoholism_percentage ?? localGameStats.alcoholism,
+            happiness: u.happiness_percentage ?? localGameStats.happiness,
+            energy: u.energy_percentage ?? localGameStats.energy,
             disease: gameStats.disease || 0,
           };
           setLocalGameStats(freshStats);
