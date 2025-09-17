@@ -1073,7 +1073,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
             .from('users')
             .update({
               life_percentage: gameStats.health,
-              hunger_percentage: gameStats.hunger,
               alcoholism_percentage: gameStats.alcoholism,
               disease_percentage: gameStats.disease,
               wallet_balance: money
@@ -1266,12 +1265,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
           const userData = payload.new;
           setGameStats(prev => ({
             ...prev,
-            health: userData.life_percentage || prev.health,
-            hunger: userData.hunger_percentage || prev.hunger,
-            happiness: userData.happiness_percentage || prev.happiness,
-            energy: userData.energy_percentage || prev.energy,
-            alcoholism: userData.alcoholism_percentage || prev.alcoholism,
-            disease: userData.disease_percentage || prev.disease
+            health: (userData.life_percentage ?? prev.health),
+            hunger: (userData.hunger_percentage ?? prev.hunger),
+            happiness: (userData.happiness_percentage ?? prev.happiness),
+            energy: (userData.energy_percentage ?? prev.energy),
+            alcoholism: (userData.alcoholism_percentage ?? prev.alcoholism),
+            disease: (userData.disease_percentage ?? prev.disease)
           }));
           
           // Update wallet balance if changed
