@@ -123,7 +123,7 @@ export function RouletteApp({ onBack }: RouletteAppProps) {
         addDisease(selectedItem.name, selectedItem.medicine!);
         // Increase disease percentage and reduce health
         const currentDiseasePercent = gameStats.disease || 0;
-        const currentHealth = gameStats.health || 100;
+        const currentHealth = gameStats.health ?? 100;
         await updateStats({ 
           disease: Math.min(100, currentDiseasePercent + 15),
           health: Math.max(0, currentHealth - 10) // Reduce health when getting sick
