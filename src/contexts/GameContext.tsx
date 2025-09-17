@@ -308,7 +308,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Check happiness decrease (every 20 minutes = 1200000ms)
       if (!lastHappinessDecrease || (currentTime - parseInt(lastHappinessDecrease)) >= 1200000) {
         setGameStats(prev => {
-          const newHappiness = Math.max(0, (prev.happiness || 100) - 2);
+          const newHappiness = Math.max(0, (prev.happiness ?? 100) - 2);
           if (userId && newHappiness !== prev.happiness) {
             supabase
               .from('users')
@@ -324,7 +324,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Check energy decrease (every 20 minutes = 1200000ms)  
       if (!lastEnergyDecrease || (currentTime - parseInt(lastEnergyDecrease)) >= 1200000) {
         setGameStats(prev => {
-          const newEnergy = Math.max(0, (prev.energy || 100) - 2);
+          const newEnergy = Math.max(0, (prev.energy ?? 100) - 2);
           if (userId && newEnergy !== prev.energy) {
             supabase
               .from('users')
@@ -633,7 +633,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // Special handling for hunger-related disease
     if (name === "Desnutrição") {
       // Decrease health when getting hunger disease
-      const currentHealth = gameStats.health || 100;
+      const currentHealth = gameStats.health ?? 100;
       const newHealth = Math.max(0, currentHealth - 20); // Decrease health by 20 points
       
       // Update both disease and health stats
@@ -664,8 +664,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     
     // If no diseases left, set disease percentage to 0, otherwise decrease by 15
-    const currentHealth = gameStats.health || 100;
-    const currentHunger = gameStats.hunger || 0;
+    const currentHealth = gameStats.health ?? 100;
+    const currentHunger = gameStats.hunger ?? 0;
     const newDiseasePercent = updatedDiseases.length === 0 ? 0 : Math.max(0, (gameStats.disease || 0) - 15);
     
     // Increase hunger by 60% after treatment
@@ -818,9 +818,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Update local stats with database values
             setGameStats(prev => ({
               ...prev,
-              health: updatedUserStats.life_percentage || 100,
-              hunger: updatedUserStats.hunger_percentage || 100,
-              disease: updatedUserStats.disease_percentage || 0
+              health: updatedUserStats.life_percentage ?? 100,
+              hunger: updatedUserStats.hunger_percentage ?? 100,
+              disease: updatedUserStats.disease_percentage ?? 0
             }));
             
             console.log('Stats updated from database after malnutrition cure:', updatedUserStats);
@@ -903,7 +903,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .single();
 
-    const currentHealth = currentStats?.life_percentage || 100;
+    const currentHealth = currentStats?.life_percentage ?? 100;
     const newHealth = Math.min(100, currentHealth + 15); // Restore health when cured
 
     await supabase
@@ -1042,7 +1042,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     await cureDisease("Desnutrição");
     
     // Additional health boost since it's a medical treatment
-    const currentHealth = gameStats.health || 100;
+    const currentHealth = gameStats.health ?? 100;
     const newHealth = Math.min(100, currentHealth + 10);
     
     await updateStats({ 
@@ -1073,7 +1073,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             .from('users')
             .update({
               life_percentage: gameStats.health,
-              hunger_percentage: gameStats.hunger,
+              // hunger_percentage is intentionally excluded here to avoid overriding server-managed decreases
               alcoholism_percentage: gameStats.alcoholism,
               disease_percentage: gameStats.disease,
               wallet_balance: money
@@ -1216,9 +1216,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
               if (updatedStats) {
                 setGameStats(prev => ({
                   ...prev,
-                  health: updatedStats.life_percentage || 100,
-                  hunger: updatedStats.hunger_percentage || 100,
-                  disease: updatedStats.disease_percentage || 0
+                  health: updatedStats.life_percentage ?? 100,
+                  hunger: updatedStats.hunger_percentage ?? 100,
+                  disease: updatedStats.disease_percentage ?? 0
                 }));
                 
                 console.log('🔄 Real-time stats updated:', updatedStats);
@@ -1266,12 +1266,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
           const userData = payload.new;
           setGameStats(prev => ({
             ...prev,
-            health: userData.life_percentage || prev.health,
-            hunger: userData.hunger_percentage || prev.hunger,
-            happiness: userData.happiness_percentage || prev.happiness,
-            energy: userData.energy_percentage || prev.energy,
-            alcoholism: userData.alcoholism_percentage || prev.alcoholism,
-            disease: userData.disease_percentage || prev.disease
+            health: userData.life_percentage ?? prev.health,
+            hunger: userData.hunger_percentage ?? prev.hunger,
+            happiness: userData.happiness_percentage ?? prev.happiness,
+            energy: userData.energy_percentage ?? prev.energy,
+            alcoholism: userData.alcoholism_percentage ?? prev.alcoholism,
+            disease: userData.disease_percentage ?? prev.disease
           }));
           
           // Update wallet balance if changed

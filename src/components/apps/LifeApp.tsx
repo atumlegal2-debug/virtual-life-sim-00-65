@@ -258,13 +258,13 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   
                   if (freshProfile) {
                     const freshStats = {
-                      health: freshProfile.life_percentage || 100,
-                      hunger: freshProfile.hunger_percentage || 100,
-                      mood: freshProfile.mood?.toString() || "Sentindo-se bem",
-                      alcoholism: freshProfile.alcoholism_percentage || 0,
-                      happiness: freshProfile.happiness_percentage || 100,
-                      energy: freshProfile.energy_percentage || 100,
-                      disease: gameStats.disease || 0 // Add missing disease property
+                      health: freshProfile.life_percentage ?? 100,
+                      hunger: freshProfile.hunger_percentage ?? 100,
+                      mood: freshProfile.mood?.toString() ?? "Sentindo-se bem",
+                      alcoholism: freshProfile.alcoholism_percentage ?? 0,
+                      happiness: freshProfile.happiness_percentage ?? 100,
+                      energy: freshProfile.energy_percentage ?? 100,
+                      disease: gameStats.disease ?? 0 // Add missing disease property
                     };
                     
                     // Update local state only to avoid feedback loop; GameContext realtime will sync globally
@@ -425,10 +425,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Felicidade</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-yellow-700 dark:text-yellow-300 border-yellow-400 dark:border-yellow-600 font-semibold">
-                  {localGameStats.happiness || 100}%
+                  {localGameStats.happiness ?? 100}%
                 </Badge>
               </div>
-              <StatBar label="" value={localGameStats.happiness || 100} color="happiness" />
+              <StatBar label="" value={localGameStats.happiness ?? 100} color="happiness" />
             </CardContent>
           </Card>
 
@@ -441,10 +441,10 @@ export function LifeApp({ onBack }: LifeAppProps) {
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Energia</span>
                 </div>
                 <Badge variant="outline" className="text-xs bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-600 font-semibold">
-                  {localGameStats.energy || 100}%
+                  {localGameStats.energy ?? 100}%
                 </Badge>
               </div>
-              <StatBar label="" value={localGameStats.energy || 100} color="energy" />
+              <StatBar label="" value={localGameStats.energy ?? 100} color="energy" />
             </CardContent>
           </Card>
         </div>
