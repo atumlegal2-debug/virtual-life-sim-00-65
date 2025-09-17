@@ -155,7 +155,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         
         setGameStats({
           health: profile.life_percentage ?? 100,
-          hunger: profile.hunger_percentage ?? 100,
+          hunger: profile.hunger_percentage !== null && profile.hunger_percentage !== undefined ? profile.hunger_percentage : 100,
           alcoholism: profile.alcoholism_percentage ?? 0,
           disease: profile.disease_percentage ?? 0,
           mood: profile.mood?.toString() ?? "Sentindo-se bem",
@@ -204,7 +204,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (profile) {
         setGameStats({
           health: profile.life_percentage ?? 100,
-          hunger: profile.hunger_percentage ?? 100,
+          hunger: profile.hunger_percentage !== null && profile.hunger_percentage !== undefined ? profile.hunger_percentage : 100,
           alcoholism: profile.alcoholism_percentage ?? 0,
           disease: profile.disease_percentage ?? 0,
           mood: profile.mood?.toString() ?? "Sentindo-se bem",
@@ -383,7 +383,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       setGameStats({
         health: profile.life_percentage ?? 100,
-        hunger: profile.hunger_percentage ?? 100,
+        hunger: profile.hunger_percentage !== null && profile.hunger_percentage !== undefined ? profile.hunger_percentage : 100,
         alcoholism: profile.alcoholism_percentage ?? 0,
         disease: profile.disease_percentage ?? 0,
         mood: profile.mood?.toString() ?? "Sentindo-se bem",
@@ -1144,15 +1144,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
         (payload) => {
           const u: any = payload.new;
-          const freshStats = {
-            health: u.life_percentage ?? 100,
-            hunger: u.hunger_percentage ?? 100,
-            alcoholism: u.alcoholism_percentage ?? 0,
-            happiness: u.happiness_percentage ?? 100,
-            energy: u.energy_percentage ?? 100,
-            disease: u.disease_percentage ?? 0,
-          };
-          setGameStats(prev => ({ ...prev, ...freshStats }));
+          setGameStats(prev => ({
+            ...prev,
+            health: u.life_percentage !== null && u.life_percentage !== undefined ? u.life_percentage : prev.health,
+            hunger: u.hunger_percentage !== null && u.hunger_percentage !== undefined ? u.hunger_percentage : prev.hunger,
+            alcoholism: u.alcoholism_percentage !== null && u.alcoholism_percentage !== undefined ? u.alcoholism_percentage : prev.alcoholism,
+            happiness: u.happiness_percentage !== null && u.happiness_percentage !== undefined ? u.happiness_percentage : prev.happiness,
+            energy: u.energy_percentage !== null && u.energy_percentage !== undefined ? u.energy_percentage : prev.energy,
+            disease: u.disease_percentage !== null && u.disease_percentage !== undefined ? u.disease_percentage : prev.disease,
+          }));
         }
       )
       .subscribe();
@@ -1266,12 +1266,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
           const userData = payload.new;
           setGameStats(prev => ({
             ...prev,
-            health: userData.life_percentage || prev.health,
-            hunger: userData.hunger_percentage || prev.hunger,
-            happiness: userData.happiness_percentage || prev.happiness,
-            energy: userData.energy_percentage || prev.energy,
-            alcoholism: userData.alcoholism_percentage || prev.alcoholism,
-            disease: userData.disease_percentage || prev.disease
+            health: userData.life_percentage !== null && userData.life_percentage !== undefined ? userData.life_percentage : prev.health,
+            hunger: userData.hunger_percentage !== null && userData.hunger_percentage !== undefined ? userData.hunger_percentage : prev.hunger,
+            happiness: userData.happiness_percentage !== null && userData.happiness_percentage !== undefined ? userData.happiness_percentage : prev.happiness,
+            energy: userData.energy_percentage !== null && userData.energy_percentage !== undefined ? userData.energy_percentage : prev.energy,
+            alcoholism: userData.alcoholism_percentage !== null && userData.alcoholism_percentage !== undefined ? userData.alcoholism_percentage : prev.alcoholism,
+            disease: userData.disease_percentage !== null && userData.disease_percentage !== undefined ? userData.disease_percentage : prev.disease
           }));
           
           // Update wallet balance if changed
