@@ -344,8 +344,19 @@ export function LifeApp({ onBack }: LifeAppProps) {
             energy: u.energy_percentage ?? 100,
             disease: gameStats.disease || 0,
           };
-          setLocalGameStats(freshStats);
-          // Avoid DB write here to prevent feedback loop
+          
+          // Only update if there's a meaningful change
+          setLocalGameStats(prev => {
+            const hasSignificantChange = Math.abs(prev.hunger - freshStats.hunger) > 0.1 ||
+                                       Math.abs(prev.health - freshStats.health) > 0.1;
+            
+            if (hasSignificantChange) {
+              console.log('🩺 LifeApp stats updated from realtime');
+              return freshStats;
+            }
+            
+            return prev;
+          });
         }
       )
       .subscribe();

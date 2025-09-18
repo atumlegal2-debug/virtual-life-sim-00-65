@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Call the function to decrease hunger for all users (with 10-minute timing control)
+    // Call the function to decrease hunger for all users (with proper timing control)
     const { data, error } = await supabase.rpc('decrease_hunger');
     
     if (error) {
@@ -27,14 +27,25 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    if (data.decreased) {
-      console.log(`Hunger decreased successfully for ${data.users_updated} users`);
+    if (data && typeof data === 'object') {
+      if (data.decreased) {
+        console.log(`✅ Hunger decreased for ${data.users_updated} users`);
+      } else {
+        console.log(`⏭️ Skipped hunger decrease: ${data.message}`);
+        if (data.next_decrease_in_seconds) {
+          console.log(`⏰ Next decrease in ${Math.round(data.next_decrease_in_seconds)} seconds`);
+        }
+      }
     } else {
-      console.log(`Skipped hunger decrease: ${data.message}. Next decrease in ${Math.round(data.next_decrease_in_seconds)} seconds`);
+      console.log('Hunger decrease function result:', data);
     }
     
     return new Response(
-      JSON.stringify({ success: true, message: 'Hunger decreased successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: data?.decreased ? 'Hunger decreased successfully' : 'Hunger decrease skipped (timing)',
+        data: data
+      }),
       { 
         headers: { 
           ...corsHeaders, 

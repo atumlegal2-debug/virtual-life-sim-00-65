@@ -153,7 +153,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setUserId(profile.id);
         localStorage.setItem('currentUserId', profile.id);
         
-        setGameStats({
+        const newStats = {
           health: profile.life_percentage ?? 100,
           hunger: profile.hunger_percentage ?? 100,
           alcoholism: profile.alcoholism_percentage ?? 0,
@@ -161,19 +161,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
           mood: profile.mood?.toString() ?? "Sentindo-se bem",
           happiness: profile.happiness_percentage ?? 100,
           energy: profile.energy_percentage ?? 100
-        });
+        };
+        
+        console.log('🔄 Initial stats loaded from database:', newStats);
+        setGameStats(newStats);
         
         // Check for approved treatments that should cure malnutrition
-        await checkForApprovedTreatments(profile.id);
+        };
         
-        console.log('🔄 Stats carregados do banco:', {
-          health: profile.life_percentage,
-          hunger: profile.hunger_percentage,
-          happiness: profile.happiness_percentage,
-          energy: profile.energy_percentage,
-          alcoholism: profile.alcoholism_percentage,
-          disease: profile.disease_percentage
-        });
+        console.log('🔄 Stats loaded on login:', newStats);
+        setGameStats(newStats);
+        
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via auth ID:', profile.wallet_balance);
         
@@ -202,7 +200,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (profile) {
-        setGameStats({
+        const newStats = {
           health: profile.life_percentage ?? 100,
           hunger: profile.hunger_percentage ?? 100,
           alcoholism: profile.alcoholism_percentage ?? 0,
@@ -210,16 +208,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
           mood: profile.mood?.toString() ?? "Sentindo-se bem",
           happiness: profile.happiness_percentage ?? 100,
           energy: profile.energy_percentage ?? 100
-        });
+        };
         
-        console.log('🔄 Stats carregados do banco (username):', {
-          health: profile.life_percentage,
-          hunger: profile.hunger_percentage,
-          happiness: profile.happiness_percentage,
-          energy: profile.energy_percentage,
-          alcoholism: profile.alcoholism_percentage,
-          disease: profile.disease_percentage
-        });
+        console.log('🔄 Stats loaded by username:', newStats);
+        setGameStats(newStats);
+        
         setMoney(profile.wallet_balance || 2000);
         console.log('GameContext saldo carregado via username:', profile.wallet_balance);
         
@@ -244,31 +237,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!isLoggedIn) return;
     
     const interval = setInterval(async () => {
-      // Note: Hunger decrease is now handled by the server-side edge function
-      // This ensures consistent timing and prevents double decreasing
+      // Note: Hunger decrease is handled by the server-side edge function
+      // We only sync the current value without overriding it
 
-      // 1) Sincroniza fome do banco (para refletir o edge function)
+      // 1) Ativa automaticamente Desnutrição quando fome < 50
       let hungerToCheck = gameStats.hunger;
-      try {
-        if (userId) {
-          const { data: userRow } = await supabase
-            .from('users')
-            .select('hunger_percentage')
-            .eq('id', userId)
-            .single();
-          if (typeof userRow?.hunger_percentage === 'number') {
-            hungerToCheck = userRow.hunger_percentage;
-            if (userRow.hunger_percentage !== gameStats.hunger) {
-              console.log(`🍎 Sync hunger: UI ${gameStats.hunger} -> DB ${userRow.hunger_percentage}`);
-              setGameStats(prev => ({ ...prev, hunger: userRow.hunger_percentage as number }));
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Falha ao sincronizar fome:', e);
-      }
-
-      // 2) Ativa automaticamente Desnutrição quando fome < 50
       if (hungerToCheck <= 49 && !diseases.some(d => d.name === "Desnutrição")) {
         console.log('Aplicando doença de fome (Desnutrição). Fome atual:', hungerToCheck);
         await addDisease("Desnutrição", "Consulta Médica");
@@ -283,7 +256,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Check and fix any disease inconsistencies
       checkAndFixDiseaseLevel();
 
-      // 3) Diminui alcoolismo ao longo do tempo
+      // 2) Diminui alcoolismo ao longo do tempo
       setGameStats(prev => {
         const currentAlcoholism = prev.alcoholism || 0;
         if (currentAlcoholism > 0) {
@@ -300,7 +273,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return prev;
       });
 
-      // 4) Diminui felicidade e energia a cada 20 minutos (2 pontos cada)
+      // 3) Diminui felicidade e energia a cada 20 minutos (2 pontos cada)
       const currentTime = Date.now();
       const lastHappinessDecrease = localStorage.getItem(`${currentUser}_last_happiness_decrease`);
       const lastEnergyDecrease = localStorage.getItem(`${currentUser}_last_energy_decrease`);
@@ -337,7 +310,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      // 5) Se não há doenças ativas, zera porcentagem de doença
+      // 4) Se não há doenças ativas, zera porcentagem de doença
       if (diseases.length === 0 && gameStats.disease > 0) {
         const newDiseaseLevel = 0;
         setGameStats(prev => ({ ...prev, disease: newDiseaseLevel }));
@@ -349,7 +322,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 6) Limpa efeitos temporários expirados
+      // 5) Limpa efeitos temporários expirados
       clearExpiredEffects();
     }, 60000); // Every minute
 
@@ -534,7 +507,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const updateStats = async (stats: Partial<GameStats>) => {
-    setGameStats(prev => ({ ...prev, ...stats }));
+    // Only update local state, don't sync to database immediately to prevent conflicts
+    setGameStats(prev => {
+      const newStats = { ...prev, ...stats };
+      console.log('📊 Updating local stats:', { old: prev, new: newStats, changes: stats });
+      return newStats;
+    });
     
     // Sync with database if user is logged in
     if (userId && isLoggedIn) {
@@ -548,11 +526,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (stats.energy !== undefined) updateData.energy_percentage = stats.energy;
       
       if (Object.keys(updateData).length > 0) {
-        console.log('Syncing stats to database:', updateData);
-        await supabase
-          .from('users')
-          .update(updateData)
-          .eq('id', userId);
+        console.log('📤 Syncing stats to database:', updateData);
+        // Use a timeout to batch updates and prevent rapid successive calls
+        setTimeout(async () => {
+          try {
+            await supabase
+              .from('users')
+              .update(updateData)
+              .eq('id', userId);
+            console.log('✅ Stats synced to database successfully');
+          } catch (error) {
+            console.error('❌ Error syncing stats to database:', error);
+          }
+        }, 1000);
       }
     }
   };
@@ -1066,28 +1052,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Auto-save game stats to database whenever they change
   useEffect(() => {
-    if (userId && isLoggedIn && currentUser) {
-      const saveStatsToDatabase = async () => {
-        try {
-          await supabase
-            .from('users')
-            .update({
-              life_percentage: gameStats.health,
-              hunger_percentage: gameStats.hunger,
-              alcoholism_percentage: gameStats.alcoholism,
-              disease_percentage: gameStats.disease,
-              wallet_balance: money
-            })
-            .eq('id', userId);
-        } catch (error) {
-          console.error('Error auto-saving stats:', error);
-        }
-      };
-      
-      // Debounce the save to avoid too many database calls
-      const timeoutId = setTimeout(saveStatsToDatabase, 2000);
-      return () => clearTimeout(timeoutId);
-    }
+    // Remove auto-save to prevent conflicts with hunger decrease function
+    // Stats are now synced through updateStats function and realtime updates
   }, [gameStats, money, userId, isLoggedIn, currentUser]);
 
   // Listen for login state changes to reload friends
@@ -1153,8 +1119,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
             disease: u.disease_percentage ?? 0,
           };
           setGameStats(prev => ({ ...prev, ...freshStats }));
-        }
-      )
+          
+          // Only update if there's a significant change to avoid constant resets
+          setGameStats(prev => {
+            const shouldUpdate = Math.abs(prev.hunger - freshStats.hunger) > 0.1 ||
+                               Math.abs(prev.health - freshStats.health) > 0.1 ||
+                               Math.abs(prev.happiness - freshStats.happiness) > 0.1 ||
+                               Math.abs(prev.energy - freshStats.energy) > 0.1;
+            
+            if (shouldUpdate) {
+              console.log('📊 Updating stats from realtime:', {
+                old: { hunger: prev.hunger, health: prev.health },
+                new: { hunger: freshStats.hunger, health: freshStats.health }
+              });
+              return freshStats;
+            }
+            
+            return prev;
+          });
       .subscribe();
 
     return () => {
@@ -1306,6 +1288,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.functions.invoke('auto-process-orders');
         if (error) {
           console.error('Error in auto-process-orders:', error);
+    if (!isLoggedIn || !currentUser) return;
+    
+    // Call hunger decrease function every 10 minutes
+    const hungerInterval = setInterval(async () => {
+      try {
+        console.log('🔄 GameContext - Calling hunger-decrease function');
+        const result = await supabase.functions.invoke('hunger-decrease');
+        console.log('🔄 GameContext - Hunger function result:', result);
+      } catch (error) {
+        console.error('Erro ao chamar função de diminuição da fome:', error);
+      }
+    }, 600000); // 10 minutes
+
+    // Call immediately on mount
+    const callHungerDecrease = async () => {
+      try {
+        await supabase.functions.invoke('hunger-decrease');
+      } catch (error) {
+        console.error('Erro na chamada inicial da função de fome:', error);
+      }
+    };
+    callHungerDecrease();
+
+    return () => clearInterval(hungerInterval);
+  }, [isLoggedIn, currentUser]);
+
+  // Separate effect for other stats management
+  useEffect(() => {
         } else {
           console.log('📦 Auto-process orders completed:', data);
         }

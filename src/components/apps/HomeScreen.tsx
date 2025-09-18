@@ -57,19 +57,9 @@ export function HomeScreen() {
 
   // Iniciar sistema automático de diminuição da fome
   useEffect(() => {
-    const hungerInterval = setInterval(async () => {
-      try {
-        console.log('🔄 HomeScreen - Calling hunger-decrease function');
-        const result = await supabase.functions.invoke('hunger-decrease');
-        console.log('🔄 HomeScreen - Hunger function result:', result);
-        // Atualizar o perfil do usuário após diminuir a fome
-        fetchUserProfile();
-      } catch (error) {
-        console.error('Erro ao diminuir fome:', error);
-      }
-    }, 60000); // 1 minuto
-
-    return () => clearInterval(hungerInterval);
+    // Remove the hunger decrease interval from HomeScreen
+    // The hunger decrease is now handled by the edge function called from GameContext
+    // This prevents multiple calls and conflicts
   }, []);
 
   useEffect(() => {
